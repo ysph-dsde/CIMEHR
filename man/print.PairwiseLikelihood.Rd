@@ -2,20 +2,36 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.PairwiseLikelihood}
 \alias{print.PairwiseLikelihood}
-\title{Print Method for PairwiseLikelihood Fits}
+\title{Print a PairwiseLikelihood Fit}
 \usage{
-\method{print}{PairwiseLikelihood}(x, digits = 4, ...)
+\method{print}{PairwiseLikelihood}(x, digits = 4, level = 0.95, ...)
 }
 \arguments{
-\item{x}{An object of class \code{"PairwiseLikelihood"}.}
+\item{x}{A \code{PairwiseLikelihood} object returned by
+\code{\link{PairwiseLikelihood}}.}
 
-\item{digits}{Integer; number of significant digits. Default is \code{4}.}
+\item{digits}{Number of significant digits. Default is 4.}
 
-\item{...}{Additional arguments (currently unused).}
+\item{level}{Confidence level for Wald intervals. Default is 0.95.}
+
+\item{\dots}{Ignored.}
 }
 \value{
-Invisibly returns \code{x}.
+\code{x}, invisibly.
 }
 \description{
-Print Method for PairwiseLikelihood Fits
+Prints coefficients with naive standard errors (from the inverse
+Hessian) when available.
+}
+\examples{
+\dontrun{
+dat <- sim_data_gen(n = 500, seed = 42)
+fit <- PairwiseLikelihood(Y ~ Z + X, data = dat$long_data, id = "id")
+fit
+}
+
+}
+\seealso{
+\code{\link{summary.PairwiseLikelihood}},
+\code{\link{PairwiseLikelihood}}
 }

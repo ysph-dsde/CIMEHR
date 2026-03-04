@@ -2,20 +2,34 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.EHRJoint}
 \alias{print.EHRJoint}
-\title{Print Method for EHRJoint Fits}
+\title{Print an EHRJoint Fit}
 \usage{
-\method{print}{EHRJoint}(x, digits = 4, ...)
+\method{print}{EHRJoint}(x, digits = 4, level = 0.95, ...)
 }
 \arguments{
-\item{x}{An object of class \code{"EHRJoint"}.}
+\item{x}{An \code{EHRJoint} object returned by \code{\link{EHRJoint}}.}
 
-\item{digits}{Integer; number of significant digits. Default is \code{4}.}
+\item{digits}{Number of significant digits. Default is 4.}
 
-\item{...}{Additional arguments (currently unused).}
+\item{level}{Confidence level for Wald intervals. Default is 0.95.}
+
+\item{\dots}{Ignored.}
 }
 \value{
-Invisibly returns \code{x}.
+\code{x}, invisibly.
 }
 \description{
-Print Method for EHRJoint Fits
+Prints outcome fixed-effect estimates from the joint model without a
+separate observation process.
+}
+\examples{
+\dontrun{
+dat <- sim_data_gen(n = 500, seed = 42)
+fit <- EHRJoint(dat$long_data)
+fit
+}
+
+}
+\seealso{
+\code{\link{summary.EHRJoint}}, \code{\link{EHRJoint}}
 }

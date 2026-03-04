@@ -3,7 +3,7 @@
 #' @description
 #' Reduces longitudinal data to a single summary statistic per subject
 #' (e.g., mean, median, min, max of the outcome), then fits a
-#' cross-sectional linear model on the summarised data. This provides a
+#' cross-sectional linear model on the summarized data. This provides a
 #' simple baseline analysis that ignores the within-subject correlation
 #' structure and visit process entirely.
 #'
@@ -18,7 +18,7 @@
 #'   \code{"mean"}, or \code{"median"}. Default is \code{"mean"}.
 #' @param formula A one-sided \code{\link[stats]{formula}} specifying the
 #'   covariates for the linear model (e.g., \code{~ X + Z}). The outcome
-#'   (as summarised) is used as the response. Default is \code{~ 1}
+#'   (as summarized) is used as the response. Default is \code{~ 1}
 #'   (intercept only).
 #' @param cov_stat Summary statistic to apply to time-varying covariates
 #'   within each subject before fitting. Can be a single character string
@@ -46,18 +46,7 @@
 #' This approach discards all within-subject temporal information and
 #' does not account for informative visiting or observation processes.
 #' It is included primarily as a naive benchmark for comparison with
-#' methods such as \code{\link{GIVEHR}}, \code{\link{JMVL_IP}}, or
-#' \code{\link{IIRR_weighting}}.
-#'
-#' @references
-#' Fitzmaurice, G. M., Laird, N. M., and Ware, J. H. (2011).
-#' \emph{Applied Longitudinal Analysis} (2nd ed.). Wiley. Chapter 4.
-#'
-#' @seealso
-#' \code{\link{LMM}} for a mixed-model approach that uses all
-#' observations;
-#' \code{\link{GIVEHR}} for a joint model accounting for informative
-#' visiting.
+#' methods such as \code{\link{GIVEHR}}.
 #'
 #' @examples
 #' \dontrun{
@@ -80,7 +69,7 @@
 #' )
 #' }
 #'
-#' @importFrom stats aggregate as.formula lm
+#' @importFrom stats aggregate as.formula lm median
 #' @export
 SummaryStat <- function(data, id = "id", outcome = "Y", stat = "mean",
                         formula = ~ 1, cov_stat = "mean") {

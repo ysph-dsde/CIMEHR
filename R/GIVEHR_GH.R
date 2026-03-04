@@ -156,7 +156,7 @@
 #' @references
 #' Yang, C.-H., Shi, X., and Mukherjee, B. (2026).
 #' "Joint Modeling of Longitudinal EHR Data with Shared Random Effects for Informative Visiting and Observation Processes."
-#' arXiv:2602.15374. doi:10.48550/arXiv.2602.15374.
+#' arXiv:2602.15374. \doi{10.48550/arXiv.2602.15374}.
 #'
 #' @seealso
 #' \code{\link{GIVEHR}} for the base version without quadrature;
@@ -188,7 +188,8 @@
 #' }
 #'
 #' @importFrom stats as.formula binomial coef dnorm glm.fit model.matrix
-#'   nlminb pnorm
+#'   nlminb pnorm setNames
+#' @importFrom utils head
 #' @export
 GIVEHR_GH <- function(
     data,

@@ -2,20 +2,35 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.IIRR_weighting}
 \alias{print.IIRR_weighting}
-\title{Print Method for IIRR_weighting Fits}
+\title{Print an IIRR_weighting Fit}
 \usage{
-\method{print}{IIRR_weighting}(x, digits = 4, ...)
+\method{print}{IIRR_weighting}(x, digits = 4, level = 0.95, ...)
 }
 \arguments{
-\item{x}{An object of class \code{"IIRR_weighting"}.}
+\item{x}{An \code{IIRR_weighting} object.}
 
-\item{digits}{Integer; number of significant digits. Default is \code{4}.}
+\item{digits}{Number of significant digits. Default is 4.}
 
-\item{...}{Additional arguments (currently unused).}
+\item{level}{Confidence level for Wald intervals. Default is 0.95.}
+
+\item{\dots}{Ignored.}
 }
 \value{
-Invisibly returns \code{x}.
+\code{x}, invisibly.
 }
 \description{
-Print Method for IIRR_weighting Fits
+Prints outcome fixed-effect estimates from the inverse intensity rate
+ratio weighting estimator.
+}
+\examples{
+\dontrun{
+dat <- sim_data_gen(n = 500, seed = 42)
+fit <- IIRR_weighting(dat$long_data, formula = ~ Z + X)
+fit
+}
+
+}
+\seealso{
+\code{\link{summary.IIRR_weighting}},
+\code{\link{IIRR_weighting}}
 }

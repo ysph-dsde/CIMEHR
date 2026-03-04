@@ -2,20 +2,32 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.LMM_result}
 \alias{print.LMM_result}
-\title{Print Method for LMM Results}
+\title{Print an LMM Result}
 \usage{
 \method{print}{LMM_result}(x, digits = 4, ...)
 }
 \arguments{
-\item{x}{An object of class \code{"LMM_result"}.}
+\item{x}{An \code{LMM_result} object returned by \code{\link{LMM}}.}
 
-\item{digits}{Integer; number of significant digits. Default is \code{4}.}
+\item{digits}{Number of significant digits. Default is 4.}
 
-\item{...}{Additional arguments (currently unused).}
+\item{\dots}{Ignored.}
 }
 \value{
-Invisibly returns \code{x}.
+\code{x}, invisibly.
 }
 \description{
-Print Method for LMM Results
+Prints the fixed-effects table from a linear mixed model fit.
+}
+\examples{
+\dontrun{
+dat <- sim_data_gen(n = 500, seed = 42)
+fit <- LMM(dat$long_data, fixed = Y ~ Z + X + time,
+           random = ~ 1 | id, obs_indicator = "R")
+fit
+}
+
+}
+\seealso{
+\code{\link{summary.LMM_result}}, \code{\link{LMM}}
 }

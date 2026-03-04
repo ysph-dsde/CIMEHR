@@ -27,7 +27,6 @@
 #'   observation indicator column (\code{1} = outcome observed, \code{0} =
 #'   outcome missing at visit). Default is \code{"R"}.
 #'
-#' @section Linear Increment Model Parameters:
 #' @param li_formula A \code{\link[stats]{formula}} for the linear increment
 #'   model. The left-hand side should be the outcome variable. Default is
 #'   \code{NULL}, which constructs
@@ -45,7 +44,6 @@
 #'   specification passed to \code{\link[slim]{slim}}. Default is
 #'   \code{~ 1} (constant limit).
 #'
-#' @section IP Method Parameters:
 #' @param ip_method Character string specifying the IP adjustment method
 #'   applied to the completed dataset. One of:
 #'   \describe{
@@ -131,25 +129,9 @@
 #' of class \code{"LI_IP_result"}.
 #'
 #' @references
-#' Aalen, O. O. and Gunnes, N. (2010). A dynamic approach for
-#' reconstructing missing longitudinal data using the linear increments
-#' model. \emph{Biostatistics}, \strong{11}(3), 453--472.
-#'
-#' Liang, Y., Lu, W., and Ying, Z. (2009). Joint modeling and analysis of
-#' longitudinal data with informative observation times. \emph{Biometrics},
-#' \strong{65}(2), 377--384.
-#'
-#' Yiu, S. and Su, L. (2024). Accommodating informative visit times for
-#' analysing irregular longitudinal data: a sensitivity analysis approach
-#' with balancing weights estimators. \emph{Journal of the Royal
-#' Statistical Society: Series C}, \strong{74}, 824--843.
-#'
-#' @seealso
-#' \code{\link{MI_IP}} for the multiple imputation counterpart;
-#' \code{\link[slim]{slim}} for the underlying linear increment model;
-#' \code{\link{JMVL_IP}}, \code{\link{IIRR_weighting}},
-#' \code{\link{IIRR_balancing}}, \code{\link{PairwiseLikelihood}}, and
-#' \code{\link{LMM}} for the individual IP methods.
+#' Odd O. Aalen and Nina Gunnes (2010). A dynamic approach for reconstructing
+#' missing longitudinal data using the linear increments model. \emph{Biostatistics},
+#' 11(3), 453--472. \doi{10.1093/biostatistics/kxq014}.
 #'
 #' @examples
 #' \dontrun{
@@ -427,7 +409,7 @@ LI_IP <- function(
                      lmm_optimizer <- ip_args$optimizer %||% "nlminb"
                      lmm_visit_adjust <- ip_args$visit_adjust  # NULL is valid default
 
-                     coefs <- LMM_fun(
+                     coefs <- LMM(
                        data = data,
                        id = id,
                        fixed = outcome_formula,
@@ -444,7 +426,7 @@ LI_IP <- function(
                    },
 
                    "Liang" = {
-                     fit <- JMVL_Liang_fun(
+                     fit <- JMVL_IP(
                        data = data,
                        id = id,
                        time = time,
@@ -466,7 +448,7 @@ LI_IP <- function(
                      phi <- ip_args$phi %||% 0
                      balance_covs <- ip_args$balance_covs  # NULL uses visit_covs in function
 
-                     fit <- IIRR_balancing_fun(
+                     fit <- IIRR_balancing(
                        data = data,
                        id = id,
                        time = time,
@@ -491,7 +473,7 @@ LI_IP <- function(
                      phi <- ip_args$phi %||% 0
                      balance_covs <- ip_args$balance_covs  # NULL uses visit_covs in function
 
-                     fit <- IIRR_balancing_fun(
+                     fit <- IIRR_balancing(
                        data = data,
                        id = id,
                        time = time,
@@ -516,7 +498,7 @@ LI_IP <- function(
                      pair_sample <- ip_args$pair_sample  # NULL uses all pairs
                      pair_family <- ip_args$family %||% "gaussian"
 
-                     fit <- pairwise_glm_fit_rcpp(
+                     fit <- PairwiseLikelihood(
                        data = data[data[[obs_indicator]] == 1, ],
                        formula = outcome_formula,
                        id_col = id,

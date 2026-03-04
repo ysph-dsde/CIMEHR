@@ -1,93 +1,7 @@
-if (!requireNamespace("Rcpp", quietly = TRUE)) install.packages("Rcpp")
-library(Rcpp)
-
-Rcpp::cppFunction(code = '
-#include <Rcpp.h>
-using namespace Rcpp;
-
-// numerically stable softplus: log(1 + exp(x))
-inline double softplus(double x){
-  double ax = std::fabs(x);
-  return (x > 0.0 ? x : 0.0) + std::log1p(std::exp(-ax));
-}
-
-// Logistic-style pairwise loglik:
-// sum_{pairs} -softplus( (yi - yj) * (muj - mui) )
-// [[Rcpp::export]]
-double pw_total_softplus_rcpp(const NumericVector& y,
-                              const NumericVector& mu,
-                              const IntegerVector& offsets,
-                              const IntegerVector& g1,
-                              const IntegerVector& g2){
-  const int M = g1.size();
-  double total = 0.0;
-
-  for (int k = 0; k < M; ++k){
-    const int si = g1[k] - 1;   // 0-based subject index
-    const int sj = g2[k] - 1;
-
-    const int ai0 = offsets[si];
-    const int ai1 = offsets[si + 1];
-    const int aj0 = offsets[sj];
-    const int aj1 = offsets[sj + 1];
-
-    for (int ii = ai0; ii < ai1; ++ii){
-      const double yi  = y[ii];
-      const double mui = mu[ii];
-      for (int jj = aj0; jj < aj1; ++jj){
-        const double z = (yi - y[jj]) * (mu[jj] - mui);
-        total += -softplus(z);
-      }
-    }
-  }
-  return total;
-}
-')
-
-Rcpp::cppFunction(code = '
-#include <Rcpp.h>
-using namespace Rcpp;
-
-// Gaussian pairwise "likelihood":
-// sum_{pairs} 0.5 * ( (Yi - Yj) - (mui - muj) )^2
-// => minimize this total: pairwise residual sum of squares
-// [[Rcpp::export]]
-double pw_total_gaussian_rcpp(const NumericVector& y,
-                              const NumericVector& mu,
-                              const IntegerVector& offsets,
-                              const IntegerVector& g1,
-                              const IntegerVector& g2){
-  const int M = g1.size();
-  double total = 0.0;
-
-  for (int k = 0; k < M; ++k){
-    const int si = g1[k] - 1;   // 0-based
-    const int sj = g2[k] - 1;
-
-    const int ai0 = offsets[si];
-    const int ai1 = offsets[si + 1];
-    const int aj0 = offsets[sj];
-    const int aj1 = offsets[sj + 1];
-
-    for (int ii = ai0; ii < ai1; ++ii){
-      const double yi  = y[ii];
-      const double mui = mu[ii];
-      for (int jj = aj0; jj < aj1; ++jj){
-        const double diffY  = yi        - y[jj];
-        const double diffMu = mui       - mu[jj];
-        const double resid  = diffY     - diffMu;
-        total += 0.5 * resid * resid;   // 0.5 * (resid^2)
-      }
-    }
-  }
-  return total;
-}
-')
-
-#' Pairwise Composite Likelihood GLM Estimation
+#' Pairwise Composite Likelihood Generalized Linear Model (GLM) Estimation
 #'
 #' @description
-#' Fits a generalised linear model using pairwise composite likelihood
+#' Fits a generalized linear model (GLM) using pairwise composite likelihood
 #' (PCL). For each pair of subjects, the contribution to the composite
 #' log-likelihood is based on the difference \eqn{Y_i - Y_j} (Gaussian
 #' family) or a logistic-style softplus function (binomial family).
@@ -120,8 +34,8 @@ double pw_total_gaussian_rcpp(const NumericVector& y,
 #'       Requires \eqn{Y \in \{0, 1\}}.}
 #'   }
 #' @param start Optional numeric vector of starting values for the
-#'   regression coefficients. Default is \code{NULL}, which uses OLS
-#'   (Gaussian) or GLM (binomial) estimates.
+#'   regression coefficients. Default is \code{NULL}, which uses Ordinal Least
+#'   Squares (Gaussian) or GLM (binomial) estimates.
 #' @param pair_sample Optional positive integer; if the total number of
 #'   subject pairs exceeds this value, a random subsample of pairs is
 #'   used. Default is \code{NULL} (use all pairs).
@@ -145,8 +59,8 @@ double pw_total_gaussian_rcpp(const NumericVector& y,
 #'   \item{\code{coef}}{Named numeric vector of estimated regression
 #'     coefficients.}
 #'   \item{\code{loglik}}{Numeric scalar; composite log-likelihood at the
-#'     optimum (Gaussian: negated pairwise RSS; binomial: pairwise
-#'     softplus sum).}
+#'     optimum (Gaussian: negated pairwise residual sum of squares;
+#'     binomial: pairwise softplus sum).}
 #'   \item{\code{converged}}{Logical; \code{TRUE} if
 #'     \code{\link[stats]{optim}} converged.}
 #'   \item{\code{hessian}}{(When \code{hessian = TRUE}.) Numeric matrix;
@@ -179,7 +93,7 @@ double pw_total_gaussian_rcpp(const NumericVector& y,
 #'   -\log\bigl[1 + \exp\bigl((Y_s - Y_t)(\mu_t - \mu_s)\bigr)\bigr].}
 #'
 #' The inner loops are implemented in C++ via \pkg{Rcpp} for efficiency.
-#' Optimisation is performed with \code{\link[stats]{optim}} using BFGS.
+#' Optimzation is performed with \code{\link[stats]{optim}} using BFGS.
 #'
 #' S3 methods \code{print} and \code{summary} are available for objects
 #' of class \code{"PairwiseLikelihood"}.
@@ -190,22 +104,9 @@ double pw_total_gaussian_rcpp(const NumericVector& y,
 #' \code{pw_total_softplus_rcpp} are compiled on first use.
 #'
 #' @references
-#' Varin, C., Reid, N., and Firth, D. (2011). An overview of composite
-#' likelihood methods. \emph{Statistica Sinica}, \strong{21}(1), 5--42.
-#'
-#' Cox, D. R. and Reid, N. (2004). A note on pseudolikelihood constructed
-#' from marginal densities. \emph{Biometrika}, \strong{91}(3), 729--737.
-#'
-#' Kuk, A. Y. C. and Nott, D. J. (2000). A pairwise likelihood approach
-#' to analyzing correlated binary data. \emph{Statistics and Probability
-#' Letters}, \strong{47}(4), 329--335.
-#'
-#' @seealso
-#' \code{\link{GIVEHR}} for a full joint model approach;
-#' \code{\link{IIRR_weighting}} and \code{\link{IIRR_balancing}} for
-#' inverse-intensity-weighting alternatives;
-#' \code{\link{MI_IP}} and \code{\link{LI_IP}} for combining imputation
-#' with IP adjustment.
+#' Yong Chen, Jing Ning, and Chunyan Cai (2015). Regression analysis of longitudinal data
+#' with irregular and informative observation times. \emph{Biostatistics},
+#' 16(4), 727--739. \doi{10.1093/biostatistics/kxv008}.
 #'
 #' @examples
 #' \dontrun{
@@ -354,7 +255,10 @@ PairwiseLikelihood <- function(
   # 8) (optional) numeric Hessian and naive vcov
   H <- NULL; V_naive <- NULL
   if (hessian) {
-    if (!requireNamespace("numDeriv", quietly = TRUE)) install.packages("numDeriv")
+    if (!requireNamespace("numDeriv", quietly = TRUE)) {
+      stop("Package 'numDeriv' is required for Hessian computation. Install it with: install.packages('numDeriv')",
+           call. = FALSE)
+    }
     H <- tryCatch(numDeriv::hessian(obj, bhat), error = function(e) NULL)
     if (!is.null(H)) {
       rownames(H) <- colnames(H) <- colnames(X)

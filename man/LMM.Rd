@@ -2,7 +2,7 @@
 % Please edit documentation in R/LMM.R
 \name{LMM}
 \alias{LMM}
-\title{Fit a Linear Mixed Model for Longitudinal Data}
+\title{Fit a Linear Mixed Model (LMM) for Longitudinal Data}
 \usage{
 LMM(
   data,
@@ -71,7 +71,7 @@ matrix has one row per fixed effect and columns \code{Value},
 \code{Std.Error}, \code{DF}, \code{t-value}, and \code{p-value}.
 }
 \description{
-Fits a linear mixed-effects model to longitudinal data using
+Fits a linear mixed-effects model (LMM) to longitudinal data using
 \code{\link[nlme]{lme}}, with optional filtering by an observation
 indicator and optional visit-count adjustment. This provides a
 convenient wrapper for standard LMM, observed-adjusted LMM (OA-LMM),
@@ -117,20 +117,10 @@ LMM(dat$long_data, fixed = Y ~ Z + X + time, random = ~ 1 + Z | id,
 
 }
 \references{
-Pullenayegum, E. M. and Lim, L. S. (2016). Longitudinal data subject
-to irregular observation: a review of methods with a focus on visit
-processes, assumptions, and study design. \emph{Statistical Methods in
-Medical Research}, \strong{25}(6), 2992--3014.
+Benjamin A. Goldstein, Nrupen A. Bhavsar, Matthew Phelan, and Michael J. Pencina (2016).
+Controlling for informed presence bias due to the number of health encounters in an electronic health record.
+\emph{American Journal of Epidemiology}, 184(11), 847--855. \doi{10.1093/aje/kww112}.
 
-Pinheiro, J. C. and Bates, D. M. (2000). \emph{Mixed-Effects Models
-in S and S-PLUS}. Springer.
-}
-\seealso{
-\code{\link[nlme]{lme}} for the underlying fitting function;
-\code{\link{GIVEHR}} for a joint model that explicitly accounts for
-informative visiting;
-\code{\link{IIRR_weighting}} for an inverse-intensity-weighting
-approach;
-\code{\link{MI_IP}} and \code{\link{LI_IP}} for combining imputation
-with IP adjustment.
+Nan M. Laird and James H. Ware (1982). Random-effects models for longitudinal data.
+\emph{Biometrics}, 38(4), 963--974.
 }

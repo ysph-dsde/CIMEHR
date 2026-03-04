@@ -112,10 +112,6 @@ Yang, Shi, and Mukherjee (2025, Web Appendix S9) and is suitable for
 evaluating \code{\link{GIVEHR}}, \code{\link{GIVEHR_GH}}, and
 \code{\link{GIVEHR_OU_PCL}}.
 }
-\section{Baseline Covariates}{
-
-}
-
 \section{Visiting Process}{
 
 The visit intensity for subject \eqn{i} is
@@ -147,6 +143,28 @@ where \eqn{b_i \mid U_i \sim N(\theta U_i, \Sigma_b)} and
 \code{NA} when \eqn{R_{ij} = 0}.
 }
 
+\examples{
+\dontrun{
+# Simulate data
+dat <- sim_data_gen(n = 500, seed = 42)
+
+# Fit the GIVEHR model
+fit <- GIVEHR(
+  data          = dat$long_data,
+  id_col        = "id",
+  time_col      = "time",
+  y_col         = "Y",
+  r_col         = "R",
+  censor_col    = "C",
+  covars_visit_XV         = c("Z", "X"),
+  covars_outcome_fixed_XY = c("Z", "X"),
+  covars_outcome_link_ZY  = "Z",
+  covars_obs_fixed_XO     = c("Z", "X"),
+  covars_obs_random_ZO    = "Z"
+)
+}
+
+}
 \seealso{
 \code{\link{GIVEHR}}, \code{\link{GIVEHR_GH}}, and
 \code{\link{GIVEHR_OU_PCL}} for fitting models to the simulated data.

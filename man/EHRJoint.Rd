@@ -18,29 +18,29 @@ EHRJoint(
 \arguments{
 \item{data}{A \code{data.frame} containing longitudinal records.}
 
-\item{id}{Character string. Subject identifier column name.}
+\item{id}{Character string. Subject identifier column name.
+Default is \code{"id"}.}
 
-\item{time}{Character string. Time column name.}
+\item{time}{Character string. Time column name. Default is \code{"time"}.}
 
-\item{outcome}{Character string. Outcome column name.}
+\item{outcome}{Character string. Outcome column name. Default is \code{"Y"}.}
 
-\item{obs_indicator}{Character string. Observation indicator column name.}
+\item{obs_indicator}{Character string. Observation indicator column name.
+Default is \code{"R"}.}
 
-\item{censor}{Character string. Censoring/end-of-followup column name.}
+\item{visit_covs}{Character vector of covariate names for the visiting
+model. Default is \code{c("Z", "X")}.}
 
-\item{X_visit}{Character vector of covariate names for the visiting model.}
+\item{long_covs}{Character vector of covariate names for the longitudinal
+outcome model. Default is \code{c("Z", "X")}.}
 
-\item{X_obs}{Character vector of covariate names for the observation model.}
-
-\item{X_outcome}{Character vector of covariate names for the outcome model.}
-
-\item{...}{Additional arguments passed to internal fitting routines.}
+\item{random_covs}{Character string or vector of covariate names that
+interact with the latent factor. Default is \code{"Z"}.}
 }
 \value{
 An object of class \code{"EHRJoint"} containing component-wise
 coefficient estimates. If available, standard errors are stored and used by
 \code{summary()} to form 95\\% confidence intervals.
-#'
 }
 \description{
 Fit a joint workflow for visiting, observation, and outcome processes for
@@ -53,4 +53,10 @@ fit
 summary(fit)
 }
 
+}
+\references{
+Jiacong Du, Xu Shi, and Bhramar Mukherjee (2025). A new statistical approach for joint
+modeling of longitudinal outcomes measured in electronic health records with clinically
+informative presence and observation processes. arXiv preprint arXiv:2410.13113.
+\doi{10.48550/arXiv.2410.13113}. \url{https://arxiv.org/abs/2410.13113}.
 }

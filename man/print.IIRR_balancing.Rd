@@ -2,20 +2,34 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.IIRR_balancing}
 \alias{print.IIRR_balancing}
-\title{Print Method for IIRR_balancing Fits}
+\title{Print an IIRR_balancing Fit}
 \usage{
-\method{print}{IIRR_balancing}(x, digits = 4, ...)
+\method{print}{IIRR_balancing}(x, digits = 4, level = 0.95, ...)
 }
 \arguments{
-\item{x}{An object of class \code{"IIRR_balancing"}.}
+\item{x}{An \code{IIRR_balancing} object.}
 
-\item{digits}{Integer; number of significant digits. Default is \code{4}.}
+\item{digits}{Number of significant digits. Default is 4.}
 
-\item{...}{Additional arguments (currently unused).}
+\item{level}{Confidence level for Wald intervals. Default is 0.95.}
+
+\item{\dots}{Ignored.}
 }
 \value{
-Invisibly returns \code{x}.
+\code{x}, invisibly.
 }
 \description{
-Print Method for IIRR_balancing Fits
+Prints outcome estimates from both balancing and MLE weights.
+}
+\examples{
+\dontrun{
+dat <- sim_data_gen(n = 500, seed = 42)
+fit <- IIRR_balancing(dat$long_data, formula = ~ Z + X)
+fit
+}
+
+}
+\seealso{
+\code{\link{summary.IIRR_balancing}},
+\code{\link{IIRR_balancing}}
 }

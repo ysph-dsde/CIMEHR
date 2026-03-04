@@ -240,7 +240,7 @@ coef(fit_all, type = "outcome")
 \references{
 Yang, C.-H., Shi, X., and Mukherjee, B. (2026).
 "Joint Modeling of Longitudinal EHR Data with Shared Random Effects for Informative Visiting and Observation Processes."
-arXiv:2602.15374. doi:10.48550/arXiv.2602.15374.
+arXiv:2602.15374. \doi{10.48550/arXiv.2602.15374}.
 }
 \seealso{
 \code{\link{GIVEHR}} for the base version without OU serial
@@ -248,6 +248,4 @@ correlation;
 \code{\link{GIVEHR_GH}} for the Gauss--Hermite quadrature variant;
 \code{\link{sim_data_gen}} for simulating data compatible with this
 model;
-\code{\link[pbivnorm]{pbivnorm}} for the bivariate normal CDF used
-internally.
 }

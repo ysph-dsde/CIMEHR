@@ -217,14 +217,12 @@ summary(fit)
 \references{
 Yang, C.-H., Shi, X., and Mukherjee, B. (2026).
 "Joint Modeling of Longitudinal EHR Data with Shared Random Effects for Informative Visiting and Observation Processes."
-arXiv:2602.15374. doi:10.48550/arXiv.2602.15374.
+arXiv:2602.15374. \doi{10.48550/arXiv.2602.15374}.
 }
 \seealso{
 \code{\link{GIVEHR_GH}} for a Gauss-Hermite quadrature variant with
 online filtering;
 \code{\link{GIVEHR_OU_PCL}} for the Ornstein-Uhlenbeck pairwise
 composite likelihood extension;
-\code{\link{EHRJoint}} for a simpler joint model without a separate
-observation process;
 \code{\link{sim_data_gen}} for simulating data compatible with this model.
 }

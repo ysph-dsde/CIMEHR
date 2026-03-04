@@ -177,7 +177,7 @@
 #' @references
 #' Yang, C.-H., Shi, X., and Mukherjee, B. (2026).
 #' "Joint Modeling of Longitudinal EHR Data with Shared Random Effects for Informative Visiting and Observation Processes."
-#' arXiv:2602.15374. doi:10.48550/arXiv.2602.15374.
+#' arXiv:2602.15374. \doi{10.48550/arXiv.2602.15374}.
 #'
 #'
 #' @seealso
@@ -186,8 +186,6 @@
 #' \code{\link{GIVEHR_GH}} for the Gauss--Hermite quadrature variant;
 #' \code{\link{sim_data_gen}} for simulating data compatible with this
 #' model;
-#' \code{\link[pbivnorm]{pbivnorm}} for the bivariate normal CDF used
-#' internally.
 #'
 #' @examples
 #' \dontrun{
@@ -214,7 +212,8 @@
 #' }
 #'
 #' @importFrom stats as.formula binomial coef dnorm glm model.matrix
-#'   optim pnorm qnorm reformulate
+#'   optim pnorm qnorm reformulate setNames median
+#' @importFrom utils combn
 #' @export
 GIVEHR_OU_PCL <- function(
     data,
@@ -267,8 +266,8 @@ GIVEHR_OU_PCL <- function(
   # Load pbivnorm
   # ===========================================================================
   if (!requireNamespace("pbivnorm", quietly = TRUE)) {
-    message("Installing 'pbivnorm' package...")
-    utils::install.packages("pbivnorm", repos = "https://cloud.r-project.org")
+    stop("Package 'pbivnorm' is required. Install it with: install.packages('pbivnorm')",
+         call. = FALSE)
   }
   pbvnorm_fast <- pbivnorm::pbivnorm
 
@@ -941,4 +940,3 @@ GIVEHR_OU_PCL <- function(
     class = "GIVEHR_OU_PCL"
   )
 }
-

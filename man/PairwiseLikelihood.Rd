@@ -2,7 +2,7 @@
 % Please edit documentation in R/PairwiseLikelihood.R
 \name{PairwiseLikelihood}
 \alias{PairwiseLikelihood}
-\title{Pairwise Composite Likelihood GLM Estimation}
+\title{Pairwise Composite Likelihood Generalized Linear Model (GLM) Estimation}
 \usage{
 PairwiseLikelihood(
   data,
@@ -47,8 +47,8 @@ Requires \eqn{Y \in \{0, 1\}}.}
 }}
 
 \item{start}{Optional numeric vector of starting values for the
-regression coefficients. Default is \code{NULL}, which uses OLS
-(Gaussian) or GLM (binomial) estimates.}
+regression coefficients. Default is \code{NULL}, which uses Ordinal Least
+Squares (Gaussian) or GLM (binomial) estimates.}
 
 \item{pair_sample}{Optional positive integer; if the total number of
 subject pairs exceeds this value, a random subsample of pairs is
@@ -77,8 +77,8 @@ applicable).}
 \item{\code{coef}}{Named numeric vector of estimated regression
 coefficients.}
 \item{\code{loglik}}{Numeric scalar; composite log-likelihood at the
-optimum (Gaussian: negated pairwise RSS; binomial: pairwise
-softplus sum).}
+optimum (Gaussian: negated pairwise residual sum of squares;
+binomial: pairwise softplus sum).}
 \item{\code{converged}}{Logical; \code{TRUE} if
 \code{\link[stats]{optim}} converged.}
 \item{\code{hessian}}{(When \code{hessian = TRUE}.) Numeric matrix;
@@ -95,7 +95,7 @@ subsampling parameter.}
 }
 }
 \description{
-Fits a generalised linear model using pairwise composite likelihood
+Fits a generalized linear model (GLM) using pairwise composite likelihood
 (PCL). For each pair of subjects, the contribution to the composite
 log-likelihood is based on the difference \eqn{Y_i - Y_j} (Gaussian
 family) or a logistic-style softplus function (binomial family).
@@ -123,7 +123,7 @@ PCL estimator.
   -\log\bigl[1 + \exp\bigl((Y_s - Y_t)(\mu_t - \mu_s)\bigr)\bigr].}
 
 The inner loops are implemented in C++ via \pkg{Rcpp} for efficiency.
-Optimisation is performed with \code{\link[stats]{optim}} using BFGS.
+Optimzation is performed with \code{\link[stats]{optim}} using BFGS.
 
 S3 methods \code{print} and \code{summary} are available for objects
 of class \code{"PairwiseLikelihood"}.
@@ -158,20 +158,7 @@ fit2 <- PairwiseLikelihood(
 
 }
 \references{
-Varin, C., Reid, N., and Firth, D. (2011). An overview of composite
-likelihood methods. \emph{Statistica Sinica}, \strong{21}(1), 5--42.
-
-Cox, D. R. and Reid, N. (2004). A note on pseudolikelihood constructed
-from marginal densities. \emph{Biometrika}, \strong{91}(3), 729--737.
-
-Kuk, A. Y. C. and Nott, D. J. (2000). A pairwise likelihood approach
-to analyzing correlated binary data. \emph{Statistics and Probability
-Letters}, \strong{47}(4), 329--335.
-}
-\seealso{
-\code{\link{GIVEHR}} for a full joint model approach;
-\code{\link{IIRR_weighting}} and \code{\link{IIRR_balancing}} for
-inverse-intensity-weighting alternatives;
-\code{\link{MI_IP}} and \code{\link{LI_IP}} for combining imputation
-with IP adjustment.
+Yong Chen, Jing Ning, and Chunyan Cai (2015). Regression analysis of longitudinal data
+with irregular and informative observation times. \emph{Biostatistics},
+16(4), 727--739. \doi{10.1093/biostatistics/kxv008}.
 }

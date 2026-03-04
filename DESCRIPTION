@@ -1,5 +1,5 @@
 Package: SIMMER
-Title: Gaussian Informative Visiting and observation processes in Electronic Health Records
+Title: Gaussian Informative Visiting and observation processes in Electronic Health Record (EHR) dtaa
 Version: 0.0.0.9000
 Authors@R:  c(
   person(given = "Cheng-Han", family = "Yang",
@@ -11,7 +11,7 @@ Authors@R:  c(
          role = "aut", 
          comment = c(ORCID = "0009-0005-0422-4268"))
  )
-Description: What the package does (one paragraph).
+Description: Fits semiparametric joint models for longitudinal electronic health record (EHR) data that addresses two-stage hierarchical missingness mechanism. The first stage is the visiting process, and the second stage is the observation process. The core GIVEHR estimator uses a three-stage procedure: partial likelihood with log-normal frailty for visit intensity, probit regression with shared latent factor-linked random effects for observation, and weighted least squares with risk-set centering for the ouctome. These three stages are connected through a shared latent factor that induces dependence across all three processes. Two extensions handal temporal dependence in the observation process: Gauss-Hermite quadrature with online filtering (GIVEHR_GH) and Ornstein-Uhlenbeck pairwise composite likelihood (GIVEHR_OU_PCL). A data simulator and implementations of common benchmark methods (linear midex models, multiple imputation, and others) are included for comparative studies. Detailed methods are described in Yang, Shi, and Mukherjee (2026) <https://doi.org/10.48550/arXiv.2602.15374>.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -21,7 +21,18 @@ Suggests:
     rmarkdown
 Imports:
     MASS,
-    stats
+    Rcpp,
+    nleqslv,
+    pbivnorm,
+    numDeriv,
+    stats,
+    utils,
+    data.table,
+    mice,
+    nlme,
+    slim
+LinkingTo:
+    Rcpp
 URL: https://github.com/ysph-dsde/SIMMER
 BugReports: https://github.com/ysph-dsde/SIMMER/issues
 VignetteBuilder: knitr

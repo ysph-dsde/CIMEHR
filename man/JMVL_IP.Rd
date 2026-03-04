@@ -129,17 +129,7 @@ fit$sigma_sq_hat
 
 }
 \references{
-Liang, Y., Lu, W., and Ying, Z. (2009). Joint modeling and analysis of
-longitudinal data with informative observation times. \emph{Biometrics},
-\strong{65}(2), 377--384.
-}
-\seealso{
-\code{\link{EHRJoint}} for a joint model that additionally models the
-observation process;
-\code{\link{GIVEHR}} for the full GIVEHR model with probit observation
-process and sandwich variance;
-\code{\link{IIRR_weighting}} for an inverse-intensity-weighting
-alternative;
-\code{\link{MI_IP}} and \code{\link{LI_IP}} for combining imputation
-with IP adjustment.
+Yu Liang, Wenbin Lu, and Zhiliang Ying (2009). Joint modeling and analysis of longitudinal
+data with informative observation times. \emph{Biometrics}, 65(2), 377--384.
+\doi{10.1111/j.1541-0420.2008.01104.x}.
 }

@@ -2,18 +2,35 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.LI_IP}
 \alias{print.LI_IP}
-\title{Print Method for LI_IP}
+\title{Print an LI_IP Fit}
 \usage{
-\method{print}{LI_IP}(x, ...)
+\method{print}{LI_IP}(x, digits = 4, level = 0.95, ...)
 }
 \arguments{
-\item{x}{An object of class \code{"LI_IP"}.}
+\item{x}{An \code{LI_IP} object returned by \code{\link{LI_IP}}.}
 
-\item{...}{Additional arguments (currently unused).}
+\item{digits}{Number of significant digits. Default is 4.}
+
+\item{level}{Confidence level for Wald intervals. Default is 0.95.}
+
+\item{\dots}{Ignored.}
 }
 \value{
-Invisibly returns \code{x}.
+\code{x}, invisibly.
 }
 \description{
-Print Method for LI_IP
+Prints outcome coefficients from the linear increment imputation with
+informative presence adjustment.
+}
+\examples{
+\dontrun{
+dat <- sim_data_gen(n = 500, seed = 42)
+fit <- LI_IP(data = dat$long_data, ip_method = "Liang",
+             visit_covs = c("Z", "X"))
+fit
+}
+
+}
+\seealso{
+\code{\link{summary.LI_IP}}, \code{\link{LI_IP}}
 }

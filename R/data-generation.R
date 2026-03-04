@@ -20,7 +20,6 @@
 #' @param seed Integer; random seed for reproducibility. Default is
 #'   \code{123}.
 #'
-#' @section Baseline Covariates:
 #' @param pZ Numeric scalar in \eqn{[0, 1]}; probability that the binary
 #'   covariate \eqn{Z_i} equals 1 (Bernoulli). Default is \code{0.5}.
 #' @param muX Numeric scalar; mean of the continuous covariate
@@ -102,7 +101,28 @@
 #' \code{\link{GIVEHR}}, \code{\link{GIVEHR_GH}}, and
 #' \code{\link{GIVEHR_OU_PCL}} for fitting models to the simulated data.
 #'
-#' @importFrom stats rbinom rnorm rexp
+#'@examples
+#' \dontrun{
+#' # Simulate data
+#' dat <- sim_data_gen(n = 500, seed = 42)
+#'
+#' # Fit the GIVEHR model
+#' fit <- GIVEHR(
+#'   data          = dat$long_data,
+#'   id_col        = "id",
+#'   time_col      = "time",
+#'   y_col         = "Y",
+#'   r_col         = "R",
+#'   censor_col    = "C",
+#'   covars_visit_XV         = c("Z", "X"),
+#'   covars_outcome_fixed_XY = c("Z", "X"),
+#'   covars_outcome_link_ZY  = "Z",
+#'   covars_obs_fixed_XO     = c("Z", "X"),
+#'   covars_obs_random_ZO    = "Z"
+#' )
+#' }
+#'
+#' @importFrom stats rbinom rnorm rexp median
 #' @export
 sim_data_gen <- function(
     n,

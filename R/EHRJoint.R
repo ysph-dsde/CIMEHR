@@ -5,19 +5,28 @@
 #'
 #' @param data A \code{data.frame} containing longitudinal records.
 #' @param id Character string. Subject identifier column name.
-#' @param time Character string. Time column name.
-#' @param outcome Character string. Outcome column name.
+#'   Default is \code{"id"}.
+#' @param time Character string. Time column name. Default is \code{"time"}.
+#' @param outcome Character string. Outcome column name. Default is \code{"Y"}.
 #' @param obs_indicator Character string. Observation indicator column name.
-#' @param censor Character string. Censoring/end-of-followup column name.
-#' @param X_visit Character vector of covariate names for the visiting model.
-#' @param X_obs Character vector of covariate names for the observation model.
-#' @param X_outcome Character vector of covariate names for the outcome model.
-#' @param ... Additional arguments passed to internal fitting routines.
+#'   Default is \code{"R"}.
+#' @param visit_covs Character vector of covariate names for the visiting
+#'   model. Default is \code{c("Z", "X")}.
+#' @param long_covs Character vector of covariate names for the longitudinal
+#'   outcome model. Default is \code{c("Z", "X")}.
+#' @param random_covs Character string or vector of covariate names that
+#'   interact with the latent factor. Default is \code{"Z"}.
 #'
 #' @return An object of class \code{"EHRJoint"} containing component-wise
 #' coefficient estimates. If available, standard errors are stored and used by
 #' \code{summary()} to form 95\% confidence intervals.
-#'#'
+#'
+#' @references
+#' Jiacong Du, Xu Shi, and Bhramar Mukherjee (2025). A new statistical approach for joint
+#' modeling of longitudinal outcomes measured in electronic health records with clinically
+#' informative presence and observation processes. arXiv preprint arXiv:2410.13113.
+#' \doi{10.48550/arXiv.2410.13113}. \url{https://arxiv.org/abs/2410.13113}.
+#'
 #' @examples
 #' \dontrun{
 #' fit <- EHRJoint(dat_long)
@@ -25,17 +34,21 @@
 #' summary(fit)
 #' }
 #'
+#' @importFrom stats as.formula binomial coef glm plogis
 #' @export
 EHRJoint <- function(data,
-                              id = "id",
-                              time = "time",
-                              outcome = "Y",
-                              obs_indicator = "R",
-                              visit_covs = c("Z", "X"),
-                              long_covs = c("Z", "X"),
-                              random_covs = "Z") {
+                     id = "id",
+                     time = "time",
+                     outcome = "Y",
+                     obs_indicator = "R",
+                     visit_covs = c("Z", "X"),
+                     long_covs = c("Z", "X"),
+                     random_covs = "Z") {
 
-  if (!requireNamespace("nleqslv", quietly = TRUE)) install.packages("nleqslv")
+  if (!requireNamespace("nleqslv", quietly = TRUE)) {
+    stop("Package 'nleqslv' is required. Install it with: install.packages('nleqslv')",
+         call. = FALSE)
+  }
 
   # Visiting process variables
   V <- as.matrix(data[, c(id, visit_covs)])

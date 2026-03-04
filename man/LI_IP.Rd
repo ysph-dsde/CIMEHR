@@ -164,14 +164,6 @@ coefficient estimation. Because a single imputed dataset is used
 S3 methods \code{print} and \code{summary} are available for objects
 of class \code{"LI_IP_result"}.
 }
-\section{Linear Increment Model Parameters}{
-
-}
-
-\section{IP Method Parameters}{
-
-}
-
 \examples{
 \dontrun{
 dat <- sim_data_gen(n = 500, seed = 42)
@@ -205,23 +197,7 @@ summary(result3)
 
 }
 \references{
-Aalen, O. O. and Gunnes, N. (2010). A dynamic approach for
-reconstructing missing longitudinal data using the linear increments
-model. \emph{Biostatistics}, \strong{11}(3), 453--472.
-
-Liang, Y., Lu, W., and Ying, Z. (2009). Joint modeling and analysis of
-longitudinal data with informative observation times. \emph{Biometrics},
-\strong{65}(2), 377--384.
-
-Yiu, S. and Su, L. (2024). Accommodating informative visit times for
-analysing irregular longitudinal data: a sensitivity analysis approach
-with balancing weights estimators. \emph{Journal of the Royal
-Statistical Society: Series C}, \strong{74}, 824--843.
-}
-\seealso{
-\code{\link{MI_IP}} for the multiple imputation counterpart;
-\code{\link[slim]{slim}} for the underlying linear increment model;
-\code{\link{JMVL_IP}}, \code{\link{IIRR_weighting}},
-\code{\link{IIRR_balancing}}, \code{\link{PairwiseLikelihood}}, and
-\code{\link{LMM}} for the individual IP methods.
+Odd O. Aalen and Nina Gunnes (2010). A dynamic approach for reconstructing
+missing longitudinal data using the linear increments model. \emph{Biostatistics},
+11(3), 453--472. \doi{10.1093/biostatistics/kxq014}.
 }

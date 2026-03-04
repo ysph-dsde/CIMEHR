@@ -1,8 +1,8 @@
 ---
-title: "Getting started with SIMMER (GIVEHR-focused)"
+title: "Getting Started with SIMMER"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Getting started with SIMMER (GIVEHR-focused)}
+  %\VignetteIndexEntry{Getting Started with SIMMER}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -11,104 +11,321 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
+  eval = FALSE,
   fig.width = 7,
   fig.height = 4
 )
 ```
 
-SIMMER provides methods for estimating longitudinal associations in electronic health record (EHR) data when:
+## The problem: informative presence bias in EHR data
 
-- *visit times* are informative (patients are observed more/less often depending on health status and covariates), and
-- *measurement availability* at a visit is informative (the biomarker/outcome is missing not at random).
+Longitudinal analyses of electronic health record (EHR) data face two
+sources of bias that are typically absent from designed studies:
 
-The **recommended entry point** is **`GIVEHR()`**, which fits a **three-stage semiparametric joint model**:
-(1) visiting intensity, (2) observation indicator, and (3) longitudinal outcome.
+1. **Informative visiting**: patients visit more or less often depending
+   on their health status and covariates, so the observation *times* are
+   not independent of the outcome process.
+2. **Informative observation**: even at a visit, the biomarker or outcome
+   may not be measured. Whether it is recorded can depend on the same
+   latent factors that drive the outcome.
 
-## Installation
-
-```r
-# install.packages("devtools")
-devtools::install_github("ysph-dsde/SIMMER")
-```
+Ignoring either source produces biased estimates of longitudinal
+associations. **SIMMER** provides `GIVEHR()`, a three-stage
+semiparametric estimator that jointly models both mechanisms and yields
+consistent estimates of the outcome regression coefficients.
 
 ```{r}
 library(SIMMER)
 ```
 
-## Data layout expected by `GIVEHR()`
+## 1. Simulating data
 
-`GIVEHR()` expects **long/panel** data with one row per subject-time combination. At minimum, you need:
-
-- `id`: subject identifier
-- `time`: visit time (can be `NA` to represent an unvisited candidate time point)
-- `Y`: longitudinal outcome (may be missing)
-- `R`: observation indicator (typically 1 if `Y` observed at that time, 0 otherwise)
-- `C`: censoring time (often study end; can be constant across subjects)
-- covariates for the visiting / observation / outcome stages
-
-The package provides a simulator that produces data in the correct format.
-
-## Worked example: simulate data and fit GIVEHR
+`sim_data_gen()` generates synthetic longitudinal data from the full
+joint model: a Poisson visiting process with log-normal frailty, a
+probit observation process with latent-factor-linked random effects and
+Ornstein--Uhlenbeck serial correlation, and a linear outcome model with
+shared random effects.
 
 ```{r}
-dat <- sim_data_gen(n = 300, seed = 1)
-
-# Inspect the first few rows
-head(dat)
+dat <- sim_data_gen(n = 500, seed = 1)
 ```
 
-### Fit the model
+The returned object contains `long_data` (one row per subject-visit) and
+`subject_data` (one row per subject with baseline covariates and latent
+variables). The true parameter values are stored in `dat$params`.
 
 ```{r}
-fit <- GIVEHR_GH(
-     data = dat$long_data,
-     covars_visit_XV         = c("Z", "X"),
-     covars_outcome_fixed_XY = c("Z", "X"),
-     covars_outcome_link_ZY  = "Z",
-     covars_obs_fixed_XO     = c("Z", "X"),
-     covars_obs_random_ZO    = "Z",
-     gh_points_U = 7,
-     gh_points_q = 5,
-     verbose     = TRUE
-     )
+head(dat$long_data)
+```
 
+Key columns: `id` (subject), `Z` (binary covariate), `X` (continuous
+covariate), `time` (visit time; `NA` for subjects with zero visits),
+`R` (1 = outcome observed at visit, 0 = missing), `Y` (outcome; `NA`
+when `R = 0`).
+
+`GIVEHR()` also requires a censoring-time column. For simulated data
+with a common end-of-follow-up:
+
+```{r}
+dat$long_data$C <- dat$params$time.end
+```
+
+## 2. Fitting the GIVEHR model
+
+With defaults, `GIVEHR()` uses `Z` and `X` as covariates in all three
+stages:
+
+```{r}
+fit <- GIVEHR(data = dat$long_data)
+```
+
+### Quick look: `print()`
+
+Calling `print()` (or just typing the object name) shows the outcome
+fixed-effect estimates with sandwich standard errors and 95% Wald
+confidence intervals:
+
+```{r}
 fit
 ```
 
-### Summarize results
+### Detailed look: `summary()`
+
+`summary()` displays all three stages:
 
 ```{r}
 summary(fit)
 ```
 
-The printed summary is organized by model stage:
+The output is organised into:
 
-- **Visiting process**: regression coefficients governing visit intensity (and frailty variance, if estimated).
-- **Observation process**: probit regression for measurement availability, with optional latent-factor linkage.
-- **Outcome model**: fixed effects for the longitudinal outcome association (the main target in most analyses).
+- **Visiting process (gamma)**: log-intensity coefficients governing how
+  covariates affect visit frequency, plus the estimated frailty variance.
+- **Observation process (alpha, delta)**: probit coefficients for
+  measurement availability, latent-link coefficients coupling the shared
+  factor to the observation random effects, and random-effect standard
+  deviations.
+- **Longitudinal outcome (beta, theta)**: the primary target --- fixed
+  effects for the outcome regression and latent-link coefficients.
 
-## Programmatic access to estimates
+### Comparing to true values
 
-`GIVEHR()` returns a structured object. Useful slots include:
+```{r}
+# True outcome coefficients (excluding intercept and time slope)
+dat$params$beta[c("Z", "X")]
+
+# Estimated
+coef(fit)
+```
+
+## 3. Programmatic access
+
+Standard S3 generics are available:
+
+```{r}
+# Outcome coefficients
+coef(fit)
+
+# Visiting-process coefficients
+coef(fit, type = "visiting")
+
+# Observation-process coefficients
+coef(fit, type = "observation")
+
+# Sandwich variance-covariance matrix
+vcov(fit)
+
+# Wald confidence intervals (default 95%)
+confint(fit)
+
+# 90% CI for a single parameter
+confint(fit, parm = "Z", level = 0.90)
+```
+
+You can also access the full return structure directly:
 
 ```{r}
 names(fit)
+
+# Stage 1
+fit$visiting_process$gamma_V
+fit$visiting_process$sigma2_zeta
+
+# Stage 2
+fit$observation_process$alpha_fixed
+fit$observation_process$delta_latent_link
+
+# Stage 3
+fit$longitudinal_outcome$beta_Y
+fit$longitudinal_outcome$theta_Y
+fit$longitudinal_outcome$se_beta_naive
 ```
 
-### Outcome stage (primary)
+## 4. GIVEHR variants
+
+### Gauss--Hermite quadrature (`GIVEHR_GH`)
+
+Replaces the closed-form marginal approximation in Stage 2 with
+Gauss--Hermite quadrature and an online Laplace filter. This is more
+accurate when the frailty variance is large or when a time-varying
+observation process is needed.
 
 ```{r}
-fit$outcome$beta
+fit_gh <- GIVEHR_GH(
+  data        = dat$long_data,
+  gh_points_U = 7,
+  gh_points_q = 5
+)
+
+fit_gh
+summary(fit_gh)
 ```
 
-### Visiting stage
+### Ornstein--Uhlenbeck pairwise composite likelihood (`GIVEHR_OU_PCL`)
+
+Extends Stage 2 by modelling serial correlation in the observation
+process with a stationary OU process, estimated via pairwise composite
+likelihood over adjacent visit pairs.
 
 ```{r}
-fit$visiting$coefficients
+fit_ou <- GIVEHR_OU_PCL(
+  data      = dat$long_data,
+  pair_type = "adjacent"
+)
+
+fit_ou
+summary(fit_ou)
 ```
 
-### Observation stage
+## 5. Benchmark methods
+
+SIMMER includes several alternative estimators for comparative studies.
+These methods generally address only the visiting process (not the
+observation process) or ignore informative presence entirely.
+
+### Joint model without observation process
 
 ```{r}
-fit$observation$alpha
+fit_ej <- EHRJoint(dat$long_data)
+fit_ej
+summary(fit_ej)
 ```
+
+### Liang--Lu--Ying estimating equations
+
+```{r}
+fit_liang <- JMVL_IP(dat$long_data)
+fit_liang
+```
+
+### Inverse intensity rate ratio weighting
+
+```{r}
+fit_iirr <- IIRR_weighting(dat$long_data, formula = ~ Z + X + time)
+fit_iirr
+```
+
+### IIRR with balancing weights
+
+```{r}
+fit_bal <- IIRR_balancing(dat$long_data, formula = ~ Z + X + time)
+fit_bal
+```
+
+### Linear mixed models
+
+Three variants: standard LMM, observation-adjusted (OA-LMM), and
+visit-adjusted (VA-LMM).
+
+```{r}
+# Standard LMM (observed data only)
+fit_lmm <- LMM(
+  dat$long_data,
+  fixed = Y ~ Z + X + time,
+  random = ~ 1 + Z | id,
+  obs_indicator = "R"
+)
+fit_lmm
+
+# Visit-adjusted LMM
+fit_va <- LMM(
+  dat$long_data,
+  fixed = Y ~ Z + X + time,
+  random = ~ 1 + Z | id,
+  obs_indicator = "R",
+  visit_adjust = "VA"
+)
+fit_va
+```
+
+### Summary-statistic regression
+
+A naive baseline that collapses each subject's outcome to a single
+summary (e.g., mean) and fits a cross-sectional linear model.
+
+```{r}
+fit_ss <- SummaryStat(dat$long_data, formula = ~ Z + X)
+fit_ss
+```
+
+### Imputation-based methods
+
+These first impute missing outcomes, then apply an informative-presence
+adjustment.
+
+```{r}
+# Linear increment imputation + Liang's IP adjustment
+fit_li <- LI_IP(
+  data       = dat$long_data,
+  ip_method  = "Liang",
+  visit_covs = c("Z", "X")
+)
+fit_li
+
+# Multiple imputation + IIRR weighting
+fit_mi <- MI_IP(
+  data       = dat$long_data,
+  ip_method  = "IIRR_weighting",
+  visit_covs = c("Z", "X"),
+  m          = 5
+)
+fit_mi
+```
+
+## 6. Collecting results across methods
+
+A typical simulation study compares the outcome beta estimates across
+methods. Here is one way to collect them:
+
+```{r}
+results <- data.frame(
+  Method = c("GIVEHR", "GIVEHR_GH", "GIVEHR_OU_PCL",
+             "EHRJoint", "JMVL_IP", "IIRR_weighting"),
+  beta_Z = c(
+    coef(fit)["Z"],
+    fit_gh$longitudinal_outcome$beta_Y["Z"],
+    fit_ou$longitudinal_outcome$beta_Y["Z"],
+    fit_ej$beta_hat["Z"],
+    fit_liang$beta_hat["Z"],
+    fit_iirr$beta_hat["Z"]
+  ),
+  beta_X = c(
+    coef(fit)["X"],
+    fit_gh$longitudinal_outcome$beta_Y["X"],
+    fit_ou$longitudinal_outcome$beta_Y["X"],
+    fit_ej$beta_hat["X"],
+    fit_liang$beta_hat["X"],
+    fit_iirr$beta_hat["X"]
+  )
+)
+
+results$true_Z <- dat$params$beta["Z"]
+results$true_X <- dat$params$beta["X"]
+results
+```
+
+## References
+
+Yang, C.-H., Shi, X., and Mukherjee, B. (2026). "Joint Modeling of
+Longitudinal EHR Data with Shared Random Effects for Informative
+Visiting and Observation Processes." *arXiv:2602.15374*.

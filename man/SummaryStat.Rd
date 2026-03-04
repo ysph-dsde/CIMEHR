@@ -29,7 +29,7 @@ to the outcome within each subject. One of \code{"min"}, \code{"max"},
 
 \item{formula}{A one-sided \code{\link[stats]{formula}} specifying the
 covariates for the linear model (e.g., \code{~ X + Z}). The outcome
-(as summarised) is used as the response. Default is \code{~ 1}
+(as summarized) is used as the response. Default is \code{~ 1}
 (intercept only).}
 
 \item{cov_stat}{Summary statistic to apply to time-varying covariates
@@ -48,7 +48,7 @@ A numeric matrix of regression coefficients, identical to the
 \description{
 Reduces longitudinal data to a single summary statistic per subject
 (e.g., mean, median, min, max of the outcome), then fits a
-cross-sectional linear model on the summarised data. This provides a
+cross-sectional linear model on the summarized data. This provides a
 simple baseline analysis that ignores the within-subject correlation
 structure and visit process entirely.
 }
@@ -66,8 +66,7 @@ summary data.
 This approach discards all within-subject temporal information and
 does not account for informative visiting or observation processes.
 It is included primarily as a naive benchmark for comparison with
-methods such as \code{\link{GIVEHR}}, \code{\link{JMVL_IP}}, or
-\code{\link{IIRR_weighting}}.
+methods such as \code{\link{GIVEHR}}.
 }
 \examples{
 \dontrun{
@@ -90,14 +89,4 @@ SummaryStat(
 )
 }
 
-}
-\references{
-Fitzmaurice, G. M., Laird, N. M., and Ware, J. H. (2011).
-\emph{Applied Longitudinal Analysis} (2nd ed.). Wiley. Chapter 4.
-}
-\seealso{
-\code{\link{LMM}} for a mixed-model approach that uses all
-observations;
-\code{\link{GIVEHR}} for a joint model accounting for informative
-visiting.
 }

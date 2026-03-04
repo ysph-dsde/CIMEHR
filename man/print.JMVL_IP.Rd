@@ -2,20 +2,34 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.JMVL_IP}
 \alias{print.JMVL_IP}
-\title{Print Method for JMVL_IP Fits}
+\title{Print a JMVL_IP Fit}
 \usage{
-\method{print}{JMVL_IP}(x, digits = 4, ...)
+\method{print}{JMVL_IP}(x, digits = 4, level = 0.95, ...)
 }
 \arguments{
-\item{x}{An object of class \code{"JMVL_IP"}.}
+\item{x}{A \code{JMVL_IP} object.}
 
-\item{digits}{Integer; number of significant digits. Default is \code{4}.}
+\item{digits}{Number of significant digits. Default is 4.}
 
-\item{...}{Additional arguments (currently unused).}
+\item{level}{Confidence level for Wald intervals. Default is 0.95.}
+
+\item{\dots}{Ignored.}
 }
 \value{
-Invisibly returns \code{x}.
+\code{x}, invisibly.
 }
 \description{
-Print Method for JMVL_IP Fits
+Prints outcome fixed-effect estimates from the Liang--Lu--Ying joint
+estimating equations approach.
+}
+\examples{
+\dontrun{
+dat <- sim_data_gen(n = 500, seed = 42)
+fit <- JMVL_IP(dat$long_data)
+fit
+}
+
+}
+\seealso{
+\code{\link{summary.JMVL_IP}}, \code{\link{JMVL_IP}}
 }

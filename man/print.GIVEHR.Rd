@@ -2,21 +2,35 @@
 % Please edit documentation in R/print-summary-GIVEHR.R
 \name{print.GIVEHR}
 \alias{print.GIVEHR}
-\title{Print Method for GIVEHR Fits}
+\title{Print a GIVEHR Fit}
 \usage{
-\method{print}{GIVEHR}(x, digits = 4, ...)
+\method{print}{GIVEHR}(x, digits = 4, level = 0.95, ...)
 }
 \arguments{
-\item{x}{An object of class \code{"GIVEHR"}.}
+\item{x}{A \code{GIVEHR} object returned by \code{\link{GIVEHR}}.}
 
-\item{digits}{Integer; number of significant digits to print. Default is
-\code{4}.}
+\item{digits}{Number of significant digits. Default is 4.}
 
-\item{...}{Additional arguments (currently unused).}
+\item{level}{Confidence level for Wald intervals. Default is 0.95.}
+
+\item{\dots}{Ignored.}
 }
 \value{
-Invisibly returns \code{x}.
+\code{x}, invisibly.
 }
 \description{
-Print Method for GIVEHR Fits
+Prints outcome fixed-effect estimates with sandwich standard errors and
+Wald confidence intervals.
+}
+\examples{
+\dontrun{
+dat <- sim_data_gen(n = 500, seed = 42)
+fit <- GIVEHR(data = dat$long_data)
+fit            # outcome beta with SE and 95\% CI
+summary(fit)   # all three processes
+}
+
+}
+\seealso{
+\code{\link{summary.GIVEHR}}, \code{\link{GIVEHR}}
 }

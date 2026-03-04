@@ -27,7 +27,6 @@
 #'   observation indicator column (\code{1} = outcome observed, \code{0} =
 #'   outcome missing at visit). Default is \code{"R"}.
 #'
-#' @section Imputation Parameters:
 #' @param m Integer; number of multiply imputed datasets. Default is
 #'   \code{5}.
 #' @param maxit Integer; maximum number of iterations for
@@ -58,7 +57,6 @@
 #'   \code{TRUE}. Recommended because \code{R} may be informative about
 #'   missing \eqn{Y} values under MAR.
 #'
-#' @section IP Method Parameters:
 #' @param ip_method Character string specifying the IP adjustment method
 #'   applied to each completed dataset. One of:
 #'   \describe{
@@ -103,7 +101,6 @@
 #'       \code{"VA"}).}
 #'   }
 #'
-#' @section Pooling Parameters:
 #' @param pool_method Character string specifying the method for pooling
 #'   estimates across imputations. One of:
 #'   \describe{
@@ -164,29 +161,8 @@
 #' \code{"MI_IP_result"}.
 #'
 #' @references
-#' Rubin, D. B. (1987). \emph{Multiple Imputation for Nonresponse in
-#' Surveys}. Wiley.
-#'
-#' van Buuren, S. and Groothuis-Oudshoorn, K. (2011). mice: Multivariate
-#' imputation by chained equations in R. \emph{Journal of Statistical
-#' Software}, \strong{45}(3), 1--67.
-#'
-#' Liang, Y., Lu, W., and Ying, Z. (2009). Joint modeling and analysis of
-#' longitudinal data with informative observation times. \emph{Biometrics},
-#' \strong{65}(2), 377--384.
-#'
-#' Yiu, S. and Su, L. (2024). Accommodating informative visit times for
-#' analysing irregular longitudinal data: a sensitivity analysis approach
-#' with balancing weights estimators. \emph{Journal of the Royal
-#' Statistical Society: Series C}, \strong{74}, 824--843.
-#'
-#' @seealso
-#' \code{\link{LI_IP}} for the single-imputation (linear increment)
-#' counterpart;
-#' \code{\link[mice]{mice}} for the underlying imputation engine;
-#' \code{\link{JMVL_IP}}, \code{\link{IIRR_weighting}},
-#' \code{\link{IIRR_balancing}}, \code{\link{PairwiseLikelihood}}, and
-#' \code{\link{LMM}} for the individual IP methods.
+#' Donald B. Rubin (1987). \emph{Multiple Imputation for Nonresponse in Surveys}.
+#' John Wiley & Sons. \doi{10.1002/9780470316696}.
 #'
 #' @examples
 #' \dontrun{
@@ -222,7 +198,7 @@
 #' )
 #' }
 #'
-#' @importFrom stats as.formula
+#' @importFrom stats as.formula sd var
 #' @export
 MI_IP <- function(
     data,
@@ -511,7 +487,7 @@ MI_IP <- function(
                      lmm_optimizer <- ip_args$optimizer %||% "nlminb"
                      lmm_visit_adjust <- ip_args$visit_adjust  # NULL is valid default
 
-                     coefs <- LMM_fun(
+                     coefs <- LMM(
                        data = data,
                        id = id,
                        fixed = outcome_formula,
@@ -528,7 +504,7 @@ MI_IP <- function(
                    },
 
                    "Liang" = {
-                     fit <- JMVL_Liang_fun(
+                     fit <- JMVL_IP(
                        data = data,
                        id = id,
                        time = time,
@@ -550,7 +526,7 @@ MI_IP <- function(
                      phi <- ip_args$phi %||% 0
                      balance_covs <- ip_args$balance_covs  # NULL uses visit_covs in function
 
-                     fit <- IIRR_balancing_fun(
+                     fit <- IIRR_balancing(
                        data = data,
                        id = id,
                        time = time,
@@ -575,7 +551,7 @@ MI_IP <- function(
                      phi <- ip_args$phi %||% 0
                      balance_covs <- ip_args$balance_covs  # NULL uses visit_covs in function
 
-                     fit <- IIRR_balancing_fun(
+                     fit <- IIRR_balancing(
                        data = data,
                        id = id,
                        time = time,
@@ -600,7 +576,7 @@ MI_IP <- function(
                      pair_sample <- ip_args$pair_sample  # NULL uses all pairs
                      pair_family <- ip_args$family %||% "gaussian"
 
-                     fit <- pairwise_glm_fit_rcpp(
+                     fit <- PairwiseLikelihood(
                        data = data[data[[obs_indicator]] == 1, ],
                        formula = outcome_formula,
                        id_col = id,

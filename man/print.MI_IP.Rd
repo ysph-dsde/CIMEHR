@@ -2,18 +2,35 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.MI_IP}
 \alias{print.MI_IP}
-\title{Print Method for MI_IP}
+\title{Print an MI_IP Fit}
 \usage{
-\method{print}{MI_IP}(x, ...)
+\method{print}{MI_IP}(x, digits = 4, level = 0.95, ...)
 }
 \arguments{
-\item{x}{An object of class \code{"MI_IP_result"}.}
+\item{x}{An \code{MI_IP} object returned by \code{\link{MI_IP}}.}
 
-\item{...}{Additional arguments (currently unused).}
+\item{digits}{Number of significant digits. Default is 4.}
+
+\item{level}{Confidence level for Wald intervals. Default is 0.95.}
+
+\item{\dots}{Ignored.}
 }
 \value{
-Invisibly returns \code{x}.
+\code{x}, invisibly.
 }
 \description{
-Print Method for MI_IP
+Prints pooled outcome coefficients from the multiple imputation with
+informative presence adjustment.
+}
+\examples{
+\dontrun{
+dat <- sim_data_gen(n = 500, seed = 42)
+fit <- MI_IP(data = dat$long_data, ip_method = "Liang",
+             visit_covs = c("Z", "X"), m = 5)
+fit
+}
+
+}
+\seealso{
+\code{\link{summary.MI_IP}}, \code{\link{MI_IP}}
 }

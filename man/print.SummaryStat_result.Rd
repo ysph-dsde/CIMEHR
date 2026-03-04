@@ -2,20 +2,33 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.SummaryStat_result}
 \alias{print.SummaryStat_result}
-\title{Print Method for SummaryStat Results}
+\title{Print a SummaryStat Result}
 \usage{
 \method{print}{SummaryStat_result}(x, digits = 4, ...)
 }
 \arguments{
-\item{x}{An object of class \code{"SummaryStat_result"}.}
+\item{x}{A \code{SummaryStat_result} object returned by
+\code{\link{SummaryStat}}.}
 
-\item{digits}{Integer; number of significant digits. Default is \code{4}.}
+\item{digits}{Number of significant digits. Default is 4.}
 
-\item{...}{Additional arguments (currently unused).}
+\item{\dots}{Ignored.}
 }
 \value{
-Invisibly returns \code{x}.
+\code{x}, invisibly.
 }
 \description{
-Print Method for SummaryStat Results
+Prints coefficients from the summary-statistic regression.
+}
+\examples{
+\dontrun{
+dat <- sim_data_gen(n = 500, seed = 42)
+fit <- SummaryStat(dat$long_data, formula = ~ Z + X)
+fit
+}
+
+}
+\seealso{
+\code{\link{summary.SummaryStat_result}},
+\code{\link{SummaryStat}}
 }

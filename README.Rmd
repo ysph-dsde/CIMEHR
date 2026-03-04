@@ -2,97 +2,106 @@
 output: github_document
 title: "SIMMER"
 ---
-> A unified semiparametric joint modeling framework that 
-> simultaneously characterizes the visiting, biomarker observation, 
+> A unified semiparametric joint modeling framework that
+> simultaneously characterizes the visiting, biomarker observation,
 > and longitudinal outcome processes.
 ---
 
 # Overview
-**SIMMER** fits semiparametric joint models for longitudinal EHR data with **informative visiting** and **informative observation** (missingness) processes.
 
-The primary method in this package is **`GIVEHR()`** (Generalized Informative Visiting and Examination in EHR Data), a three-stage estimator that:
+**SIMMER** fits semiparametric joint models for longitudinal EHR data that simultaneously correct for two sources of informative presence bias: an **informative visiting process** (when patients visit) and an **informative observation process** (whether outcomes are recorded at visits).
 
-1. models *when* patients are observed (visiting process),
-2. models *whether* the biomarker/outcome is observed given a visit (observation process),
-3. estimates the longitudinal outcome association using **risk-set centering** and **inverse-probability weighting**.
+The primary method is **`GIVEHR()`** (Generalized Informative Visiting and Examination in EHR Data), a three-stage estimator that:
 
-This workflow is designed for settings where visit times and measurement availability depend on patient covariates and latent health status.
+1. models *when* patients visit via partial likelihood with a log-normal frailty (visiting process),
+2. models *whether* the outcome is recorded at a visit via probit regression with shared-latent-factor-linked random effects (observation process),
+3. estimates the longitudinal outcome coefficients via weighted least squares with risk-set centering (outcome process).
+
+All three stages are connected through a shared latent factor. Sandwich variance estimators provide robust inference throughout.
 
 ## Installation
 
-```r
+```{r, eval = FALSE}
 # install.packages("devtools")
 devtools::install_github("ysph-dsde/SIMMER")
 ```
 
-## Quick example (recommended): simulate data, fit `GIVEHR()`
+## Quick example
 
-The package includes a simulator that matches the joint-model structure used by the GIVEHR family.
-
-```r
+```{r, eval = FALSE}
 library(SIMMER)
 
-set.seed(1)
+# Simulate EHR data with informative visiting and observation
+dat <- sim_data_gen(n = 500, seed = 42)
 
-dat <- sim_data_gen(n = 300, time.end = 60, seed = 1)
+# Add censoring time (required by GIVEHR)
+dat$long_data$C <- 60
 
 # Fit the three-stage joint model
-fit <- GIVEHR(
-  data = dat,
-  id_col     = "id",
-  time_col   = "time",
-  y_col      = "Y",
-  r_col      = "R",
-  censor_col = "C",
-  # Covariates used in each stage (defaults shown)
-  covars_visit_XV         = c("Z", "X"),
-  covars_obs_fixed_XO     = c("Z", "X"),
-  covars_obs_random_ZO    = "Z",
-  covars_outcome_fixed_XY = c("Z", "X"),
-  covars_outcome_link_ZY  = "Z"
-)
+fit <- GIVEHR(data = dat$long_data)
 
+# Outcome fixed effects with SE and 95% CI
 fit
+
+# Full summary of all three processes
 summary(fit)
 ```
 
-### Extracting results
+### Extracting results programmatically
 
-`GIVEHR()` returns an object with three main components (visiting, observation, outcome). You can programmatically access coefficient tables as:
+```{r, eval = FALSE}
+# Outcome coefficients (beta)
+coef(fit)
+coef(fit, type = "visiting")
+coef(fit, type = "observation")
 
-```r
-# Outcome model fixed effects (beta)
-fit$outcome$beta
+# Variance-covariance matrix and confidence intervals
+vcov(fit)
+confint(fit)
 
-# Visiting-process coefficients (gamma)
-fit$visiting$coefficients
-
-# Observation-process coefficients (alpha)
-fit$observation$alpha
+# Direct access to components
+fit$longitudinal_outcome$beta_Y
+fit$longitudinal_outcome$se_beta_naive
+fit$visiting_process$gamma_V
+fit$observation_process$alpha_fixed
 ```
 
-### Interpretation (high level)
+## GIVEHR variants
 
-- **Outcome stage (`beta`)**: association between covariates and the longitudinal outcome, *after* accounting for informative visiting and observation.
-- **Visiting stage (`gamma`)**: covariate effects on visit intensity (how frequently patients are observed).
-- **Observation stage (`alpha`)**: covariate effects on whether the outcome/biomarker is measured at a visit.
+Two extensions handle temporal dependence in the observation process:
 
-## Why focus on `GIVEHR()`?
+- **`GIVEHR_GH()`**: Gauss--Hermite quadrature with online Laplace filtering. Supports time-varying observation dependence via a lagged indicator.
+- **`GIVEHR_OU_PCL()`**: Ornstein--Uhlenbeck pairwise composite likelihood. Captures serial correlation in the observation process.
 
-SIMMER includes multiple approaches (e.g., imputation-based methods and alternative joint-model variants), but **`GIVEHR()` is the recommended default** because it:
+```{r, eval = FALSE}
+# Gauss-Hermite variant
+fit_gh <- GIVEHR_GH(data = dat$long_data, gh_points_U = 7, gh_points_q = 5)
 
-- targets the **association parameters** in the longitudinal outcome model while explicitly modeling both visiting and observation mechanisms,
-- uses a **three-stage semiparametric construction** that is computationally lighter than fully parametric joint likelihoods,
-- returns a structured object with stage-specific diagnostics and coefficient tables.
+# OU + Pairwise composite likelihood variant
+fit_ou <- GIVEHR_OU_PCL(data = dat$long_data, pair_type = "adjacent")
+```
 
-## Other exported functions (brief)
+## Benchmark methods
 
-- `GIVEHR_GH()`, `GIVEHR_OU_PCL()`: alternative variants of GIVEHR (useful for sensitivity analyses / model-checking).
-- `LI_IP()`, `MI_IP()`: imputation + inverse probability approaches.
-- `IIRR_weighting()`, `IIRR_balancing()`: weighting/balancing estimators (simpler, but generally less complete for informative visiting + observation).
-- `EHRJoint()`, `PairwiseLikelihood()`, `SummaryStat()`, `JMVL_IP()`, `LMM()`: additional estimators and utilities.
+The package includes several comparison methods for simulation and benchmark studies:
+
+| Function | Approach |
+|---|---|
+| `EHRJoint()` | Joint model without separate observation process |
+| `JMVL_IP()` | Liang--Lu--Ying joint estimating equations |
+| `IIRR_weighting()` | Inverse intensity rate ratio (IIRR) weighting |
+| `IIRR_balancing()` | Inverse intensity rate ratio (IIRR) with balancing weights |
+| `LMM()` | Linear mixed model (standard, observed-adjusted, visit-adjusted variants) |
+| `LI_IP()` | Linear increment imputation + informative visit (IP) adjustment |
+| `MI_IP()` | Multiple imputation + informative visit (IP) adjustment |
+| `PairwiseLikelihood()` | Pairwise composite likelihood ranking |
+| `SummaryStat()` | Summary-statistic regression (naive baseline) |
 
 ## Getting help
 
-- Run `vignette("getting-started", package = "SIMMER")` for a fuller worked example.
+- Run `vignette("getting-started", package = "SIMMER")` for a complete tutorial.
 - Open an issue on GitHub for bugs or feature requests.
+
+## References
+
+Yang, C.-H., Shi, X., and Mukherjee, B. (2026). "Joint Modeling of Longitudinal EHR Data with Shared Random Effects for Informative Visiting and Observation Processes." *arXiv:2602.15374*.

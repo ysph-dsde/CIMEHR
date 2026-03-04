@@ -165,20 +165,8 @@ fit_sa$beta_bal
 
 }
 \references{
-Yiu, S. and Su, L. (2024). Accommodating informative visit times for
-analysing irregular longitudinal data: a sensitivity analysis approach
-with balancing weights estimators. \emph{Journal of the Royal
-Statistical Society: Series C}, \strong{74}, 824--843.
-
-Hainmueller, J. (2012). Entropy balancing for causal effects: a
-multivariate reweighting method to produce balanced samples in
-observational studies. \emph{Political Analysis}, \strong{20}(1),
-25--46.
-}
-\seealso{
-\code{\link{IIRR_weighting}} for the standard inverse-intensity
-approach without balancing;
-\code{\link{JMVL_IP}} for a joint-model alternative;
-\code{\link{MI_IP}} and \code{\link{LI_IP}} for combining imputation
-with IP adjustment.
+Sean Yiu and Li Su (2025). Accommodating informative visit times for analysing irregular
+longitudinal data: a sensitivity analysis approach with balancing weights estimators.
+\emph{Journal of the Royal Statistical Society Series C: Applied Statistics},
+74(3), 824--843. \doi{10.1093/jrsssc/qlaf002}.
 }

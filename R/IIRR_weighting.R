@@ -68,22 +68,9 @@
 #' estimates, or bootstrap the entire procedure.
 #'
 #' @references
-#' Lin, D. Y., Wei, L. J., Yang, I., and Ying, Z. (2000). Semiparametric
-#' regression for the mean and rate functions of recurrent events.
-#' \emph{Journal of the Royal Statistical Society: Series B},
-#' \strong{62}(4), 711--730.
-#'
-#' Buzkova, P. and Lumley, T. (2007). Longitudinal data analysis for
-#' generalized linear models with follow-up dependent on outcome-related
-#' variables. \emph{The Canadian Journal of Statistics}, \strong{35}(4),
-#' 485--500.
-#'
-#' @seealso
-#' \code{\link{IIRR_balancing}} for the balancing-weights extension with
-#' sensitivity analysis;
-#' \code{\link{JMVL_IP}} for a joint-model alternative;
-#' \code{\link{MI_IP}} and \code{\link{LI_IP}} for combining imputation
-#' with IP adjustment.
+#' Petra Bůžková and Thomas Lumley (2007). Longitudinal data analysis
+#' for generalized linear models with follow-up dependent on outcome-related variables.
+#' \emph{The Canadian Journal of Statistics}, 35(4), 485--500. \doi{10.1002/cjs.5550350402}.
 #'
 #' @examples
 #' \dontrun{
@@ -101,14 +88,17 @@
 #' @importFrom stats model.frame model.matrix na.pass
 #' @export
 IIRR_weighting <- function(data,
-                               id = "id",
-                               time = "time",
-                               outcome = "Y",
-                               obs_indicator = "R",
-                               visit_covs = c("Z", "X"),
-                               formula = ~ Z + X + time) {
+                           id = "id",
+                           time = "time",
+                           outcome = "Y",
+                           obs_indicator = "R",
+                           visit_covs = c("Z", "X"),
+                           formula = ~ Z + X + time) {
 
-  if (!requireNamespace("nleqslv", quietly = TRUE)) install.packages("nleqslv")
+  if (!requireNamespace("nleqslv", quietly = TRUE)) {
+    stop("Package 'nleqslv' is required. Install it with: install.packages('nleqslv')",
+         call. = FALSE)
+  }
 
   # Filter to observed data only (R == 1 or R is NA)
   R_vec <- data[[obs_indicator]]
