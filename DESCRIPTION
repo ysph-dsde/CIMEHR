@@ -1,0 +1,21 @@
+Package: SIMMER
+Title: Gaussian Informative Visiting and observation processes in Electronic Health Records
+Version: 0.0.0.9000
+Authors@R:  c(
+  person(given = "Cheng-Han", family = "Yang",
+         email = "cheng-han.yang@yale.edu",
+         role = c("aut", "cre"),
+         comment = c("0000-0002-4161-3140")),
+  person(given = "Yiren", family = "Hou",
+         email = "yiren.hou@yale.edu",
+         role = "aut", 
+         comment = c(ORCID = "0009-0005-0422-4268"))
+ )
+Description: What the package does (one paragraph).
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+URL: https://github.com/ysph-dsde/SIMMER
+BugReports: https://github.com/ysph-dsde/SIMMER/issues
+VignetteBuilder: knitr
