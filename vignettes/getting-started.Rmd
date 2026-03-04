@@ -86,7 +86,7 @@ fixed-effect estimates with sandwich standard errors and 95% Wald
 confidence intervals:
 
 ```{r}
-fit
+print(fit)
 ```
 
 ### Detailed look: `summary()`
@@ -177,7 +177,7 @@ fit_gh <- GIVEHR_GH(
   gh_points_q = 5
 )
 
-fit_gh
+print(fit_gh)
 summary(fit_gh)
 ```
 
@@ -193,7 +193,7 @@ fit_ou <- GIVEHR_OU_PCL(
   pair_type = "adjacent"
 )
 
-fit_ou
+print(fit_ou)
 summary(fit_ou)
 ```
 
@@ -207,7 +207,7 @@ observation process) or ignore informative presence entirely.
 
 ```{r}
 fit_ej <- EHRJoint(dat$long_data)
-fit_ej
+print(fit_ej)
 summary(fit_ej)
 ```
 
@@ -215,21 +215,21 @@ summary(fit_ej)
 
 ```{r}
 fit_liang <- JMVL_IP(dat$long_data)
-fit_liang
+print(fit_liang)
 ```
 
 ### Inverse intensity rate ratio weighting
 
 ```{r}
 fit_iirr <- IIRR_weighting(dat$long_data, formula = ~ Z + X + time)
-fit_iirr
+print(fit_iirr)
 ```
 
 ### IIRR with balancing weights
 
 ```{r}
 fit_bal <- IIRR_balancing(dat$long_data, formula = ~ Z + X + time)
-fit_bal
+print(fit_bal)
 ```
 
 ### Linear mixed models
@@ -245,7 +245,7 @@ fit_lmm <- LMM(
   random = ~ 1 + Z | id,
   obs_indicator = "R"
 )
-fit_lmm
+print(fit_lmm)
 
 # Visit-adjusted LMM
 fit_va <- LMM(
@@ -255,7 +255,7 @@ fit_va <- LMM(
   obs_indicator = "R",
   visit_adjust = "VA"
 )
-fit_va
+print(fit_va)
 ```
 
 ### Summary-statistic regression
@@ -265,7 +265,7 @@ summary (e.g., mean) and fits a cross-sectional linear model.
 
 ```{r}
 fit_ss <- SummaryStat(dat$long_data, formula = ~ Z + X)
-fit_ss
+print(fit_ss)
 ```
 
 ### Imputation-based methods
@@ -280,7 +280,7 @@ fit_li <- LI_IP(
   ip_method  = "Liang",
   visit_covs = c("Z", "X")
 )
-fit_li
+print(fit_li)
 
 # Multiple imputation + IIRR weighting
 fit_mi <- MI_IP(
@@ -289,7 +289,7 @@ fit_mi <- MI_IP(
   visit_covs = c("Z", "X"),
   m          = 5
 )
-fit_mi
+print(fit_mi)
 ```
 
 ## 6. Collecting results across methods
@@ -321,7 +321,7 @@ results <- data.frame(
 
 results$true_Z <- dat$params$beta["Z"]
 results$true_X <- dat$params$beta["X"]
-results
+print(results)
 ```
 
 ## References

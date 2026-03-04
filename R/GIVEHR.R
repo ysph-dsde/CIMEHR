@@ -1,4 +1,4 @@
-#' Generalized Informative Visiting and Examination in EHR Data
+#' Generalized Informative Visiting and Examination in Electronic Health Record (EHR) Data
 #'
 #' @description
 #' Fits a three-stage semiparametric joint model for longitudinal electronic
@@ -673,24 +673,27 @@ GIVEHR <- function(
     obs_out$se_delta <- se_delta
   }
 
-  list(
-    visiting_process = list(
-      gamma_V     = gamma_hat,
-      se_gamma    = setNames(se_gamma, names(gamma_hat)),
-      vcov_gamma  = vcov_gamma,
-      Lambda0_hat = setNames(dLam0, as.character(unique_times)),
-      sigma2_zeta = s2z,
-      mu_Ui       = setNames(mu_U, id_levels),
-      sigma2_Ui   = setNames(s2_U, id_levels),
-      Ci          = setNames(Ci_subj, id_levels),
-      mi          = setNames(mi, id_levels)
+  structure(
+    list(
+      visiting_process = list(
+        gamma_V     = gamma_hat,
+        se_gamma    = setNames(se_gamma, names(gamma_hat)),
+        vcov_gamma  = vcov_gamma,
+        Lambda0_hat = setNames(dLam0, as.character(unique_times)),
+        sigma2_zeta = s2z,
+        mu_Ui       = setNames(mu_U, id_levels),
+        sigma2_Ui   = setNames(s2_U, id_levels),
+        Ci          = setNames(Ci_subj, id_levels),
+        mi          = setNames(mi, id_levels)
+      ),
+      observation_process = obs_out,
+      longitudinal_outcome = list(
+        beta_Y        = beta_hat,
+        theta_Y       = theta_hat,
+        se_beta_naive = setNames(se_beta, names(beta_hat)),
+        vcov_joint    = V3
+      )
     ),
-    observation_process = obs_out,
-    longitudinal_outcome = list(
-      beta_Y        = beta_hat,
-      theta_Y       = theta_hat,
-      se_beta_naive = setNames(se_beta, names(beta_hat)),
-      vcov_joint    = V3
-    )
+    class = "GIVEHR"
   )
 }

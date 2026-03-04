@@ -342,7 +342,7 @@ IIRR_balancing <- function(data,
   # ============================================
   # Return results
   # ============================================
-  return(list(
+  return(structure(list(
     beta_bal = beta_bal,
     beta_mle = beta_mle,
     gamma_hat = gamma_hat,
@@ -355,5 +355,5 @@ IIRR_balancing <- function(data,
       gamma = gamma_solve$termcd,
       balancing = bal_convergence
     )
-  ))
+  ), class = "IIRR_balancing"))
 }

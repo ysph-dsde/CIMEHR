@@ -172,14 +172,12 @@ EHRJoint <- function(data,
 
   names(beta_hat) <- long_covs
 
-  return(list(
+  return(structure(list(
     gamma_hat = gamma_hat,
     alpha_hat = alpha_hat,
     Lambda_C_est = Lambda_C_est,
     sigma_sq_hat = sigma_sq_hat,
     beta_hat = beta_hat,
     theta_hat = theta_hat
-  ))
+  ), class = "EHRJoint"))
 }
-
-#fit2 = EHRJoint(dat$long_data)

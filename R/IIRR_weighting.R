@@ -152,8 +152,8 @@ IIRR_weighting <- function(data,
   beta_hat <- beta_solve$x
   names(beta_hat) <- colnames(X_GEE)
 
-  return(list(
+  return(structure(list(
     gamma_hat = gamma_hat,
     beta_hat = beta_hat
-  ))
+  ), class = "IIRR_weighting"))
 }

@@ -498,8 +498,8 @@ MI_IP <- function(
                        optimizer = lmm_optimizer
                      )
                      list(
-                       coef = coefs[, "Value"],
-                       se = coefs[, "Std.Error"]
+                       coef = coefs$coefficients[, "Value"],
+                       se = coefs$coefficients[, "Std.Error"]
                      )
                    },
 

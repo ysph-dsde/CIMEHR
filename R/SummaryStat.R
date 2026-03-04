@@ -117,5 +117,6 @@ SummaryStat <- function(data, id = "id", outcome = "Y", stat = "mean",
   full_formula <- as.formula(paste("outcome_summary", paste(deparse(formula), collapse = "")))
   fit <- lm(full_formula, data = outcome_agg)
 
-  return(summary(fit)$coefficients)
+  result <- summary(fit)$coefficients
+  return(structure(list(coefficients = result), class = "SummaryStat_result"))
 }

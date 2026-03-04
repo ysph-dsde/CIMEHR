@@ -2,7 +2,7 @@
 % Please edit documentation in R/GIVEHR.R
 \name{GIVEHR}
 \alias{GIVEHR}
-\title{Generalized Informative Visiting and Examination in EHR Data}
+\title{Generalized Informative Visiting and Examination in Electronic Health Record (EHR) Data}
 \usage{
 GIVEHR(
   data,

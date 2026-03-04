@@ -142,9 +142,6 @@ LMM <- function(data,
   # Fit
   fit <- nlme::lme(fixed, data = work_data, random = random, method = method, control = ctrl)
 
-  return(summary(fit)$tTable)
+  result <- summary(fit)$tTable
+  return(structure(list(coefficients = result), class = "LMM_result"))
 }
-
-#tmp = LMM(dat$long_data, fixed = Y ~ Z + X + time, random = ~ 1 + Z| id,
-#        obs_indicator = "R", visit_adjust = "VA")
-#tmp

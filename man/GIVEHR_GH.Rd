@@ -2,7 +2,7 @@
 % Please edit documentation in R/GIVEHR_GH.R
 \name{GIVEHR_GH}
 \alias{GIVEHR_GH}
-\title{Generalized Informative Visiting and Examination in EHR Data
+\title{Generalized Informative Visiting and Examination in Electronic Health Record (EHR) Data
 (Gauss-Hermite Quadrature Version)}
 \usage{
 GIVEHR_GH(

@@ -1,4 +1,4 @@
-#' Generalized Informative Visiting and Examination in EHR Data
+#' Generalized Informative Visiting and Examination in Electronic Health Record (EHR) Data
 #' (Gauss-Hermite Quadrature Version)
 #'
 #' @description
@@ -776,18 +776,21 @@ GIVEHR_GH <- function(
     obs_params$lambda <- lambda_hat
   }
 
-  list(
-    visiting_process = list(
-      gamma_V = gamma_V_hat,
-      Lambda0_C = Lambda0_C,
-      sigma2_zeta = sigma2_zeta_hat,
-      mu_Ui = setNames(mu_Ui_hat, id_levels),
-      sigma2_Ui = setNames(sigma2_Ui_hat, id_levels)
+  structure(
+    list(
+      visiting_process = list(
+        gamma_V = gamma_V_hat,
+        Lambda0_C = Lambda0_C,
+        sigma2_zeta = sigma2_zeta_hat,
+        mu_Ui = setNames(mu_Ui_hat, id_levels),
+        sigma2_Ui = setNames(sigma2_Ui_hat, id_levels)
+      ),
+      observation_process = obs_params,
+      longitudinal_outcome = list(
+        beta_Y = beta_Y_hat,
+        theta_Y = theta_Y_hat
+      )
     ),
-    observation_process = obs_params,
-    longitudinal_outcome = list(
-      beta_Y = beta_Y_hat,
-      theta_Y = theta_Y_hat
-    )
+    class = "GIVEHR_GH"
   )
 }
