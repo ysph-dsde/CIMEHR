@@ -1,22 +1,122 @@
-#' Joint Model for Visiting and Longitudinal Process (Liang's Method)
+#' Joint Model for Visiting and Longitudinal Processes (Liang's Method)
 #'
-#' Fits a joint model for informative visiting process using Liang's estimating equations.
-#' Only uses observed data (R == 1 or R is NA).
+#' @description
+#' Fits a joint model for longitudinal data with an informative visiting
+#' process using the estimating-equations approach of Liang, Lu, and Ying
+#' (2009). The visiting-process intensity is modelled via a Cox-type
+#' partial-likelihood score equation, and the longitudinal outcome is
+#' estimated by solving Liang-type risk-set-centred estimating equations
+#' that incorporate an empirical Bayes estimate of the shared latent
+#' factor.
 #'
-#' @param data Data frame containing longitudinal data.
-#' @param id Subject ID column name. Default is "id".
-#' @param time Time variable column name. Default is "time".
-#' @param outcome Outcome variable column name. Default is "Y".
-#' @param obs_indicator Observation indicator column name. Default is "R".
-#' @param visit_covs Character vector of covariate names for visiting process. Default is c("Z", "X").
-#' @param long_covs Character vector of covariate names for longitudinal process. Default is c("Z", "X").
-#' @param random_covs Character vector of covariate names with random effects. Default is "Z".
+#' Unlike \code{\link{EHRJoint}}, this method does not model a separate
+#' observation process; it assumes that the outcome is always observed at
+#' visits (or equivalently, filters to rows with \code{R == 1} or
+#' \code{R} is \code{NA}).
 #'
-#' @return A list containing:
-#'   \item{gamma_hat}{Visiting process coefficients}
-#'   \item{beta_hat}{Longitudinal process coefficients}
-#'   \item{Lambda_C_est}{Estimated cumulative intensity}
-#'   \item{sigma_sq_hat}{Estimated random effect variance}
+#' @param data A \code{data.frame} in long (panel) format with one row per
+#'   subject-time combination. Must contain columns for subject identifier,
+#'   visit time, outcome, observation indicator, and all specified
+#'   covariates.
+#' @param id Character string giving the name of the subject identifier
+#'   column. Default is \code{"id"}.
+#' @param time Character string giving the name of the visit-time column.
+#'   Default is \code{"time"}.
+#' @param outcome Character string giving the name of the outcome column.
+#'   Default is \code{"Y"}.
+#' @param obs_indicator Character string giving the name of the binary
+#'   observation indicator column. Rows with \code{R == 1} or \code{R} is
+#'   \code{NA} are retained; all others are dropped. Default is
+#'   \code{"R"}.
+#' @param visit_covs Character vector of covariate column names for the
+#'   visiting-process intensity model. Default is \code{c("Z", "X")}.
+#' @param long_covs Character vector of covariate column names for the
+#'   fixed-effect part of the longitudinal outcome model. Default is
+#'   \code{c("Z", "X")}.
+#' @param random_covs Character vector of covariate column names that
+#'   interact with the latent factor in the outcome model. An intercept
+#'   column is prepended automatically. Default is \code{"Z"}.
+#'
+#' @return A named list with four components:
+#'
+#' \describe{
+#'   \item{\code{gamma_hat}}{Named numeric vector of visiting-process
+#'     regression coefficients, estimated by solving the partial-likelihood
+#'     score equation with \code{\link[nleqslv]{nleqslv}}.}
+#'   \item{\code{Lambda_C_est}}{Numeric scalar; Breslow estimate of the
+#'     cumulative baseline hazard \eqn{\Lambda_0(C)} over the full
+#'     follow-up window.}
+#'   \item{\code{sigma_sq_hat}}{Numeric scalar; method-of-moments estimate
+#'     of the frailty variance \eqn{\sigma^2}. Constrained to be
+#'     non-negative.}
+#'   \item{\code{beta_hat}}{Named numeric vector of outcome fixed-effect
+#'     coefficients, estimated from the Liang-type estimating equations.}
+#' }
+#'
+#' @details
+#' The model consists of two linked components:
+#'
+#' \strong{Visiting Process.}
+#' The visit intensity is
+#' \deqn{\lambda_i(t) = \eta_i \exp(\gamma^\top Z_i)\,\lambda_0(t),}
+#' where \eqn{\eta_i} is a shared frailty. The coefficient vector
+#' \eqn{\gamma} is estimated by solving the partial-likelihood score
+#' equation, the cumulative baseline hazard \eqn{\Lambda_0(C)} by the
+#' Breslow estimator, and the frailty variance \eqn{\sigma^2} by method
+#' of moments.
+#'
+#' \strong{Outcome Model.}
+#' An empirical Bayes estimator of the latent loading \eqn{B_i} is
+#' constructed as
+#' \deqn{\hat B_i = \frac{1 + n_i \hat\sigma^2}{1 + \hat\Lambda_i
+#'   \hat\sigma^2} - 1,}
+#' and the outcome model
+#' \deqn{Y_i(t) = \beta^\top X_i(t) + B_i Z_i^*(t) + \varepsilon_i(t)}
+#' is estimated by solving risk-set-centred estimating equations
+#' \deqn{\sum_{i,j} \bigl[(M_{ij} - \bar M(t_j))\bigr]
+#'   (Y_{ij} - M_{ij}^\top \beta^*) = 0,}
+#' where \eqn{M_{ij} = (X_{ij}, \hat B_i Z_{ij}^*)} and
+#' \eqn{\bar M(t)} is the risk-set-weighted mean.
+#'
+#' This differs from \code{\link{EHRJoint}} in that no observation-process
+#' weights enter the estimating equations.
+#'
+#' @note
+#' This function requires the \pkg{nleqslv} package. It will attempt to
+#' install the package automatically if it is not available.
+#'
+#' No standard errors are returned. For inference, consider bootstrapping
+#' the entire procedure.
+#'
+#' @references
+#' Liang, Y., Lu, W., and Ying, Z. (2009). Joint modeling and analysis of
+#' longitudinal data with informative observation times. \emph{Biometrics},
+#' \strong{65}(2), 377--384.
+#'
+#' @seealso
+#' \code{\link{EHRJoint}} for a joint model that additionally models the
+#' observation process;
+#' \code{\link{GIVEHR}} for the full GIVEHR model with probit observation
+#' process and sandwich variance;
+#' \code{\link{IIRR_weighting}} for an inverse-intensity-weighting
+#' alternative;
+#' \code{\link{MI_IP}} and \code{\link{LI_IP}} for combining imputation
+#' with IP adjustment.
+#'
+#' @examples
+#' \dontrun{
+#' dat <- sim_data_gen(n = 500, seed = 42)
+#'
+#' fit <- JMVL_IP(
+#'   data       = dat$long_data,
+#'   visit_covs = c("Z", "X"),
+#'   long_covs  = c("Z", "X"),
+#'   random_covs = "Z"
+#' )
+#' fit$gamma_hat
+#' fit$beta_hat
+#' fit$sigma_sq_hat
+#' }
 #'
 #' @export
 JMVL_IP <- function(data,

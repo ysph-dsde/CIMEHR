@@ -1,18 +1,89 @@
-#' Summarize Longitudinal Data and Fit Linear Model
+#' Summary-Statistic Regression for Longitudinal Data
 #'
-#' @param data A data frame containing longitudinal data.
-#' @param id Character string for subject ID column. Default is "id".
-#' @param outcome Character string for outcome variable. Default is "Y".
-#' @param stat Summary statistic for outcome: "min", "max", "mean", or "median". Default is "mean".
-#' @param formula Formula for linear model (e.g., ~ X + Z).
-#' @param cov_stat Summary statistic for time-varying covariates. Default is "mean".
-#'        Can be a single value (applied to all) or a named list (e.g., list(X = "mean", W = "median")).
+#' @description
+#' Reduces longitudinal data to a single summary statistic per subject
+#' (e.g., mean, median, min, max of the outcome), then fits a
+#' cross-sectional linear model on the summarised data. This provides a
+#' simple baseline analysis that ignores the within-subject correlation
+#' structure and visit process entirely.
 #'
-#' @return Coefficient matrix from summary(lm(...))$coefficients.
+#' @param data A \code{data.frame} in long (panel) format with one row per
+#'   subject-time combination.
+#' @param id Character string giving the name of the subject identifier
+#'   column. Default is \code{"id"}.
+#' @param outcome Character string giving the name of the outcome column.
+#'   Default is \code{"Y"}.
+#' @param stat Character string specifying the summary statistic to apply
+#'   to the outcome within each subject. One of \code{"min"}, \code{"max"},
+#'   \code{"mean"}, or \code{"median"}. Default is \code{"mean"}.
+#' @param formula A one-sided \code{\link[stats]{formula}} specifying the
+#'   covariates for the linear model (e.g., \code{~ X + Z}). The outcome
+#'   (as summarised) is used as the response. Default is \code{~ 1}
+#'   (intercept only).
+#' @param cov_stat Summary statistic to apply to time-varying covariates
+#'   within each subject before fitting. Can be a single character string
+#'   (applied to all covariates) or a named list mapping covariate names
+#'   to statistic strings (e.g.,
+#'   \code{list(X = "mean", W = "median")}). Covariates not named in
+#'   the list default to \code{"mean"}. Default is \code{"mean"}.
 #'
+#' @return A numeric matrix of regression coefficients, identical to the
+#'   \code{coefficients} component of
+#'   \code{summary(\link[stats]{lm}(...))}, with columns \code{Estimate},
+#'   \code{Std. Error}, \code{t value}, and \code{Pr(>|t|)}.
+#'
+#' @details
+#' The function proceeds as follows:
+#' \enumerate{
+#'   \item The outcome is aggregated to one value per subject using
+#'     \code{stat} (e.g., subject-level means).
+#'   \item Each covariate in the formula is aggregated to one value per
+#'     subject using \code{cov_stat}.
+#'   \item A standard linear model is fitted on the subject-level
+#'     summary data.
+#' }
+#'
+#' This approach discards all within-subject temporal information and
+#' does not account for informative visiting or observation processes.
+#' It is included primarily as a naive benchmark for comparison with
+#' methods such as \code{\link{GIVEHR}}, \code{\link{JMVL_IP}}, or
+#' \code{\link{IIRR_weighting}}.
+#'
+#' @references
+#' Fitzmaurice, G. M., Laird, N. M., and Ware, J. H. (2011).
+#' \emph{Applied Longitudinal Analysis} (2nd ed.). Wiley. Chapter 4.
+#'
+#' @seealso
+#' \code{\link{LMM}} for a mixed-model approach that uses all
+#' observations;
+#' \code{\link{GIVEHR}} for a joint model accounting for informative
+#' visiting.
+#'
+#' @examples
+#' \dontrun{
+#' dat <- sim_data_gen(n = 500, seed = 42)
+#'
+#' # Mean outcome regressed on Z and X
+#' SummaryStat(
+#'   data    = dat$long_data,
+#'   outcome = "Y",
+#'   stat    = "mean",
+#'   formula = ~ Z + X
+#' )
+#'
+#' # Median outcome with per-covariate summarisation
+#' SummaryStat(
+#'   data     = dat$long_data,
+#'   stat     = "median",
+#'   formula  = ~ Z + X,
+#'   cov_stat = list(X = "mean", Z = "mean")
+#' )
+#' }
+#'
+#' @importFrom stats aggregate as.formula lm
 #' @export
 SummaryStat <- function(data, id = "id", outcome = "Y", stat = "mean",
-                            formula = ~ 1, cov_stat = "mean") {
+                        formula = ~ 1, cov_stat = "mean") {
 
   # Helper: get stat function
   get_stat_fun <- function(s) {
@@ -59,13 +130,3 @@ SummaryStat <- function(data, id = "id", outcome = "Y", stat = "mean",
 
   return(summary(fit)$coefficients)
 }
-
-#dat = sim_ip_io_probit_re_lognormal(m = 1000, seed=1)
-#dim(dat$long_data)
-
-#fit = SummaryStat(data = data.frame(dat$long_data),
-#                      id = "id",
-#                      outcome = "Y",
-#                      stat = "mean",
-#                      formula = ~ Z + X)
-

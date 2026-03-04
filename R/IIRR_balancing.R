@@ -1,97 +1,171 @@
-#' Balancing Weights Inverse Intensity Rate Ratio Estimator
+#' Inverse Intensity Rate Ratio Estimator with Balancing Weights
 #'
-#' Implements the balancing weights approach from Yiu and Su (2024) for
-#' accommodating informative visit times in longitudinal data analysis.
-#' This function estimates marginal regression coefficients using both
-
-#' balancing weights (proposed method) and MLE weights (standard method)
-#' for comparison.
+#' @description
+#' Estimates marginal regression coefficients for a longitudinal outcome
+#' using the balancing-weights approach of Yiu and Su (2024). The
+#' visiting-process intensity is modelled via a partial-likelihood score
+#' equation, and the outcome coefficients are obtained from weighted
+#' estimating equations using two alternative weight sets: (i) balancing
+#' weights that satisfy covariate-balance constraints in the spirit of
+#' entropy balancing, and (ii) conventional maximum-likelihood-based
+#' inverse intensity weights.
 #'
-#' @param data Data frame in panel format (id, time, Y, R, covariates).
-#' @param id Character. Subject ID column name. Default is "id".
-#' @param time Character. Time variable column name. Default is "time".
-#' @param outcome Character. Outcome variable column name. Default is "Y".
-#' @param obs_indicator Character. Observation indicator column name
-#'        (1 = visited/observed, 0 = not visited). Default is "R".
-#' @param visit_covs Character vector. Covariate names for visiting process model.
-#'        Default is c("Z", "X").
-#' @param balance_covs Character vector. Covariates to balance. Default is NULL,
-#'        which uses the same covariates as visit_covs. Time interactions are
-#'        automatically added.
-#' @param formula Formula. Model formula for longitudinal outcome model.
-#'        Default is ~ Z + X + time.
-#' @param phi Numeric. Sensitivity parameter for selection function. Default is 0.
-#'        - phi = 0: Visiting at Random (VAR) assumption
-#'        - phi > 0: Higher outcome increases visit probability
-#'        - phi < 0: Higher outcome decreases visit probability
+#' A sensitivity parameter \eqn{\phi} allows the analyst to explore
+#' departures from the assumption that the visiting process is fully
+#' captured by the observed covariates.
 #'
-#' @return A list containing:
-#'   \item{beta_bal}{Numeric vector. Outcome model coefficients estimated using
-#'         balancing weights. This is the proposed method from Yiu and Su (2024),
-#'         which provides more robust and efficient estimates than MLE weights.}
-#'   \item{beta_mle}{Numeric vector. Outcome model coefficients estimated using
-#'         standard MLE-based inverse intensity weights. Provided for comparison
-#'         with the balancing weights approach.}
-#'   \item{gamma_hat}{Numeric vector. Visiting process coefficients from the
-#'         Cox-type model for visit intensity.}
-#'   \item{balancing_weights}{Numeric vector. Estimated balancing weights for
-#'         each observed visit. These weights satisfy the balancing constraints
-#'         ensuring covariate distributions among visitors match the target population.
-#'         Length equals the number of visits (sum of obs_indicator == 1).}
-#'   \item{mle_weights}{Numeric vector. Standard inverse intensity weights
-#'         calculated as (1/hazest) * Q. Length equals the number of visits.}
-#'   \item{breslow}{Numeric vector. Breslow increments of baseline hazard dLambda_0(t)
-#'         at each unique time point.}
-#'   \item{constraints}{Numeric vector. Target values for balancing constraints.
-#'         Represents covariate means in the target population weighted by baseline hazard.}
-#'   \item{phi}{Numeric. The sensitivity parameter used in the analysis.}
-#'   \item{convergence}{List containing convergence codes for gamma estimation
-#'         and balancing weight estimation. Code 1 indicates successful convergence.}
+#' @param data A \code{data.frame} in long (panel) format with one row per
+#'   subject-time combination. Must contain columns for subject identifier,
+#'   visit time, outcome, observation indicator, and all specified
+#'   covariates.
+#' @param id Character string giving the name of the subject identifier
+#'   column. Default is \code{"id"}.
+#' @param time Character string giving the name of the visit-time column.
+#'   Default is \code{"time"}.
+#' @param outcome Character string giving the name of the outcome column.
+#'   Default is \code{"Y"}.
+#' @param obs_indicator Character string giving the name of the binary
+#'   observation indicator column (\code{1} = outcome observed at visit).
+#'   Default is \code{"R"}.
+#' @param visit_covs Character vector of covariate column names for the
+#'   visiting-process intensity model. Default is \code{c("Z", "X")}.
+#' @param balance_covs Character vector of covariate column names for
+#'   which covariate-balance constraints are imposed. If \code{NULL}
+#'   (the default), \code{visit_covs} is used.
+#' @param formula A one-sided \code{\link[stats]{formula}} specifying the
+#'   design matrix for the longitudinal outcome model (e.g.,
+#'   \code{~ Z + X + time}). An intercept is included by default. Default
+#'   is \code{~ Z + X + time}.
+#' @param phi Numeric scalar; sensitivity parameter controlling departures
+#'   from the semiparametric visiting-process model. When
+#'   \eqn{\phi = 0} (the default), the estimator coincides with the
+#'   standard IIRR assumption. Non-zero \eqn{\phi} tilts the balancing
+#'   weights to explore sensitivity to unmeasured confounding of the
+#'   visit process.
+#'
+#' @return An object of class \code{"IIRR_balancing"}, which is a named
+#'   list with the following components:
+#'
+#' \describe{
+#'   \item{\code{beta_bal}}{Named numeric vector of outcome regression
+#'     coefficients estimated with the proposed balancing weights.}
+#'   \item{\code{beta_mle}}{Named numeric vector of outcome regression
+#'     coefficients estimated with conventional MLE-based inverse
+#'     intensity weights (for comparison).}
+#'   \item{\code{gamma_hat}}{Named numeric vector of visiting-process
+#'     regression coefficients, estimated by solving the partial-likelihood
+#'     score equation with \code{\link[nleqslv]{nleqslv}}.}
+#'   \item{\code{balancing_weights}}{Numeric vector of per-observation
+#'     balancing weights.}
+#'   \item{\code{mle_weights}}{Numeric vector of per-observation
+#'     MLE-based inverse intensity weights.}
+#'   \item{\code{breslow}}{Numeric scalar; Breslow estimate of the
+#'     cumulative baseline hazard \eqn{\Lambda_0(C)}.}
+#'   \item{\code{constraints}}{Numeric vector of constraint residuals
+#'     (ideally near zero when balance is achieved).}
+#'   \item{\code{phi}}{Numeric scalar echoing the sensitivity parameter.}
+#'   \item{\code{convergence}}{A list with elements:
+#'     \describe{
+#'       \item{\code{gamma}}{Integer; convergence code from
+#'         \code{\link[nleqslv]{nleqslv}} for the visiting-process
+#'         estimation (1 = converged).}
+#'       \item{\code{balancing}}{Integer; convergence code from the
+#'         balancing-weights optimisation (1 = converged).}
+#'     }
+#'   }
+#' }
 #'
 #' @details
-#' The function implements two weighting approaches:
+#' The estimator proceeds in four steps:
 #'
-#' **Balancing Weights (beta_bal)**: Weights are estimated by solving balancing
-#' equations that ensure the weighted covariate distribution among visitors matches
-#' the distribution in the target population. This approach is more robust to model
-#' misspecification and has smaller finite-sample bias compared to MLE weights.
+#' \strong{Step 1 -- Visiting-Process Coefficients.}
+#' The partial-likelihood score equation for the visiting-process
+#' coefficients \eqn{\gamma} is solved with
+#' \code{\link[nleqslv]{nleqslv}}:
+#' \deqn{\sum_j \bigl[Z_{ij} - \bar Z(\gamma; t_j)\bigr] = 0.}
 #'
-#' **MLE Weights (beta_mle)**: Standard inverse intensity weights estimated from
-#' the Cox partial likelihood. May have larger bias when the visit process is
-#' highly dependent on covariates.
+#' \strong{Step 2 -- MLE Weights.}
+#' The MLE-based inverse intensity weight for observation \eqn{(i,j)} is
+#' \deqn{w_i^{\text{MLE}} = \frac{1}{\exp(\hat\gamma^\top Z_i)
+#'   \hat\Lambda_0(C)},}
+#' where \eqn{\hat\Lambda_0(C)} is the Breslow cumulative baseline
+#' hazard estimate.
 #'
-#' Both methods can incorporate the sensitivity parameter phi to assess the impact
-#' of informative visit times on the results.
+#' \strong{Step 3 -- Balancing Weights.}
+#' The balancing weights \eqn{w_i^{\text{bal}}} are found by solving a
+#' constrained entropy-minimisation problem:
+#' \deqn{\min \sum_i w_i \log(w_i) \quad \text{s.t.} \quad
+#'   \sum_i w_i X_i = \bar X,}
+#' where \eqn{\bar X} is the unweighted covariate mean and the
+#' constraint set is determined by \code{balance_covs}. When
+#' \eqn{\phi \neq 0}, the constraints are tilted via the sensitivity
+#' parameter. The dual problem is solved with
+#' \code{\link[nleqslv]{nleqslv}} using Broyden's method.
+#'
+#' \strong{Step 4 -- Outcome Estimation.}
+#' The outcome coefficients \eqn{\beta} are estimated by weighted least
+#' squares using both the balancing weights (\code{beta_bal}) and the
+#' MLE weights (\code{beta_mle}).
+#'
+#' S3 methods \code{print} and \code{summary} are available for objects
+#' of class \code{"IIRR_balancing"}.
+#'
+#' @note
+#' This function requires the \pkg{nleqslv} package.
 #'
 #' @references
-#' Yiu, S. and Su, L. (2024). Accommodating informative visit times for analysing
-#' irregular longitudinal data: a sensitivity analysis approach with balancing
-#' weights estimators. Journal of the Royal Statistical Society Series C:
-#' Applied Statistics, 74, 824-843.
+#' Yiu, S. and Su, L. (2024). Accommodating informative visit times for
+#' analysing irregular longitudinal data: a sensitivity analysis approach
+#' with balancing weights estimators. \emph{Journal of the Royal
+#' Statistical Society: Series C}, \strong{74}, 824--843.
+#'
+#' Hainmueller, J. (2012). Entropy balancing for causal effects: a
+#' multivariate reweighting method to produce balanced samples in
+#' observational studies. \emph{Political Analysis}, \strong{20}(1),
+#' 25--46.
+#'
+#' @seealso
+#' \code{\link{IIRR_weighting}} for the standard inverse-intensity
+#' approach without balancing;
+#' \code{\link{JMVL_IP}} for a joint-model alternative;
+#' \code{\link{MI_IP}} and \code{\link{LI_IP}} for combining imputation
+#' with IP adjustment.
 #'
 #' @examples
 #' \dontrun{
-#' # Basic usage with VAR assumption (phi = 0)
-#' result <- IIRR_balancing(data, visit_covs = c("Z", "X"), phi = 0)
+#' dat <- sim_data_gen(n = 500, seed = 42)
+#'
+#' # Default (phi = 0)
+#' fit <- IIRR_balancing(
+#'   data       = dat$long_data,
+#'   visit_covs = c("Z", "X"),
+#'   formula    = ~ Z + X + time
+#' )
+#' fit$beta_bal
+#' fit$beta_mle
+#' summary(fit)
 #'
 #' # Sensitivity analysis with phi = 0.3
-#' result_sa <- IIRR_balancing(data, visit_covs = c("Z", "X"), phi = 0.3)
-#'
-#' # Compare balancing vs MLE weights
-#' result$beta_bal  # Balancing weights (recommended)
-#' result$beta_mle  # MLE weights (for comparison)
+#' fit_sa <- IIRR_balancing(
+#'   data       = dat$long_data,
+#'   visit_covs = c("Z", "X"),
+#'   formula    = ~ Z + X + time,
+#'   phi        = 0.3
+#' )
+#' fit_sa$beta_bal
 #' }
 #'
+#' @importFrom stats model.frame model.matrix optim
 #' @export
 IIRR_balancing <- function(data,
-                               id = "id",
-                               time = "time",
-                               outcome = "Y",
-                               obs_indicator = "R",
-                               visit_covs = c("Z", "X"),
-                               balance_covs = NULL,
-                               formula = ~ Z + X + time,
-                               phi = 0) {
+                           id = "id",
+                           time = "time",
+                           outcome = "Y",
+                           obs_indicator = "R",
+                           visit_covs = c("Z", "X"),
+                           balance_covs = NULL,
+                           formula = ~ Z + X + time,
+                           phi = 0) {
 
   if (!requireNamespace("nleqslv", quietly = TRUE)) {
     stop("Package 'nleqslv' is required. Install it with: install.packages('nleqslv')")

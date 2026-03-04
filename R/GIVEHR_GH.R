@@ -1,28 +1,194 @@
-#' Generalized Informative Visiting and Examination in EHR (Gauss-Hermite Version)
+#' Generalized Informative Visiting and Examination in EHR Data
+#' (Gauss-Hermite Quadrature Version)
 #'
-#' Fits a joint model for visiting, observation, and longitudinal processes using
-#' Gauss-Hermite quadrature and online filtering for time-varying observation probabilities.
+#' @description
+#' Fits a three-stage semiparametric joint model for longitudinal electronic
+#' health record (EHR) data, extending \code{\link{GIVEHR}} by replacing the
+#' closed-form marginal observation-probability approximation with
+#' Gauss--Hermite quadrature and an online Laplace filter. This enables
+#' exact integration over both the shared latent factor \eqn{U_i} and the
+#' observation-process random effects \eqn{q_i}, and supports a
+#' time-varying observation process through a lagged observation indicator.
 #'
-#' @param data Data frame containing longitudinal data.
-#' @param id_col Subject ID column name. Default is "id".
-#' @param time_col Time variable column name. Default is "time".
-#' @param y_col Outcome variable column name. Default is "Y".
-#' @param r_col Observation indicator column name. Default is "R".
-#' @param r_lag_col Lagged observation indicator column name. If NULL, no time-varying lambda.
-#' @param covars_visit_XV Covariates for visiting process. Default is c("Z", "X").
-#' @param covars_outcome_fixed_XY Fixed effect covariates for outcome. Default is c("Z", "X").
-#' @param covars_outcome_link_ZY Link covariates for outcome (random effects). Default is c("Z").
-#' @param covars_obs_fixed_XO Fixed effect covariates for observation process. Default is c("Z", "X").
-#' @param covars_obs_random_ZO Random effect covariates for observation process. Default is "Z".
-#' @param gh_points_U Number of Gauss-Hermite points for U integration. Default is 7.
-#' @param gh_points_q Number of Gauss-Hermite points for q integration. Default is 5.
-#' @param gh_clip_eta Clipping value for eta in probit. Default is 12.
-#' @param clip_k Clipping value for k in Phi computation. Default is 12.
-#' @param filter_max_iter Maximum iterations for Laplace filter. Default is 6.
-#' @param verbose If TRUE, print progress messages. Default is FALSE.
+#' Stage 1 estimates the visiting-process intensity via Andersen--Gill
+#' partial likelihood with a log-normal frailty. Stage 2 maximizes a
+#' Gauss-Hermite-integrated marginal log-likelihood for the probit
+#' observation model. Stage 3 estimates the longitudinal outcome
+#' coefficients by weighted least squares with time-varying risk-set
+#' centering and sequentially updated \eqn{\omega_i(t)} and
+#' \eqn{\kappa_i(t)}.
 #'
-#' @return A list containing estimates from visiting, observation, and longitudinal processes.
+#' @param data A \code{data.frame} in long (panel) format with one row per
+#'   subject-time combination. Must contain columns for subject identifier,
+#'   visit time, outcome, observation indicator, and all specified covariates.
+#'   Rows with \code{NA} in the time column are treated as unvisited time
+#'   points.
+#' @param id_col Character string giving the name of the subject identifier
+#'   column. Default is \code{"id"}.
+#' @param time_col Character string giving the name of the visit-time column.
+#'   Default is \code{"time"}.
+#' @param y_col Character string giving the name of the outcome column.
+#'   Default is \code{"Y"}.
+#' @param r_col Character string giving the name of the binary observation
+#'   indicator column (\code{1} = outcome observed, \code{0} = outcome
+#'   missing at visit). Default is \code{"R"}.
+#' @param r_lag_col Character string giving the name of a lagged observation
+#'   indicator column. When non-\code{NULL}, a time-varying coefficient
+#'   \eqn{\lambda} on \code{R_{i,j-1}} is added to the observation-process
+#'   linear predictor, allowing the probability of observation to depend on
+#'   whether the outcome was observed at the previous visit. When
+#'   \code{NULL} (the default), the lagged indicator is constructed
+#'   internally with first-visit values set to zero, but the
+#'   \eqn{\lambda} coefficient is omitted from the model.
+#' @param covars_visit_XV Character vector of covariate column names for the
+#'   visiting-process intensity model. Default is \code{c("Z", "X")}.
+#' @param covars_outcome_fixed_XY Character vector of covariate column names
+#'   for the fixed-effect part of the longitudinal outcome model. No
+#'   intercept is added automatically. Default is \code{c("Z", "X")}.
+#' @param covars_outcome_link_ZY Character vector of covariate column names
+#'   that interact with the conditional expectation of the latent factor
+#'   \eqn{U_i} in the outcome model. An intercept is prepended
+#'   automatically. Including \code{time_col} adds a time-varying link.
+#'   Default is \code{c("Z")}.
+#' @param covars_obs_fixed_XO Character vector of covariate column names for
+#'   the fixed-effect part of the observation-process probit model. An
+#'   intercept is prepended automatically. Default is \code{c("Z", "X")}.
+#' @param covars_obs_random_ZO Character vector of covariate column names
+#'   receiving independent random effects in the observation process. An
+#'   intercept is prepended automatically. Set to \code{NULL} or an empty
+#'   vector for a fixed-effects-only probit. Default is \code{"Z"}.
+#' @param gh_points_U Integer giving the number of Gauss--Hermite quadrature
+#'   nodes for integrating over the standardised latent factor \eqn{U_i}.
+#'   More nodes improve accuracy at the cost of speed. Default is \code{7}.
+#' @param gh_points_q Integer giving the number of Gauss--Hermite quadrature
+#'   nodes for each dimension of the observation-process random effects
+#'   \eqn{q_i}. A tensor-product grid is formed when \eqn{q_i} is
+#'   multi-dimensional. Default is \code{5}.
+#' @param gh_clip_eta Numeric scalar; linear predictor values in the probit
+#'   model are clipped to \code{[-gh_clip_eta, gh_clip_eta]} for numerical
+#'   stability during Stage 2 optimisation. Default is \code{12}.
+#' @param clip_k Numeric scalar; the standardised argument to \eqn{\Phi} is
+#'   clipped to \code{[-clip_k, clip_k]} when computing marginal observation
+#'   probabilities \eqn{\omega_i(t)} and conditional expectations
+#'   \eqn{\kappa_i(t)}. Default is \code{12}.
+#' @param filter_max_iter Integer giving the maximum number of Newton
+#'   iterations for the Laplace approximation used in the online filter
+#'   that updates the joint posterior of \eqn{(U_i, q_i)} after each
+#'   observation event. Default is \code{6}.
+#' @param verbose Logical; if \code{TRUE}, progress messages are printed
+#'   during estimation. Default is \code{FALSE}.
 #'
+#' @return A named list with three components:
+#'
+#' \describe{
+#'   \item{\code{visiting_process}}{A list with elements:
+#'     \describe{
+#'       \item{\code{gamma_V}}{Named numeric vector of visiting-process
+#'         regression coefficients (Andersen--Gill partial likelihood).}
+#'       \item{\code{Lambda0_C}}{Numeric scalar; Breslow estimate of the
+#'         cumulative baseline hazard over the full follow-up window.}
+#'       \item{\code{sigma2_zeta}}{Numeric scalar; estimated log-normal
+#'         frailty variance on the log scale.}
+#'       \item{\code{mu_Ui}}{Named numeric vector of empirical Bayes
+#'         posterior means for the standardised latent factor \eqn{U_i}.}
+#'       \item{\code{sigma2_Ui}}{Named numeric vector of empirical Bayes
+#'         posterior variances for \eqn{U_i}.}
+#'     }
+#'   }
+#'   \item{\code{observation_process}}{A list with elements:
+#'     \describe{
+#'       \item{\code{alpha_fixed}}{Named numeric vector of fixed-effect
+#'         probit coefficients (including intercept).}
+#'       \item{\code{delta_latent_link}}{(Present only when random effects
+#'         are fitted.) Named numeric vector of latent-link coefficients
+#'         \eqn{\delta}.}
+#'       \item{\code{Sigma_q}}{(Present only when random effects are
+#'         fitted.) Numeric matrix; estimated random-effect covariance
+#'         matrix (diagonal).}
+#'       \item{\code{lambda}}{(Present only when \code{r_lag_col} is
+#'         non-\code{NULL}.) Numeric scalar; estimated coefficient for the
+#'         lagged observation indicator.}
+#'     }
+#'   }
+#'   \item{\code{longitudinal_outcome}}{A list with elements:
+#'     \describe{
+#'       \item{\code{beta_Y}}{Named numeric vector of outcome fixed-effect
+#'         coefficients.}
+#'       \item{\code{theta_Y}}{Named numeric vector of outcome latent-link
+#'         coefficients.}
+#'     }
+#'   }
+#' }
+#'
+#' @details
+#' The model structure is the same as \code{\link{GIVEHR}} but the
+#' computational strategy differs in two key respects:
+#'
+#' \strong{Stage 2 -- Gauss--Hermite Quadrature.}
+#' Instead of the Laplace-style marginal approximation used in
+#' \code{\link{GIVEHR}}, the marginal observation-process log-likelihood
+#' is evaluated by Gauss--Hermite quadrature over \eqn{U_i} (centred on
+#' the empirical Bayes posterior from Stage 1) and over \eqn{q_i}. The
+#' quadrature grid has \code{gh_points_U} nodes for \eqn{U_i} and a
+#' tensor-product grid of \code{gh_points_q} nodes per dimension for
+#' \eqn{q_i}. The marginal negative log-likelihood is minimised with
+#' \code{\link[stats]{nlminb}}. When \code{r_lag_col} is specified, an
+#' additional parameter \eqn{\lambda} captures dependence of observation
+#' on the previous observation status.
+#'
+#' \strong{Stage 3 -- Online Filtering.}
+#' The marginal observation probability \eqn{\omega_i(t)} and conditional
+#' expectation \eqn{\kappa_i(t)} are computed via a sequential (online)
+#' Laplace filter that updates the joint posterior of \eqn{(U_i, q_i)}
+#' after each observation event. This produces time-varying versions of
+#' \eqn{\omega} and \eqn{\kappa} that condition on the full observation
+#' history up to each time point, rather than treating them as static
+#' subject-level quantities.
+#'
+#' The visiting-process estimation (Stage 1) is identical to
+#' \code{\link{GIVEHR}}.
+#'
+#' @note
+#' Computation time increases with \code{gh_points_U}, \code{gh_points_q},
+#' and the number of subjects. For very large datasets, consider using
+#' \code{\link{GIVEHR}} (which avoids quadrature) as a faster alternative.
+#'
+#' @references
+#' Yang, C.-H., Shi, X., and Mukherjee, B. (2026).
+#' "Joint Modeling of Longitudinal EHR Data with Shared Random Effects for Informative Visiting and Observation Processes."
+#' arXiv:2602.15374. doi:10.48550/arXiv.2602.15374.
+#'
+#' @seealso
+#' \code{\link{GIVEHR}} for the base version without quadrature;
+#' \code{\link{GIVEHR_OU_PCL}} for the Ornstein-Uhlenbeck pairwise
+#' composite likelihood extension;
+#' \code{\link{sim_data_gen}} for simulating compatible data.
+#'
+#' @examples
+#' \dontrun{
+#' # Simulate data
+#' dat <- sim_data_gen(n = 300, seed = 1)
+#'
+#' # Fit with default quadrature settings
+#' fit <- GIVEHR_GH(
+#'   data = dat$long_data,
+#'   covars_visit_XV         = c("Z", "X"),
+#'   covars_outcome_fixed_XY = c("Z", "X"),
+#'   covars_outcome_link_ZY  = "Z",
+#'   covars_obs_fixed_XO     = c("Z", "X"),
+#'   covars_obs_random_ZO    = "Z",
+#'   gh_points_U = 7,
+#'   gh_points_q = 5,
+#'   verbose     = TRUE
+#' )
+#'
+#' # Examine outcome coefficients
+#' fit$longitudinal_outcome$beta_Y
+#' fit$longitudinal_outcome$theta_Y
+#' }
+#'
+#' @importFrom stats as.formula binomial coef dnorm glm.fit model.matrix
+#'   nlminb pnorm
 #' @export
 GIVEHR_GH <- function(
     data,

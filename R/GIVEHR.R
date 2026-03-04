@@ -1,3 +1,202 @@
+#' Generalized Informative Visiting and Examination in EHR Data
+#'
+#' @description
+#' Fits a three-stage semiparametric joint model for longitudinal electronic
+#' health record (EHR) data that simultaneously accounts for an informative
+#' visiting process and an informative observation process. Stage 1 estimates
+#' the visiting-process intensity via partial likelihood with a log-normal
+#' frailty. Stage 2 models the observation indicator with a probit regression
+#' that may include latent-factor-linked random effects. Stage 3 estimates the
+#' longitudinal outcome coefficients by weighted least squares with risk-set
+#' centering. Sandwich variance estimators are provided for all three stages.
+#'
+#' @param data A \code{data.frame} in long (panel) format with one row per
+#'   subject-time combination. Must contain columns for subject identifier,
+#'   visit time, outcome, observation indicator, censoring time, and all
+#'   specified covariates. Rows with \code{NA} in the time column are treated
+#'   as unvisited time points.
+#' @param id_col Character string giving the name of the subject identifier
+#'   column in \code{data}. Default is \code{"id"}.
+#' @param time_col Character string giving the name of the visit-time column
+#'   in \code{data}. Default is \code{"time"}.
+#' @param y_col Character string giving the name of the outcome column in
+#'   \code{data}. Default is \code{"Y"}.
+#' @param r_col Character string giving the name of the binary observation
+#'   indicator column (\code{1} = outcome observed at visit, \code{0} =
+#'   outcome missing at visit). Default is \code{"R"}.
+#' @param censor_col Character string giving the name of the column containing
+#'   each subject's censoring (end-of-follow-up) time. One value per subject
+#'   is expected; the value on the first row for each subject is used. Default
+#'   is \code{"C"}.
+#' @param covars_visit_XV Character vector of covariate column names for the
+#'   visiting-process intensity model. These enter the exponent of the
+#'   multiplicative intensity. Default is \code{c("Z", "X")}.
+#' @param covars_outcome_fixed_XY Character vector of covariate column names
+#'   for the fixed-effect part of the longitudinal outcome model. No intercept
+#'   is added automatically. Default is \code{c("Z", "X")}.
+#' @param covars_outcome_link_ZY Character vector of covariate column names
+#'   that interact with the conditional expectation of the latent factor
+#'   \eqn{U_i} in the outcome model. An intercept column is prepended
+#'   automatically. Including \code{time_col} in this vector adds a
+#'   time-varying latent link. Default is \code{c("Z")}.
+#' @param covars_obs_fixed_XO Character vector of covariate column names for
+#'   the fixed-effect part of the observation-process probit model. An
+#'   intercept is prepended automatically. Default is \code{c("Z", "X")}.
+#' @param covars_obs_random_ZO Character vector of covariate column names that
+#'   receive independent random effects in the observation process. An
+#'   intercept is prepended automatically. Set to \code{NULL} or an empty
+#'   vector to fit a fixed-effects-only probit. Default is \code{"Z"}.
+#' @param time_precision Positive numeric scalar for time discretisation.
+#'   Visit times are rounded to the nearest multiple of \code{time_precision}
+#'   before constructing risk sets. Set to \code{NULL} or \code{0} to skip
+#'   rounding. Default is \code{0.01}.
+#'
+#' @return A named list with three components, each itself a named list:
+#'
+#' \describe{
+#'   \item{\code{visiting_process}}{A list with elements:
+#'     \describe{
+#'       \item{\code{gamma_V}}{Named numeric vector of visiting-process
+#'         regression coefficients from partial likelihood.}
+#'       \item{\code{se_gamma}}{Named numeric vector of sandwich standard
+#'         errors for \code{gamma_V}.}
+#'       \item{\code{vcov_gamma}}{Numeric matrix; the sandwich
+#'         variance-covariance matrix for \code{gamma_V}.}
+#'       \item{\code{Lambda0_hat}}{Named numeric vector of Breslow baseline
+#'         hazard increments \eqn{d\hat\Lambda_0(t_k)} at each unique
+#'         discretised event time.}
+#'       \item{\code{sigma2_zeta}}{Numeric scalar; estimated log-normal
+#'         frailty variance on the log scale.}
+#'       \item{\code{mu_Ui}}{Named numeric vector of empirical Bayes
+#'         posterior means for the standardised latent factor \eqn{U_i}.}
+#'       \item{\code{sigma2_Ui}}{Named numeric vector of empirical Bayes
+#'         posterior variances for \eqn{U_i}.}
+#'       \item{\code{Ci}}{Named numeric vector of per-subject censoring
+#'         times.}
+#'       \item{\code{mi}}{Named integer vector of per-subject visit counts.}
+#'     }
+#'   }
+#'   \item{\code{observation_process}}{A list with elements:
+#'     \describe{
+#'       \item{\code{alpha_fixed}}{Named numeric vector of fixed-effect
+#'         probit coefficients (including intercept).}
+#'       \item{\code{se_alpha}}{Named numeric vector of sandwich standard
+#'         errors for \code{alpha_fixed}.}
+#'       \item{\code{vcov_obs}}{Numeric matrix; sandwich
+#'         variance-covariance matrix for all observation-process
+#'         parameters.}
+#'       \item{\code{delta_latent_link}}{(Present only when random effects
+#'         are fitted.) Named numeric vector of latent-link coefficients
+#'         \eqn{\delta}.}
+#'       \item{\code{se_delta}}{(Present only when random effects are
+#'         fitted.) Named numeric vector of sandwich standard errors for
+#'         \code{delta_latent_link}.}
+#'       \item{\code{Sigma_q}}{(Present only when random effects are
+#'         fitted.) Named numeric vector of estimated random-effect
+#'         standard deviations.}
+#'     }
+#'   }
+#'   \item{\code{longitudinal_outcome}}{A list with elements:
+#'     \describe{
+#'       \item{\code{beta_Y}}{Named numeric vector of outcome fixed-effect
+#'         coefficients.}
+#'       \item{\code{theta_Y}}{Named numeric vector of outcome latent-link
+#'         coefficients.}
+#'       \item{\code{se_beta_naive}}{Named numeric vector of sandwich
+#'         standard errors for \code{beta_Y}.}
+#'       \item{\code{vcov_joint}}{Numeric matrix; sandwich
+#'         variance-covariance matrix for the full coefficient vector
+#'         \code{c(beta_Y, theta_Y)}.}
+#'     }
+#'   }
+#' }
+#'
+#' @details
+#' The GIVEHR estimator proceeds in three stages:
+#'
+#' \strong{Stage 1 - Visiting Process.}
+#' The recurrent-event intensity for subject \eqn{i} is modelled as
+#' \deqn{\lambda_i(t) = \eta_i \exp(\gamma^\top X_i^V)\,\lambda_0(t),}
+#' where \eqn{\eta_i = \exp(\mu_0 + \sigma_\zeta U_i)} is a log-normal
+#' frailty with \eqn{U_i \sim N(0,1)} and
+#' \eqn{\mu_0 = -\sigma_\zeta^2 / 2} ensures \eqn{E[\eta_i] = 1}.
+#' The coefficient vector \eqn{\gamma} is estimated by Newton-Raphson
+#' on the partial likelihood score, the baseline hazard
+#' \eqn{\lambda_0} by the Breslow estimator, and the frailty variance
+#' \eqn{\sigma_\zeta^2} by a method-of-moments estimator. Subject-level
+#' posterior summaries \eqn{(\hat\mu_{U_i}, \hat\sigma^2_{U_i})} are
+#' obtained via Laplace approximation. A sandwich estimator
+#' provides inference for \eqn{\gamma}.
+#'
+#' \strong{Stage 2 - Observation Process.}
+#' At each visit the probability that the outcome is recorded is modelled as
+#' \deqn{P(R_{ij}=1 \mid U_i, q_i) =
+#'   \Phi\!\bigl(\alpha^\top X_{ij}^O +
+#'   \delta^\top Z_{ij}^O \cdot U_i +
+#'   q_i^\top Z_{ij}^O\bigr),}
+#' where \eqn{q_i \sim N(0, \Sigma_q)} are independent random effects and
+#' \eqn{\Phi} is the standard-normal CDF. The marginal log-likelihood
+#' (integrated over \eqn{q_i} using the empirical Bayes posterior of
+#' \eqn{U_i}) is maximised by \code{\link[stats]{nlminb}} with analytic
+#' gradients. When the estimated frailty variance is negligible or no random
+#' covariates are specified, a fixed-effects probit is fitted by iteratively
+#' reweighted least squares. A clustered sandwich estimator provides
+#' standard errors.
+#'
+#' \strong{Stage 3 - Longitudinal Outcome.}
+#' The outcome model is
+#' \deqn{Y_i(t) = \beta^\top X_i^Y(t) +
+#'   \theta^\top Z_i^Y(t)\,\kappa_i(t) + \varepsilon_i(t),}
+#' where \eqn{\kappa_i(t) = E[U_i \mid \text{observation history up to } t]}
+#' is the conditional expectation of the latent factor given the
+#' observation history. Estimation uses weighted least squares with
+#' time-varying risk-set centering, where the weights combine the marginal
+#' observation probability \eqn{\varpi_i(t)} and the visit intensity.
+#' A sandwich estimator provides standard errors for \eqn{\beta}.
+#'
+#' @references
+#' Yang, C.-H., Shi, X., and Mukherjee, B. (2026).
+#' "Joint Modeling of Longitudinal EHR Data with Shared Random Effects for Informative Visiting and Observation Processes."
+#' arXiv:2602.15374. doi:10.48550/arXiv.2602.15374.
+#'
+#' @seealso
+#' \code{\link{GIVEHR_GH}} for a Gauss-Hermite quadrature variant with
+#' online filtering;
+#' \code{\link{GIVEHR_OU_PCL}} for the Ornstein-Uhlenbeck pairwise
+#' composite likelihood extension;
+#' \code{\link{EHRJoint}} for a simpler joint model without a separate
+#' observation process;
+#' \code{\link{sim_data_gen}} for simulating data compatible with this model.
+#'
+#' @examples
+#' \dontrun{
+#' # Simulate data
+#' dat <- sim_data_gen(n = 500, seed = 42)
+#'
+#' # Fit the GIVEHR model
+#' fit <- GIVEHR(
+#'   data          = dat$long_data,
+#'   id_col        = "id",
+#'   time_col      = "time",
+#'   y_col         = "Y",
+#'   r_col         = "R",
+#'   censor_col    = "C",
+#'   covars_visit_XV         = c("Z", "X"),
+#'   covars_outcome_fixed_XY = c("Z", "X"),
+#'   covars_outcome_link_ZY  = "Z",
+#'   covars_obs_fixed_XO     = c("Z", "X"),
+#'   covars_obs_random_ZO    = "Z"
+#' )
+#'
+#' # Inspect results
+#' fit$visiting_process$gamma_V
+#' fit$longitudinal_outcome$beta_Y
+#' fit$longitudinal_outcome$se_beta_naive
+#' summary(fit)
+#' }
+#'
+#' @importFrom stats binomial coef dnorm glm nlminb plogis pnorm reformulate
+#' @export
 GIVEHR <- function(
     data,
     id_col                  = "id",
@@ -143,10 +342,10 @@ GIVEHR <- function(
   }
   names(gamma_hat) <- colnames(XV_subj)
 
-  # --- Stage 1 Sandwich Variance (Lin-Wei-Ying) ---
+  # -- Stage 1 Sandwich Variance (Lin-Wei-Ying) --
   # Bread = -Hessian at final iteration
   Info_gamma <- -sh_final$hessian
-  inv_Info   <- tryCatch(solve(Info_gamma), error = function(e) qr.solve(Info_gamma))
+  inv_Info   <- tryCatch(solve(Info_gamma), error = function(e) base::qr.solve(Info_gamma))
 
   # Breslow
   rs_final <- sh_final$rs_vec
@@ -191,7 +390,7 @@ GIVEHR <- function(
   vcov_gamma <- inv_Info %*% Meat_gamma %*% inv_Info
   se_gamma   <- sqrt(pmax(diag(vcov_gamma), 0))
 
-  # --- Continue Stage 1: frailty + EB ---
+  # -- Continue Stage 1: frailty + EB --
   nu_i  <- rs_final * Lam0_Ci
   mm_n  <- sum(mi * (mi - 1L)) - sum(nu_i^2)
   mm_d  <- sum(nu_i^2)
@@ -264,7 +463,7 @@ GIVEHR <- function(
     w_f    <- dphi_f^2 / (mu_f * (1 - mu_f))
     # Info = X' W X
     Info_obs <- crossprod(XO_obs, w_f * XO_obs)
-    inv_Info_obs <- tryCatch(solve(Info_obs), error = function(e) qr.solve(Info_obs))
+    inv_Info_obs <- tryCatch(solve(Info_obs), error = function(e) base::qr.solve(Info_obs))
     # Per-obs score: (R - mu) * dphi/(mu*(1-mu)) * X
     s_obs_row <- ((R_obs - mu_f) * dphi_f / (mu_f * (1 - mu_f))) * XO_obs
     s_obs_i   <- rowsum(s_obs_row, subj_index[obs_idx])
@@ -346,7 +545,7 @@ GIVEHR <- function(
     delta_hat <- setNames(opt$par[(p_XO + 1):(p_XO + q_dim)], colnames(ZO_obs))
     Sq_hat    <- setNames(exp(opt$par[(p_XO + q_dim + 1):n_par]), colnames(ZO_obs))
 
-    # --- Stage 2 Sandwich Variance ---
+    # -- Stage 2 Sandwich Variance --
     # Meat: per-subject clustered scores
     final_eval <- fn_and_gr(opt$par, return_scores = TRUE)
     score_obs_mat <- attr(final_eval, "scores")                     # n_obs x n_par
@@ -363,7 +562,7 @@ GIVEHR <- function(
       H_obs[, j] <- (gr_plus - gr_at_opt) / eps_h
     }
     H_obs <- 0.5 * (H_obs + t(H_obs))
-    inv_H_obs <- tryCatch(solve(H_obs), error = function(e) qr.solve(H_obs))
+    inv_H_obs <- tryCatch(solve(H_obs), error = function(e) base::qr.solve(H_obs))
     vcov_obs_all <- inv_H_obs %*% Meat_obs %*% inv_H_obs
   }
 
@@ -436,7 +635,7 @@ GIVEHR <- function(
 
   H_eo <- D_eo - Dbar_eo; Y_eo <- y_vec[eo_idx]
   LHS <- crossprod(H_eo, D_eo); RHS <- crossprod(H_eo, Y_eo)
-  coefs <- drop(tryCatch(solve(LHS, RHS), error = function(e) qr.solve(LHS, RHS)))
+  coefs <- drop(tryCatch(solve(LHS, RHS), error = function(e) base::qr.solve(LHS, RHS)))
 
   beta_hat  <- coefs[1:p_XY]; theta_hat <- coefs[-(1:p_XY)]
   names(beta_hat)  <- colnames(XY_all)
@@ -446,7 +645,7 @@ GIVEHR <- function(
   res_eo  <- Y_eo - drop(tcrossprod(D_eo, matrix(coefs, nrow = 1)))
   score_i <- rowsum(H_eo * res_eo, subj_index[eo_idx])
   Meat3   <- crossprod(score_i)
-  invB3   <- tryCatch(solve(LHS), error = function(e) qr.solve(LHS))
+  invB3   <- tryCatch(solve(LHS), error = function(e) base::qr.solve(LHS))
   V3      <- invB3 %*% Meat3 %*% t(invB3)
   se_beta <- sqrt(pmax(diag(V3)[1:p_XY], 0))
 

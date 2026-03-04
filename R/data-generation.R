@@ -1,5 +1,109 @@
-# Simulate longitudinal data for GIVEHR with OU+PCL observation process
-# Matches the model specification in Web Appendix S9
+#' Simulate Longitudinal EHR Data with Informative Visiting and Observation
+#' Processes
+#'
+#' @description
+#' Generates synthetic longitudinal data from a joint model that includes an
+#' informative visiting process (Poisson with log-normal frailty), an
+#' informative observation process (probit with latent-factor-linked random
+#' effects and an Ornstein--Uhlenbeck serial correlation component), and a
+#' linear longitudinal outcome model with latent-factor-linked random effects.
+#' The data-generating mechanism matches the model specification in
+#' Yang, Shi, and Mukherjee (2025, Web Appendix S9) and is suitable for
+#' evaluating \code{\link{GIVEHR}}, \code{\link{GIVEHR_GH}}, and
+#' \code{\link{GIVEHR_OU_PCL}}.
+#'
+#' @param n Integer; number of subjects to simulate.
+#' @param time.start Numeric scalar; start of the observation window.
+#'   Default is \code{0}.
+#' @param time.end Numeric scalar; end of the observation window (censoring
+#'   time for all subjects). Default is \code{60}.
+#' @param seed Integer; random seed for reproducibility. Default is
+#'   \code{123}.
+#'
+#' @section Baseline Covariates:
+#' @param pZ Numeric scalar in \eqn{[0, 1]}; probability that the binary
+#'   covariate \eqn{Z_i} equals 1 (Bernoulli). Default is \code{0.5}.
+#' @param muX Numeric scalar; mean of the continuous covariate
+#'   \eqn{X_i \sim N(\mu_X, \sigma_X^2)}. Default is \code{0}.
+#' @param sdX Positive numeric scalar; standard deviation of \eqn{X_i}.
+#'   Default is \code{1}.
+#'
+#' @section Visiting Process:
+#' The visit intensity for subject \eqn{i} is
+#' \deqn{\lambda_i(t) = \eta_i \exp(\gamma_0 + \gamma_Z Z_i + \gamma_X X_i),}
+#' where \eqn{\eta_i = \exp(\mu_0 + \sigma_\zeta U_i)} is a log-normal
+#' frailty with \eqn{U_i \sim N(0,1)} and
+#' \eqn{\mu_0 = -\sigma_\zeta^2/2}. Visit times are generated as a
+#' homogeneous Poisson process with rate \eqn{\lambda_i}.
+#'
+#' @param gamma Named numeric vector of length 3 with elements
+#'   \code{intercept}, \code{Z}, and \code{X} giving the visiting-process
+#'   log-intensity coefficients. Default is
+#'   \code{c(intercept = -2.2, Z = 1, X = 1)}.
+#' @param sigma_zeta Positive numeric scalar; standard deviation of the
+#'   log-normal frailty on the log scale. Controls the degree of
+#'   overdispersion in visit counts. Default is \code{1.0}.
+#'
+#' @section Observation Process:
+#' At each visit, the latent propensity for outcome observation is
+#' \deqn{\tilde R_{ij} = \alpha^\top X_{ij}^O + q_i^\top Z_{ij}^O +
+#'   \xi_i(t_{ij}),}
+#' where \eqn{R_{ij} = I(\tilde R_{ij} > 0)},
+#' \eqn{q_i \mid U_i \sim N(\delta U_i, \Sigma_q)}, and
+#' \eqn{\xi_i(t)} is a stationary Ornstein--Uhlenbeck process with unit
+#' marginal variance and decay parameter \eqn{\phi}.
+#'
+#' @param alpha Named numeric vector with elements \code{intercept},
+#'   \code{Z}, and \code{X} giving the observation-process fixed-effect
+#'   probit coefficients. Default is
+#'   \code{c(intercept = 1.5, Z = -0.5, X = -0.3)}.
+#' @param delta Named numeric vector with elements \code{intercept} and
+#'   \code{Z} giving the latent-link coefficients that couple the shared
+#'   factor \eqn{U_i} to the observation-process random effects. Default
+#'   is \code{c(intercept = -0.3, Z = -0.5)}.
+#' @param sigma_q Named numeric vector with elements \code{intercept} and
+#'   \code{Z} giving the standard deviations of the residual
+#'   observation-process random effects (square roots of the diagonal of
+#'   \eqn{\Sigma_q}). Default is \code{c(intercept = 0.3, Z = 0.2)}.
+#' @param phi Positive numeric scalar; decay rate of the OU process
+#'   \eqn{\xi_i(t)}. The autocorrelation at lag \eqn{\Delta t} is
+#'   \eqn{\exp(-\phi \Delta t)}. Larger values imply faster decay.
+#'   Default is \code{0.1}.
+#'
+#' @section Outcome Process:
+#' The outcome for subject \eqn{i} at time \eqn{t} is
+#' \deqn{Y_i(t) = \beta_0 + \beta_Z Z_i + \beta_X X_i + \beta_t t +
+#'   b_i^\top Z_i^Y + \varepsilon_i(t),}
+#' where \eqn{b_i \mid U_i \sim N(\theta U_i, \Sigma_b)} and
+#' \eqn{\varepsilon_i(t) \sim N(0, \sigma_y^2)}. The outcome is set to
+#' \code{NA} when \eqn{R_{ij} = 0}.
+#'
+#' @param beta Named numeric vector with elements \code{intercept},
+#'   \code{Z}, and \code{X} giving the outcome fixed-effect coefficients
+#'   (excluding the time slope). Default is
+#'   \code{c(intercept = -2, Z = -0.5, X = 0.5)}.
+#' @param beta_t Numeric scalar; coefficient for the linear time effect in
+#'   the outcome model. Default is \code{0.1}.
+#' @param theta Named numeric vector with elements \code{intercept} and
+#'   \code{Z} giving the outcome latent-link coefficients that couple the
+#'   shared factor \eqn{U_i} to the outcome random effects. Default is
+#'   \code{c(intercept = 0.5, Z = 0.3)}.
+#' @param Sigma_b Numeric \eqn{2 \times 2} positive-definite matrix; the
+#'   residual covariance of the outcome random effects \eqn{b_i} (after
+#'   removing the latent-factor contribution). Default is
+#'   \code{matrix(c(1, 0, 0, 2), 2, 2)}.
+#' @param sigma_y Positive numeric scalar; residual standard deviation of
+#'   the outcome measurement error. Default is \code{1}.
+#'
+#' @return An object of class \code{"sim_GIVEHR_OU_PCL"}, which is a named
+#'   list with the following components:
+#'
+#' @seealso
+#' \code{\link{GIVEHR}}, \code{\link{GIVEHR_GH}}, and
+#' \code{\link{GIVEHR_OU_PCL}} for fitting models to the simulated data.
+#'
+#' @importFrom stats rbinom rnorm rexp
+#' @export
 sim_data_gen <- function(
     n,
     time.start = 0,

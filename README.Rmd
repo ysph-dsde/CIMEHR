@@ -8,4 +8,91 @@ title: "SIMMER"
 ---
 
 # Overview
-**SIMMER** is a tool to calculate association estimates by a unified semiparametric joint modeling framework that simultaneously characterizes
+**SIMMER** fits semiparametric joint models for longitudinal EHR data with **informative visiting** and **informative observation** (missingness) processes.
+
+The primary method in this package is **`GIVEHR()`** (Generalized Informative Visiting and Examination in EHR Data), a three-stage estimator that:
+
+1. models *when* patients are observed (visiting process),
+2. models *whether* the biomarker/outcome is observed given a visit (observation process),
+3. estimates the longitudinal outcome association using **risk-set centering** and **inverse-probability weighting**.
+
+This workflow is designed for settings where visit times and measurement availability depend on patient covariates and latent health status.
+
+## Installation
+
+```r
+# install.packages("devtools")
+devtools::install_github("ysph-dsde/SIMMER")
+```
+
+## Quick example (recommended): simulate data, fit `GIVEHR()`
+
+The package includes a simulator that matches the joint-model structure used by the GIVEHR family.
+
+```r
+library(SIMMER)
+
+set.seed(1)
+
+dat <- sim_data_gen(n = 300, time.end = 60, seed = 1)
+
+# Fit the three-stage joint model
+fit <- GIVEHR(
+  data = dat,
+  id_col     = "id",
+  time_col   = "time",
+  y_col      = "Y",
+  r_col      = "R",
+  censor_col = "C",
+  # Covariates used in each stage (defaults shown)
+  covars_visit_XV         = c("Z", "X"),
+  covars_obs_fixed_XO     = c("Z", "X"),
+  covars_obs_random_ZO    = "Z",
+  covars_outcome_fixed_XY = c("Z", "X"),
+  covars_outcome_link_ZY  = "Z"
+)
+
+fit
+summary(fit)
+```
+
+### Extracting results
+
+`GIVEHR()` returns an object with three main components (visiting, observation, outcome). You can programmatically access coefficient tables as:
+
+```r
+# Outcome model fixed effects (beta)
+fit$outcome$beta
+
+# Visiting-process coefficients (gamma)
+fit$visiting$coefficients
+
+# Observation-process coefficients (alpha)
+fit$observation$alpha
+```
+
+### Interpretation (high level)
+
+- **Outcome stage (`beta`)**: association between covariates and the longitudinal outcome, *after* accounting for informative visiting and observation.
+- **Visiting stage (`gamma`)**: covariate effects on visit intensity (how frequently patients are observed).
+- **Observation stage (`alpha`)**: covariate effects on whether the outcome/biomarker is measured at a visit.
+
+## Why focus on `GIVEHR()`?
+
+SIMMER includes multiple approaches (e.g., imputation-based methods and alternative joint-model variants), but **`GIVEHR()` is the recommended default** because it:
+
+- targets the **association parameters** in the longitudinal outcome model while explicitly modeling both visiting and observation mechanisms,
+- uses a **three-stage semiparametric construction** that is computationally lighter than fully parametric joint likelihoods,
+- returns a structured object with stage-specific diagnostics and coefficient tables.
+
+## Other exported functions (brief)
+
+- `GIVEHR_GH()`, `GIVEHR_OU_PCL()`: alternative variants of GIVEHR (useful for sensitivity analyses / model-checking).
+- `LI_IP()`, `MI_IP()`: imputation + inverse probability approaches.
+- `IIRR_weighting()`, `IIRR_balancing()`: weighting/balancing estimators (simpler, but generally less complete for informative visiting + observation).
+- `EHRJoint()`, `PairwiseLikelihood()`, `SummaryStat()`, `JMVL_IP()`, `LMM()`: additional estimators and utilities.
+
+## Getting help
+
+- Run `vignette("getting-started", package = "SIMMER")` for a fuller worked example.
+- Open an issue on GitHub for bugs or feature requests.

@@ -1,148 +1,188 @@
 #' Linear Increment Imputation with Informative Presence Adjustment
 #'
-#' Combines linear increment (LI) imputation for missing outcomes with IP-adjusted
-#' analysis methods. First imputes missing Y values using a linear increment model
-#' (Aalen & Gunnes, 2010), then applies an IP-adjustment method to the completed dataset.
+#' @description
+#' Implements a two-stage procedure that first imputes missing outcome values
+#' using the linear increment (LI) model of Aalen and Gunnes (2010), then
+#' applies an informative-presence (IP) adjustment method to the completed
+#' dataset. The LI model is fitted with \code{\link[slim]{slim}} and
+#' handles irregular observation times naturally by modelling increments
+#' rather than levels.
 #'
-#' @param data Data frame in long format with one row per visit.
-#' @param id Character. Subject ID column name. Default is "id".
-#' @param time Character. Time variable column name. Default is "time".
-#' @param outcome Character. Outcome variable column name. Default is "Y".
-#' @param obs_indicator Character. Observation indicator column name
-#'        (1 = outcome observed, 0 = outcome missing at visit). Default is "R".
-#'        Rows with NA in time are treated as unvisited time points.
+#' Unlike \code{\link{MI_IP}}, this approach produces a single completed
+#' dataset (no pooling required), making it computationally faster but
+#' unable to account for imputation uncertainty in standard errors.
 #'
-#' @section Linear Increment Model:
-#' The linear increment model (Aalen & Gunnes, 2010) models the change in outcome
-#' between consecutive observations rather than the outcome level itself. This approach
-#' is particularly suited for irregular longitudinal data because:
-#' \itemize{
-#'   \item It naturally handles varying time gaps between observations
-#'   \item It assumes the increment \eqn{\Delta Y = Y(t_j) - Y(t_{j-1})} follows a
-#'         linear model with variance proportional to the time gap
-#'   \item Missing values are imputed by predicting the expected increment
-#' }
+#' @param data A \code{data.frame} in long (panel) format with one row per
+#'   subject-time combination. Must contain columns for subject identifier,
+#'   visit time, outcome, observation indicator, and all specified
+#'   covariates. Rows with \code{NA} in the time column are treated as
+#'   unvisited time points.
+#' @param id Character string giving the name of the subject identifier
+#'   column. Default is \code{"id"}.
+#' @param time Character string giving the name of the visit-time column.
+#'   Default is \code{"time"}.
+#' @param outcome Character string giving the name of the outcome column.
+#'   Default is \code{"Y"}.
+#' @param obs_indicator Character string giving the name of the binary
+#'   observation indicator column (\code{1} = outcome observed, \code{0} =
+#'   outcome missing at visit). Default is \code{"R"}.
 #'
-#' The model can be written as:
-#' \deqn{\Delta Y_{ij} = (t_j - t_{j-1}) \cdot (\beta_0 + \beta' X_{ij}) + \epsilon_{ij}}
-#' where \eqn{Var(\epsilon_{ij}) \propto (t_j - t_{j-1})}.
-#'
-#' @param li_formula Formula. Model formula for the linear increment model.
-#'        Default is Y ~ Z + X + time. The left-hand side should be the outcome variable.
-#' @param li_covariance Character. Covariance structure for the linear increment model.
-#'        One of:
-#'   \itemize{
-#'     \item "randomwalk" - Random walk covariance (default, recommended for irregular data)
-#'     \item "independence" - Independent increments
-#'     \item "exchangeable" - Exchangeable correlation
+#' @section Linear Increment Model Parameters:
+#' @param li_formula A \code{\link[stats]{formula}} for the linear increment
+#'   model. The left-hand side should be the outcome variable. Default is
+#'   \code{NULL}, which constructs
+#'   \code{Y ~ <visit_covs> + <time>}.
+#' @param li_covariance Character string specifying the covariance structure
+#'   for the linear increment model. One of:
+#'   \describe{
+#'     \item{\code{"randomwalk"}}{(Default.) Random-walk covariance,
+#'       recommended for irregular data. The variance of increments is
+#'       proportional to the time gap.}
+#'     \item{\code{"independence"}}{Independent increments.}
+#'     \item{\code{"exchangeable"}}{Exchangeable correlation structure.}
 #'   }
-#' @param li_limit Formula. Limit specification for the linear increment model.
-#'        Default is ~ 1 (constant limit). See \code{\link[slim]{slim}} for details.
+#' @param li_limit A one-sided \code{\link[stats]{formula}} for the limit
+#'   specification passed to \code{\link[slim]{slim}}. Default is
+#'   \code{~ 1} (constant limit).
 #'
 #' @section IP Method Parameters:
-#' @param ip_method Character. IP adjustment method. One of:
-#'   \itemize{
-#'     \item "LMM" - Standard linear mixed model (no IP adjustment, for comparison)
-#'     \item "Liang" - Joint model of Liang et al. (2009)
-#'     \item "IIRR_weighting" - Inverse intensity rate ratio weighting
-#'     \item "IIRR_balancing" - IIRR with balancing weights (Yiu & Su, 2025)
-#'     \item "PairLik" - Pairwise composite likelihood
-#'   }
-#' @param visit_covs Character vector. Covariates for visiting process model.
-#'        Used by Liang, IIRR methods. Default is c("Z", "X").
-#' @param outcome_formula Formula. Model formula for longitudinal outcome.
-#'        Used by LMM, IIRR_balancing, PairLik. Default is Y ~ Z + X + time.
-#' @param random_formula Formula. Random effects formula for LMM.
-#'        Default is ~ 1 | id.
-#' @param outcome_covs Character vector. Covariates for outcome model in Liang method.
-#'        Default is NULL (uses visit_covs).
-#' @param random_covs Character vector. Covariates with random effects in Liang method.
-#'        Default is first element of visit_covs.
-#' @param ip_args List. Additional arguments passed to the IP method. See
-#'        \code{\link{MI_IP_fun}} for detailed options for each method. Common options:
+#' @param ip_method Character string specifying the IP adjustment method
+#'   applied to the completed dataset. One of:
 #'   \describe{
-#'     \item{IIRR methods:}{\code{phi} - sensitivity parameter (default 0)}
-#'     \item{PairLik:}{\code{pair_sample} - number of pairs to sample}
-#'     \item{LMM:}{\code{visit_adjust} - "OA" or "VA" for visit adjustment}
+#'     \item{\code{"LMM"}}{Standard linear mixed model via
+#'       \code{\link{LMM}} (no IP adjustment; included for comparison).}
+#'     \item{\code{"Liang"}}{Joint model of Liang et al. (2009) via
+#'       \code{\link{JMVL_IP}}.}
+#'     \item{\code{"IIRR_weighting"}}{Inverse intensity rate ratio
+#'       weighting via \code{\link{IIRR_balancing}} (using MLE weights).}
+#'     \item{\code{"IIRR_balancing"}}{Balancing-weights estimator of
+#'       Yiu and Su (2024) via \code{\link{IIRR_balancing}}.}
+#'     \item{\code{"PairLik"}}{Pairwise composite likelihood via
+#'       \code{\link{PairwiseLikelihood}}.}
+#'   }
+#' @param visit_covs Character vector of covariate column names for the
+#'   visiting-process model (used by Liang and IIRR methods). Default is
+#'   \code{c("Z", "X")}.
+#' @param outcome_covs Character vector of covariate column names for the
+#'   outcome model in the Liang method. Default is \code{NULL} (uses
+#'   \code{visit_covs}).
+#' @param random_covs Character vector of covariate column names with
+#'   random effects in the Liang method. Default is \code{NULL} (uses the
+#'   first element of \code{visit_covs}).
+#' @param outcome_formula A \code{\link[stats]{formula}} for the
+#'   longitudinal outcome model, used by LMM, IIRR, and PairLik methods.
+#'   Default is \code{NULL}, which constructs
+#'   \code{Y ~ <outcome_covs> + <time>}.
+#' @param random_formula A one-sided \code{\link[stats]{formula}} for the
+#'   LMM random effects (e.g., \code{~ 1 | id}). Default is \code{NULL},
+#'   which constructs \code{~ 1 | <id>}.
+#' @param ip_args A named list of additional arguments passed to the IP
+#'   method. Common options include:
+#'   \describe{
+#'     \item{For IIRR methods:}{\code{phi} (numeric; sensitivity
+#'       parameter, default \code{0}).}
+#'     \item{For PairLik:}{\code{pair_sample} (integer; number of pairs
+#'       to sample).}
+#'     \item{For LMM:}{\code{visit_adjust} (\code{"OA"} or \code{"VA"}).}
 #'   }
 #'
-#' @return A list containing:
-#'   \item{coefficients}{Named vector of coefficient estimates.}
-#'   \item{ip_method}{The IP method used.}
-#'   \item{li_model}{Summary of the linear increment model used for imputation.}
-#'   \item{n_imputed}{Number of values imputed.}
-#'   \item{imputed_data}{The completed dataset after LI imputation.}
-#'   \item{call}{The function call.}
+#' @return An object of class \code{"LI_IP_result"}, which is a named list
+#'   with the following components:
+#'
+#' \describe{
+#'   \item{\code{coefficients}}{Named numeric vector of estimated
+#'     regression coefficients from the IP method.}
+#'   \item{\code{se}}{Named numeric vector of standard errors (when
+#'     available from the IP method; \code{NULL} otherwise).}
+#'   \item{\code{ip_method}}{Character string echoing the IP method
+#'     used.}
+#'   \item{\code{ip_args}}{List echoing the additional IP arguments.}
+#'   \item{\code{li_model}}{A list with elements \code{formula},
+#'     \code{covariance}, and \code{limit} describing the LI imputation
+#'     model.}
+#'   \item{\code{n_imputed}}{Integer; number of missing outcome values
+#'     that were imputed.}
+#'   \item{\code{imputed_data}}{A \code{data.frame}; the completed dataset
+#'     after LI imputation.}
+#'   \item{\code{call}}{The matched call.}
+#' }
 #'
 #' @details
-#' Unlike multiple imputation (MI), the linear increment approach produces a single
-#' completed dataset. This has implications:
-#' \itemize{
-#'   \item No pooling of estimates is needed
-#'   \item Standard errors from the IP method do not account for imputation uncertainty
-#'   \item Computationally faster than MI
-#' }
+#' The procedure has two stages:
 #'
-#' The LI method is appropriate when:
-#' \itemize
-#'   \item The outcome evolves smoothly over time
-#'   \item Missing data is MAR (missing at random) given observed history
-#'   \item Time gaps between observations vary across subjects
-#' }
+#' \strong{Stage 1 --- Linear Increment Imputation.}
+#' The linear increment model (Aalen and Gunnes, 2010) models the change
+#' in outcome between consecutive observations:
+#' \deqn{\Delta Y_{ij} = (t_j - t_{j-1})(\beta_0 + \beta^\top X_{ij})
+#'   + \varepsilon_{ij},}
+#' where \eqn{\text{Var}(\varepsilon_{ij}) \propto (t_j - t_{j-1})}
+#' under the random-walk covariance structure. The model is fitted with
+#' \code{\link[slim]{slim}} on the subset of rows with observed outcomes,
+#' and predictions are generated for rows where the outcome is missing
+#' but visit time is known.
+#'
+#' \strong{Stage 2 --- IP Adjustment.}
+#' The completed dataset is passed to the selected IP method for
+#' coefficient estimation. Because a single imputed dataset is used
+#' (rather than multiple imputations), the reported standard errors
+#' (when available) do not account for imputation uncertainty.
+#'
+#' S3 methods \code{print} and \code{summary} are available for objects
+#' of class \code{"LI_IP_result"}.
 #'
 #' @references
-#' Aalen, O. O., & Gunnes, N. (
-#' 2010). A dynamic approach for reconstructing missing
-#' longitudinal data using the linear increments model. Biostatistics, 11(3), 453-472.
+#' Aalen, O. O. and Gunnes, N. (2010). A dynamic approach for
+#' reconstructing missing longitudinal data using the linear increments
+#' model. \emph{Biostatistics}, \strong{11}(3), 453--472.
 #'
-#' Liang, Y., Lu, W., & Ying, Z. (2009). Joint modeling and analysis of
-#' longitudinal data with informative observation times. Biometrics, 65, 377-384.
+#' Liang, Y., Lu, W., and Ying, Z. (2009). Joint modeling and analysis of
+#' longitudinal data with informative observation times. \emph{Biometrics},
+#' \strong{65}(2), 377--384.
+#'
+#' Yiu, S. and Su, L. (2024). Accommodating informative visit times for
+#' analysing irregular longitudinal data: a sensitivity analysis approach
+#' with balancing weights estimators. \emph{Journal of the Royal
+#' Statistical Society: Series C}, \strong{74}, 824--843.
+#'
+#' @seealso
+#' \code{\link{MI_IP}} for the multiple imputation counterpart;
+#' \code{\link[slim]{slim}} for the underlying linear increment model;
+#' \code{\link{JMVL_IP}}, \code{\link{IIRR_weighting}},
+#' \code{\link{IIRR_balancing}}, \code{\link{PairwiseLikelihood}}, and
+#' \code{\link{LMM}} for the individual IP methods.
 #'
 #' @examples
 #' \dontrun{
-#' # Example 1: Liang's method with default LI imputation
+#' dat <- sim_data_gen(n = 500, seed = 42)
+#'
+#' # Liang's method with default LI imputation
 #' result <- LI_IP(
-#'   data = mydata,
-#'   ip_method = "Liang",
+#'   data       = dat$long_data,
+#'   ip_method  = "Liang",
 #'   visit_covs = c("Z", "X")
 #' )
+#' result
 #'
-#' # Example 2: Custom LI model formula
-#' result <- LI_IP(
-#'   data = mydata,
-#'   ip_method = "IIRR_weighting",
-#'   li_formula = Y ~ Z + X + time + Z:time,
+#' # Custom LI model with IIRR weighting
+#' result2 <- LI_IP(
+#'   data          = dat$long_data,
+#'   ip_method     = "IIRR_weighting",
+#'   li_formula    = Y ~ Z + X + time,
 #'   li_covariance = "randomwalk",
-#'   visit_covs = c("Z", "X")
+#'   visit_covs    = c("Z", "X")
 #' )
 #'
-#' # Example 3: IIRR with sensitivity analysis (phi != 0)
-#' result <- LI_IP(
-#'   data = mydata,
-#'   ip_method = "IIRR_balancing",
+#' # IIRR balancing with sensitivity analysis
+#' result3 <- LI_IP(
+#'   data       = dat$long_data,
+#'   ip_method  = "IIRR_balancing",
 #'   visit_covs = c("Z", "X"),
-#'   ip_args = list(phi = 0.3)  # Sensitivity parameter
+#'   ip_args    = list(phi = 0.3)
 #' )
-#'
-#' # Example 4: Compare LI vs MI approaches
-#' result_li <- LI_IP(
-#'   data = mydata,
-#'   ip_method = "Liang",
-#'   visit_covs = c("Z", "X")
-#' )
-#' result_mi <- MI_IP_fun(
-#'   data = mydata,
-#'   ip_method = "Liang",
-#'   visit_covs = c("Z", "X"),
-#'   m = 5
-#' )
-#'
-#' # Compare coefficients
-#' rbind(LI = result_li$coefficients, MI = result_mi$coefficients)
+#' summary(result3)
 #' }
 #'
-#' @seealso \code{\link{MI_IP_fun}} for multiple imputation approach
-#'
+#' @importFrom stats as.formula model.frame model.matrix predict
 #' @export
 LI_IP <- function(
     data,
@@ -291,6 +331,7 @@ LI_IP <- function(
 #' This "random walk" structure means larger time gaps have more uncertainty,
 #' which is natural for irregular longitudinal data.
 #' @keywords internal
+#' @noRd
 .li_impute_outcome <- function(data, id, time, outcome, obs_indicator,
                                formula, covariance, limit) {
 
@@ -358,11 +399,22 @@ LI_IP <- function(
 }
 
 
-# ============================================
-# Internal: Apply IP Method (shared with MI_IP_fun)
-# ============================================
-# Note: This function is the same as in MI_IP_fun.R
-# In a package, you would define it once in a utils.R file
+#' Apply an Informative Presence Adjustment Method
+#'
+#' Internal dispatcher that routes to the appropriate IP method function.
+#'
+#' @param data A completed \code{data.frame} (after imputation).
+#' @param ip_method Character string naming the method.
+#' @param id,time,outcome,obs_indicator Column name strings.
+#' @param visit_covs,outcome_covs,random_covs Character vectors of covariate
+#'   names.
+#' @param outcome_formula,random_formula Formula objects.
+#' @param ip_args Named list of additional method-specific arguments.
+#'
+#' @return A list with elements \code{coef} and \code{se}.
+#'
+#' @keywords internal
+#' @noRd
 .apply_ip_method <- function(data, ip_method, id, time, outcome, obs_indicator,
                              visit_covs, outcome_covs, random_covs,
                              outcome_formula, random_formula,
@@ -483,88 +535,4 @@ LI_IP <- function(
   )
 
   result
-}
-
-
-# ============================================
-# Print method
-# ============================================
-#' @export
-print.LI_IP_result <- function(x, ...) {
-  cat("Linear Increment Imputation with IP Adjustment\n")
-  cat("===============================================\n\n")
-
-  cat("Linear Increment Model:\n")
-  cat("  Formula:", deparse(x$li_model$formula), "\n")
-  cat("  Covariance:", x$li_model$covariance, "\n")
-  cat("  Values imputed:", x$n_imputed, "\n\n")
-
-  cat("IP Method:", x$ip_method, "\n")
-  if (length(x$ip_args) > 0) {
-    cat("IP Arguments:\n")
-    for (nm in names(x$ip_args)) {
-      cat("  ", nm, ":", x$ip_args[[nm]], "\n")
-    }
-  }
-  cat("\n")
-
-  cat("Coefficients:\n")
-  if (!is.null(x$se)) {
-    print_df <- data.frame(
-      Estimate = x$coefficients,
-      SE = x$se,
-      row.names = names(x$coefficients)
-    )
-  } else {
-    print_df <- data.frame(
-      Estimate = x$coefficients,
-      row.names = names(x$coefficients)
-    )
-  }
-  print(round(print_df, 4))
-  invisible(x)
-}
-
-
-# ============================================
-# Summary method
-# ============================================
-#' @export
-summary.LI_IP_result <- function(object, ...) {
-  cat("Linear Increment Imputation with IP Adjustment\n")
-  cat("===============================================\n\n")
-
-  cat("Call:\n")
-  print(object$call)
-  cat("\n")
-
-  cat("Linear Increment Model:\n")
-  cat("  Formula:", deparse(object$li_model$formula), "\n")
-  cat("  Covariance structure:", object$li_model$covariance, "\n")
-  cat("  Number of values imputed:", object$n_imputed, "\n\n")
-
-  cat("IP Method:", object$ip_method, "\n\n")
-
-  cat("Coefficients:\n")
-  if (!is.null(object$se)) {
-    z_val <- object$coefficients / object$se
-    p_val <- 2 * pnorm(-abs(z_val))
-    print_df <- data.frame(
-      Estimate = object$coefficients,
-      `Std.Error` = object$se,
-      `z value` = z_val,
-      `Pr(>|z|)` = p_val,
-      row.names = names(object$coefficients),
-      check.names = FALSE
-    )
-  } else {
-    print_df <- data.frame(
-      Estimate = object$coefficients,
-      row.names = names(object$coefficients)
-    )
-    cat("(Standard errors not available for this IP method)\n")
-  }
-  print(round(print_df, 4))
-
-  invisible(object)
 }

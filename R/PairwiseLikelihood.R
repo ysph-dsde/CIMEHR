@@ -86,23 +86,152 @@ double pw_total_gaussian_rcpp(const NumericVector& y,
 
 #' Pairwise Composite Likelihood GLM Estimation
 #'
-#' Fits a generalized linear model using pairwise composite likelihood.
+#' @description
+#' Fits a generalised linear model using pairwise composite likelihood
+#' (PCL). For each pair of subjects, the contribution to the composite
+#' log-likelihood is based on the difference \eqn{Y_i - Y_j} (Gaussian
+#' family) or a logistic-style softplus function (binomial family).
+#' This approach yields consistent slope estimates without requiring a
+#' correctly specified within-cluster correlation structure, and is
+#' robust to informative cluster sizes.
 #'
-#' @param data Data frame containing longitudinal/clustered data.
-#' @param formula Model formula (e.g., Y ~ Z + X + time). Intercept is automatically
-#'   removed as it is not identifiable in pairwise differences.
-#' @param id_col Subject/cluster ID column name. Default is "id".
-#' @param time_col Time variable column name. Default is "time".
-#' @param y_col Outcome variable column name. Default is "Y".
-#' @param family "gaussian" (continuous outcome) or "binomial" (binary outcome). Default is "gaussian".
-#' @param start Optional starting values for coefficients. Default is NULL (uses lm/glm estimates).
-#' @param pair_sample Optional integer to sample subject pairs for large datasets. Default is NULL (use all).
-#' @param pair_seed Seed for reproducible pair sampling. Default is 1.
-#' @param hessian If TRUE, compute Hessian and naive vcov. Default is TRUE.
-#' @param verbose If TRUE, print progress messages. Default is FALSE.
+#' The intercept is not identifiable in pairwise differences and is
+#' automatically removed if present in the formula.
 #'
-#' @return A list containing: coef, vcov_naive, loglik, converged, n, G, k_pairs, etc.
+#' @param data A \code{data.frame} containing longitudinal or clustered
+#'   data. Rows with missing values in the outcome, covariates, or
+#'   identifier columns are removed.
+#' @param formula A \code{\link[stats]{formula}} specifying the model
+#'   (e.g., \code{Y ~ Z + X + time}). If an intercept is present it is
+#'   removed automatically with a message (when \code{verbose = TRUE}).
+#' @param id_col Character string giving the name of the subject/cluster
+#'   identifier column. Default is \code{"id"}.
+#' @param time_col Character string giving the name of the time variable
+#'   column. Default is \code{"time"}.
+#' @param y_col Character string giving the name of the outcome column.
+#'   Default is \code{"Y"}.
+#' @param family Character string specifying the response distribution.
+#'   One of:
+#'   \describe{
+#'     \item{\code{"gaussian"}}{(Default.) Pairwise residual sum of
+#'       squares: \eqn{\sum 0.5\,(Y_i - Y_j - \mu_i + \mu_j)^2}.}
+#'     \item{\code{"binomial"}}{Logistic-style softplus:
+#'       \eqn{\sum -\log(1 + \exp((Y_i - Y_j)(\mu_j - \mu_i)))}.
+#'       Requires \eqn{Y \in \{0, 1\}}.}
+#'   }
+#' @param start Optional numeric vector of starting values for the
+#'   regression coefficients. Default is \code{NULL}, which uses OLS
+#'   (Gaussian) or GLM (binomial) estimates.
+#' @param pair_sample Optional positive integer; if the total number of
+#'   subject pairs exceeds this value, a random subsample of pairs is
+#'   used. Default is \code{NULL} (use all pairs).
+#' @param pair_seed Integer seed for reproducible pair subsampling.
+#'   Default is \code{1}.
+#' @param hessian Logical; if \code{TRUE}, the numeric Hessian is
+#'   computed at the optimum via \code{\link[numDeriv]{hessian}} and used
+#'   to obtain a naive variance--covariance matrix. Default is
+#'   \code{TRUE}.
+#' @param verbose Logical; if \code{TRUE}, progress messages are printed.
+#'   Default is \code{FALSE}.
 #'
+#' @return An object of class \code{"PairwiseLikelihood"}, which is a
+#'   named list with the following components:
+#'
+#' \describe{
+#'   \item{\code{call}}{The matched call.}
+#'   \item{\code{family}}{Character string echoing the response family.}
+#'   \item{\code{formula}}{The formula used (intercept removed if
+#'     applicable).}
+#'   \item{\code{coef}}{Named numeric vector of estimated regression
+#'     coefficients.}
+#'   \item{\code{loglik}}{Numeric scalar; composite log-likelihood at the
+#'     optimum (Gaussian: negated pairwise RSS; binomial: pairwise
+#'     softplus sum).}
+#'   \item{\code{converged}}{Logical; \code{TRUE} if
+#'     \code{\link[stats]{optim}} converged.}
+#'   \item{\code{hessian}}{(When \code{hessian = TRUE}.) Numeric matrix;
+#'     Hessian of the objective at the optimum.}
+#'   \item{\code{vcov_naive}}{(When \code{hessian = TRUE}.) Numeric
+#'     matrix; inverse Hessian, a naive (model-based)
+#'     variance--covariance estimator for \code{coef}.}
+#'   \item{\code{n}}{Integer; number of observations used.}
+#'   \item{\code{p}}{Integer; number of regression coefficients.}
+#'   \item{\code{G}}{Integer; number of unique subjects/clusters.}
+#'   \item{\code{k_pairs}}{Integer; number of subject pairs used.}
+#'   \item{\code{pair_sample}}{Integer or \code{NULL}; echoing the
+#'     subsampling parameter.}
+#' }
+#'
+#' @details
+#' The pairwise composite likelihood objective aggregates contributions
+#' from all (or a subsample of) between-subject pairs. For each pair of
+#' subjects \eqn{(i, j)} and all cross-products of their observations,
+#' the contribution is:
+#'
+#' \strong{Gaussian:}
+#' \deqn{l_{ij}(\beta) = -\frac{1}{2} \sum_{s \in i} \sum_{t \in j}
+#'   \bigl[(Y_s - Y_t) - (\mu_s - \mu_t)\bigr]^2,}
+#' where \eqn{\mu_s = X_s^\top \beta}. Minimising the total gives the
+#' PCL estimator.
+#'
+#' \strong{Binomial:}
+#' \deqn{l_{ij}(\beta) = \sum_{s \in i} \sum_{t \in j}
+#'   -\log\bigl[1 + \exp\bigl((Y_s - Y_t)(\mu_t - \mu_s)\bigr)\bigr].}
+#'
+#' The inner loops are implemented in C++ via \pkg{Rcpp} for efficiency.
+#' Optimisation is performed with \code{\link[stats]{optim}} using BFGS.
+#'
+#' S3 methods \code{print} and \code{summary} are available for objects
+#' of class \code{"PairwiseLikelihood"}.
+#'
+#' @note
+#' This function requires the \pkg{Rcpp} and \pkg{numDeriv} packages. The
+#' inline C++ functions \code{pw_total_gaussian_rcpp} and
+#' \code{pw_total_softplus_rcpp} are compiled on first use.
+#'
+#' @references
+#' Varin, C., Reid, N., and Firth, D. (2011). An overview of composite
+#' likelihood methods. \emph{Statistica Sinica}, \strong{21}(1), 5--42.
+#'
+#' Cox, D. R. and Reid, N. (2004). A note on pseudolikelihood constructed
+#' from marginal densities. \emph{Biometrika}, \strong{91}(3), 729--737.
+#'
+#' Kuk, A. Y. C. and Nott, D. J. (2000). A pairwise likelihood approach
+#' to analyzing correlated binary data. \emph{Statistics and Probability
+#' Letters}, \strong{47}(4), 329--335.
+#'
+#' @seealso
+#' \code{\link{GIVEHR}} for a full joint model approach;
+#' \code{\link{IIRR_weighting}} and \code{\link{IIRR_balancing}} for
+#' inverse-intensity-weighting alternatives;
+#' \code{\link{MI_IP}} and \code{\link{LI_IP}} for combining imputation
+#' with IP adjustment.
+#'
+#' @examples
+#' \dontrun{
+#' dat <- sim_data_gen(n = 300, seed = 42)
+#' obs_data <- dat$long_data[dat$long_data$R == 1, ]
+#'
+#' # Gaussian PCL
+#' fit <- PairwiseLikelihood(
+#'   data    = obs_data,
+#'   formula = Y ~ Z + X + time,
+#'   family  = "gaussian",
+#'   verbose = TRUE
+#' )
+#' fit$coef
+#' summary(fit)
+#'
+#' # With pair subsampling for large data
+#' fit2 <- PairwiseLikelihood(
+#'   data        = obs_data,
+#'   formula     = Y ~ Z + X + time,
+#'   pair_sample = 5000
+#' )
+#' }
+#'
+#' @importFrom stats coef complete.cases glm.fit lm.fit model.frame
+#'   model.matrix optim terms update
 #' @export
 PairwiseLikelihood <- function(
     data,

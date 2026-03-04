@@ -1,20 +1,104 @@
 #' Inverse Intensity Rate Ratio Weighting Estimator
 #'
-#' Fits a weighted GEE model using inverse intensity weights from the visiting process.
-#' Only uses observed data (R == 1 or R is NA).
+#' @description
+#' Estimates marginal regression coefficients for a longitudinal outcome by
+#' weighting each observation by the inverse of its estimated visit
+#' intensity. The visiting process is modelled via a Cox-type partial
+#' likelihood score equation, and the outcome coefficients are obtained by
+#' solving inverse-intensity-weighted estimating equations.
 #'
-#' @param data Data frame containing longitudinal data.
-#' @param id Subject ID column name. Default is "id".
-#' @param time Time variable column name. Default is "time".
-#' @param outcome Outcome variable column name. Default is "Y".
-#' @param obs_indicator Observation indicator column name. Default is "R".
-#' @param visit_covs Character vector of covariate names for visiting process. Default is c("Z", "X").
-#' @param formula Formula for longitudinal model (e.g., ~ Z + X + time). Default is ~ Z + X + time.
+#' Only rows with observed outcomes (\code{R == 1} or \code{R} is
+#' \code{NA}) are used in both the visiting-process and outcome
+#' estimation.
 #'
-#' @return A list containing:
-#'   \item{gamma_hat}{Visiting process coefficients}
-#'   \item{beta_hat}{Longitudinal process coefficients}
+#' @param data A \code{data.frame} in long (panel) format with one row per
+#'   subject-time combination. Must contain columns for subject identifier,
+#'   visit time, outcome, observation indicator, and all specified
+#'   covariates.
+#' @param id Character string giving the name of the subject identifier
+#'   column. Default is \code{"id"}.
+#' @param time Character string giving the name of the visit-time column.
+#'   Default is \code{"time"}.
+#' @param outcome Character string giving the name of the outcome column.
+#'   Default is \code{"Y"}.
+#' @param obs_indicator Character string giving the name of the binary
+#'   observation indicator column (\code{1} = outcome observed at visit).
+#'   Default is \code{"R"}.
+#' @param visit_covs Character vector of covariate column names for the
+#'   visiting-process intensity model. These enter the exponent of the
+#'   multiplicative intensity. Default is \code{c("Z", "X")}.
+#' @param formula A one-sided \code{\link[stats]{formula}} specifying the
+#'   design matrix for the longitudinal outcome model (e.g.,
+#'   \code{~ Z + X + time}). An intercept is included by default. Default
+#'   is \code{~ Z + X + time}.
 #'
+#' @return A named list with two components:
+#'
+#' \describe{
+#'   \item{\code{gamma_hat}}{Named numeric vector of visiting-process
+#'     regression coefficients, estimated by solving the partial-likelihood
+#'     score equation with \code{\link[nleqslv]{nleqslv}}.}
+#'   \item{\code{beta_hat}}{Named numeric vector of outcome model
+#'     coefficients, estimated from inverse-intensity-weighted estimating
+#'     equations solved with \code{\link[nleqslv]{nleqslv}}.}
+#' }
+#'
+#' @details
+#' The estimator proceeds in three steps:
+#'
+#' \strong{Step 1.} The visiting-process coefficients \eqn{\gamma} are
+#' estimated by solving the partial-likelihood score equation
+#' \deqn{\sum_j \bigl[Z_{ij} - \bar Z(\gamma; t_j)\bigr] = 0,}
+#' where \eqn{\bar Z(\gamma; t) = \sum_i Z_i \exp(\gamma^\top Z_i) /
+#' \sum_i \exp(\gamma^\top Z_i)} is the risk-set mean.
+#'
+#' \strong{Step 2.} Inverse intensity weights are computed as
+#' \eqn{w_i = \exp(\hat\gamma^\top Z_i)}.
+#'
+#' \strong{Step 3.} The outcome coefficients \eqn{\beta} are estimated by
+#' solving the weighted estimating equation
+#' \deqn{\sum_{i,j} w_i^{-1} X_{ij} (Y_{ij} - X_{ij}^\top \beta) = 0.}
+#'
+#' @note
+#' This function requires the \pkg{nleqslv} package. It will attempt to
+#' install the package automatically if it is not available.
+#'
+#' No standard errors are returned. For inference, consider using
+#' \code{\link{IIRR_balancing}} which provides balancing-weights
+#' estimates, or bootstrap the entire procedure.
+#'
+#' @references
+#' Lin, D. Y., Wei, L. J., Yang, I., and Ying, Z. (2000). Semiparametric
+#' regression for the mean and rate functions of recurrent events.
+#' \emph{Journal of the Royal Statistical Society: Series B},
+#' \strong{62}(4), 711--730.
+#'
+#' Buzkova, P. and Lumley, T. (2007). Longitudinal data analysis for
+#' generalized linear models with follow-up dependent on outcome-related
+#' variables. \emph{The Canadian Journal of Statistics}, \strong{35}(4),
+#' 485--500.
+#'
+#' @seealso
+#' \code{\link{IIRR_balancing}} for the balancing-weights extension with
+#' sensitivity analysis;
+#' \code{\link{JMVL_IP}} for a joint-model alternative;
+#' \code{\link{MI_IP}} and \code{\link{LI_IP}} for combining imputation
+#' with IP adjustment.
+#'
+#' @examples
+#' \dontrun{
+#' dat <- sim_data_gen(n = 500, seed = 42)
+#'
+#' fit <- IIRR_weighting(
+#'   data      = dat$long_data,
+#'   visit_covs = c("Z", "X"),
+#'   formula   = ~ Z + X + time
+#' )
+#' fit$gamma_hat
+#' fit$beta_hat
+#' }
+#'
+#' @importFrom stats model.frame model.matrix na.pass
 #' @export
 IIRR_weighting <- function(data,
                                id = "id",

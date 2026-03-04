@@ -1,23 +1,31 @@
-#' EHR Joint Model for Informative Visiting Process
+#' Joint estimation for longitudinal processes (EHRJoint)
 #'
-#' Fits a joint model accounting for informative visiting and observation processes in EHR data.
+#' Fit a joint workflow for visiting, observation, and outcome processes for
+#' irregularly observed longitudinal data.
 #'
-#' @param data Data frame containing longitudinal data.
-#' @param id Subject ID column name. Default is "id".
-#' @param time Time variable column name. Default is "time".
-#' @param outcome Outcome variable column name. Default is "Y".
-#' @param obs_indicator Observation indicator column name (1 = observed, 0 = missing). Default is "R".
-#' @param visit_covs Character vector of covariate names for visiting process. Default is c("Z", "X").
-#' @param long_covs Character vector of covariate names for longitudinal process. Default is c("Z", "X").
-#' @param random_covs Character vector of covariate names with random effects. Default is "Z".
+#' @param data A \code{data.frame} containing longitudinal records.
+#' @param id Character string. Subject identifier column name.
+#' @param time Character string. Time column name.
+#' @param outcome Character string. Outcome column name.
+#' @param obs_indicator Character string. Observation indicator column name.
+#' @param censor Character string. Censoring/end-of-followup column name.
+#' @param X_visit Character vector of covariate names for the visiting model.
+#' @param X_obs Character vector of covariate names for the observation model.
+#' @param X_outcome Character vector of covariate names for the outcome model.
+#' @param ... Additional arguments passed to internal fitting routines.
 #'
-#' @return A list containing:
-#'   \item{gamma_hat}{Visiting process coefficients}
-#'   \item{alpha_hat}{Observation process coefficients}
-#'   \item{Lambda_C_est}{Estimated cumulative intensity}
-#'   \item{sigma_sq_hat}{Estimated random effect variance}
-#'   \item{beta_hat}{Longitudinal process coefficients}
-#'   \item{theta_hat}{Random effect loading coefficients}
+#' @return An object of class \code{"EHRJoint"} containing component-wise
+#' coefficient estimates. If available, standard errors are stored and used by
+#' \code{summary()} to form 95\% confidence intervals.
+#'#'
+#' @examples
+#' \dontrun{
+#' fit <- EHRJoint(dat_long)
+#' fit
+#' summary(fit)
+#' }
+#'
+#' @export
 EHRJoint <- function(data,
                               id = "id",
                               time = "time",

@@ -1,188 +1,228 @@
 #' Multiple Imputation with Informative Presence Adjustment
 #'
-#' Combines multiple imputation for missing outcomes with IP-adjusted analysis
-#' methods. First imputes missing Y values at observed visits, then applies
-#' an IP-adjustment method to each imputed dataset and pools results using
-#' Rubin's rules.
+#' @description
+#' Implements a two-stage procedure that first imputes missing outcome values
+#' using a multilevel model via \code{\link[mice]{mice}}, then applies an
+#' informative-presence (IP) adjustment method to each imputed dataset and
+#' pools results. The imputation model accounts for the clustered structure
+#' of longitudinal data using a two-level specification (random intercept
+#' and optional random slopes).
 #'
-#' @param data Data frame in long format with one row per visit.
-#' @param id Character. Subject ID column name. Default is "id".
-#' @param time Character. Time variable column name. Default is "time".
-#' @param outcome Character. Outcome variable column name. Default is "Y".
-#' @param obs_indicator Character. Observation indicator column name
-#'        (1 = outcome observed, 0 = outcome missing at visit). Default is "R".
-#'        Rows with NA in time are treated as unvisited time points.
+#' Unlike \code{\link{LI_IP}}, this approach generates \code{m} completed
+#' datasets and pools estimates, allowing imputation uncertainty to be
+#' reflected in the standard errors (when Rubin's rules are used).
+#'
+#' @param data A \code{data.frame} in long (panel) format with one row per
+#'   subject-time combination. Must contain columns for subject identifier,
+#'   visit time, outcome, observation indicator, and all specified
+#'   covariates. Rows with \code{NA} in the time column are treated as
+#'   unvisited time points.
+#' @param id Character string giving the name of the subject identifier
+#'   column. Default is \code{"id"}.
+#' @param time Character string giving the name of the visit-time column.
+#'   Default is \code{"time"}.
+#' @param outcome Character string giving the name of the outcome column.
+#'   Default is \code{"Y"}.
+#' @param obs_indicator Character string giving the name of the binary
+#'   observation indicator column (\code{1} = outcome observed, \code{0} =
+#'   outcome missing at visit). Default is \code{"R"}.
 #'
 #' @section Imputation Parameters:
-#' @param m Integer. Number of imputations. Default is 5.
-#' @param maxit Integer. Maximum iterations for mice. Default is 50.
-#' @param impute_method Character. Method for imputing Y. One of:
-#'   \itemize{
-#'     \item "2l.pan" - Two-level model with heterogeneous within-group variance (default)
-#'     \item "2l.lmer" - Two-level model using lmer
-#'     \item "2l.norm" - Two-level normal model
+#' @param m Integer; number of multiply imputed datasets. Default is
+#'   \code{5}.
+#' @param maxit Integer; maximum number of iterations for
+#'   \code{\link[mice]{mice}}. Default is \code{50}.
+#' @param impute_method Character string specifying the \pkg{mice}
+#'   imputation method for the outcome. One of:
+#'   \describe{
+#'     \item{\code{"2l.pan"}}{(Default.) Two-level model with heterogeneous
+#'       within-group variance, implemented via \pkg{pan}.}
+#'     \item{\code{"2l.lmer"}}{Two-level model using
+#'       \code{\link[lme4]{lmer}}.}
+#'     \item{\code{"2l.norm"}}{Two-level normal model.}
 #'   }
-#' @param impute_fixed Character vector. Fixed effect covariates for imputation model.
-#'        Default is NULL, which uses c(visit_covs, time).
-#'        The imputation model for Y is:
-#'        \deqn{Y_{ij} = \beta_0 + \sum_k \beta_k X_{kij} + b_{0i} + \sum_l b_{li} Z_{lij} + \epsilon_{ij}}
-#'        where fixed effects include an intercept plus all variables in impute_fixed.
-#' @param impute_random Character vector. Random slope variables for imputation model.
-#'        Default is NULL (random intercept only). For example, c("Z") adds a random
-#'        slope for Z: \eqn{b_{0i} + b_{1i} Z_{ij}}.
-#' @param impute_include_R Logical. Whether to include observation indicator R as a
-#'        predictor in the imputation model. Default is TRUE. This is recommended
-#'        because R may be informative about missing Y values (MAR assumption).
+#' @param impute_fixed Character vector of covariate column names to
+#'   include as fixed effects in the imputation model. Default is
+#'   \code{NULL}, which uses \code{c(visit_covs, time)}. The imputation
+#'   model for \eqn{Y} is:
+#'   \deqn{Y_{ij} = \beta_0 + \sum_k \beta_k X_{kij} + b_{0i} +
+#'     \sum_l b_{li} Z_{lij} + \varepsilon_{ij},}
+#'   where fixed effects include an intercept plus all variables in
+#'   \code{impute_fixed}.
+#' @param impute_random Character vector of covariate column names to
+#'   include as random slopes in the imputation model. Default is
+#'   \code{NULL} (random intercept only). For example, \code{c("Z")} adds
+#'   a random slope for \eqn{Z}: \eqn{b_{0i} + b_{1i} Z_{ij}}.
+#' @param impute_include_R Logical; whether to include the observation
+#'   indicator \code{R} as a predictor in the imputation model. Default is
+#'   \code{TRUE}. Recommended because \code{R} may be informative about
+#'   missing \eqn{Y} values under MAR.
 #'
 #' @section IP Method Parameters:
-#' @param ip_method Character. IP adjustment method. One of:
-#'   \itemize{
-#'     \item "LMM" - Standard linear mixed model (no IP adjustment, for comparison)
-#'     \item "Liang" - Joint model of Liang et al. (2009)
-#'     \item "IIRR_weighting" - Inverse intensity rate ratio weighting
-#'     \item "IIRR_balancing" - IIRR with balancing weights (Yiu & Su, 2025)
-#'     \item "PairLik" - Pairwise composite likelihood
-#'   }
-#' @param visit_covs Character vector. Covariates for visiting process model.
-#'        Used by Liang, IIRR methods. Default is c("Z", "X").
-#' @param outcome_formula Formula. Model formula for longitudinal outcome.
-#'        Used by LMM, IIRR_balancing, PairLik. Default is Y ~ Z + X + time.
-#' @param random_formula Formula. Random effects formula for LMM.
-#'        Default is ~ 1 | id.
-#' @param outcome_covs Character vector. Covariates for outcome model in Liang method.
-#'        Default is NULL (uses visit_covs).
-#' @param random_covs Character vector. Covariates with random effects in Liang method.
-#'        Default is first element of visit_covs.
-#' @param ip_args List. Additional arguments passed to the IP method. Method-specific
-#'        options include:
+#' @param ip_method Character string specifying the IP adjustment method
+#'   applied to each completed dataset. One of:
 #'   \describe{
-#'     \item{IIRR_weighting, IIRR_balancing:}{
-#'       \itemize{
-#'         \item \code{phi}: Sensitivity parameter (default 0). phi = 0 assumes
-#'               Visiting at Random (VAR); phi > 0 means higher outcome increases
-#'               visit probability; phi < 0 means higher outcome decreases visit probability.
-#'         \item \code{balance_covs}: Character vector of covariates to balance
-#'               (default uses visit_covs).
-#'       }
-#'     }
-#'     \item{PairLik:}{
-#'       \itemize{
-#'         \item \code{pair_sample}: Integer. Number of subject pairs to sample
-#'               for large datasets (default NULL uses all pairs).
-#'         \item \code{family}: "gaussian" (default) or "binomial".
-#'       }
-#'     }
-#'     \item{LMM:}{
-#'       \itemize{
-#'         \item \code{method}: "REML" (default) or "ML".
-#'         \item \code{optimizer}: "nlminb" (default) or "optim".
-#'         \item \code{visit_adjust}: NULL, "OA", or "VA" for visit count adjustment.
-#'       }
-#'     }
+#'     \item{\code{"LMM"}}{Standard linear mixed model via
+#'       \code{\link{LMM}} (no IP adjustment; for comparison).}
+#'     \item{\code{"Liang"}}{Joint model of Liang et al. (2009) via
+#'       \code{\link{JMVL_IP}}.}
+#'     \item{\code{"IIRR_weighting"}}{Inverse intensity rate ratio
+#'       weighting via \code{\link{IIRR_balancing}} (MLE weights).}
+#'     \item{\code{"IIRR_balancing"}}{Balancing-weights estimator of
+#'       Yiu and Su (2024) via \code{\link{IIRR_balancing}}.}
+#'     \item{\code{"PairLik"}}{Pairwise composite likelihood via
+#'       \code{\link{PairwiseLikelihood}}.}
+#'   }
+#' @param visit_covs Character vector of covariate column names for the
+#'   visiting-process model (used by Liang and IIRR methods). Default is
+#'   \code{c("Z", "X")}.
+#' @param outcome_covs Character vector of covariate column names for the
+#'   outcome model in the Liang method. Default is \code{NULL} (uses
+#'   \code{visit_covs}).
+#' @param random_covs Character vector of covariate column names with
+#'   random effects in the Liang method. Default is \code{NULL} (uses the
+#'   first element of \code{visit_covs}).
+#' @param outcome_formula A \code{\link[stats]{formula}} for the
+#'   longitudinal outcome model, used by LMM, IIRR, and PairLik methods.
+#'   Default is \code{NULL}, which constructs
+#'   \code{Y ~ <outcome_covs> + <time>}.
+#' @param random_formula A one-sided \code{\link[stats]{formula}} for the
+#'   LMM random effects. Default is \code{NULL}, which constructs
+#'   \code{~ 1 | <id>}.
+#' @param ip_args A named list of additional arguments passed to the IP
+#'   method. Common options include:
+#'   \describe{
+#'     \item{For IIRR methods:}{\code{phi} (numeric; sensitivity parameter,
+#'       default \code{0}). \code{balance_covs} (character vector).}
+#'     \item{For PairLik:}{\code{pair_sample} (integer; number of pairs to
+#'       sample). \code{family} (\code{"gaussian"} or
+#'       \code{"binomial"}).}
+#'     \item{For LMM:}{\code{method} (\code{"REML"} or \code{"ML"}).
+#'       \code{optimizer} (\code{"nlminb"} or \code{"optim"}).
+#'       \code{visit_adjust} (\code{NULL}, \code{"OA"}, or
+#'       \code{"VA"}).}
 #'   }
 #'
 #' @section Pooling Parameters:
-#' @param pool_method Character. Method for pooling estimates. Currently only
-#'        "mean" is implemented (simple averaging of point estimates).
-#'        Future versions will support "rubin" for proper Rubin's rules with SE.
+#' @param pool_method Character string specifying the method for pooling
+#'   estimates across imputations. One of:
+#'   \describe{
+#'     \item{\code{"mean"}}{(Default.) Simple averaging of point estimates
+#'       with Monte Carlo standard errors.}
+#'     \item{\code{"rubin"}}{Rubin's rules: combines within-imputation
+#'       and between-imputation variance for valid inference. Requires
+#'       that the IP method returns standard errors.}
+#'   }
 #'
-#' @return A list containing:
-#'   \item{coefficients}{Named vector of pooled coefficient estimates.}
-#'   \item{by_imputation}{List of results from each imputed dataset.}
-#'   \item{ip_method}{The IP method used.}
-#'   \item{m}{Number of imputations.}
-#'   \item{call}{The function call.}
+#' @return An object of class \code{"MI_IP_result"}, which is a named list
+#'   with the following components:
+#'
+#' \describe{
+#'   \item{\code{coefficients}}{Named numeric vector of pooled regression
+#'     coefficients.}
+#'   \item{\code{se}}{Named numeric vector of pooled standard errors.}
+#'   \item{\code{by_imputation}}{List of length \code{m}, each element a
+#'     list with \code{coef} and (optionally) \code{se} from one imputed
+#'     dataset.}
+#'   \item{\code{ip_method}}{Character string echoing the IP method used.}
+#'   \item{\code{ip_args}}{List echoing the additional IP arguments.}
+#'   \item{\code{impute_method}}{Character string echoing the imputation
+#'     method.}
+#'   \item{\code{impute_model}}{A list with elements \code{fixed},
+#'     \code{random}, and \code{include_R} describing the imputation
+#'     model.}
+#'   \item{\code{m}}{Integer; number of successful imputations.}
+#'   \item{\code{m_requested}}{Integer; number of imputations originally
+#'     requested.}
+#'   \item{\code{call}}{The matched call.}
+#' }
 #'
 #' @details
-#' The function implements a two-stage procedure:
+#' The procedure has three stages:
 #'
-#' \strong{Stage 1: Multiple Imputation}
+#' \strong{Stage 1 --- Multiple Imputation.}
+#' Missing outcome values (where \code{R = 0} but time is not \code{NA})
+#' are imputed using a multilevel model via \code{\link[mice]{mice}}.
+#' Unvisited rows (time is \code{NA}) are separated, imputation is
+#' performed on the visited subset, and unvisited rows are reattached
+#' afterwards. The predictor matrix is configured so that only the
+#' outcome is imputed and only the specified covariates are used as
+#' predictors.
 #'
-#' Missing outcome values (where R = 0 but time is not NA) are imputed using
-#' a multilevel model that accounts for the clustered structure of longitudinal
-#' data. The imputation model is:
-#' \deqn{Y_{ij} = X_{ij}'\beta + Z_{ij}'b_i + \epsilon_{ij}}
-#' where \eqn{b_i \sim N(0, \Sigma_b)} and \eqn{\epsilon_{ij} \sim N(0, \sigma^2)}.
+#' \strong{Stage 2 --- IP-Adjusted Analysis.}
+#' Each completed dataset is analysed by the selected IP method. Failed
+#' fits are discarded with a warning.
 #'
-#' \strong{Stage 2: IP-Adjusted Analysis}
+#' \strong{Stage 3 --- Pooling.}
+#' Point estimates are combined across successful imputations.
+#' Under \code{pool_method = "rubin"}, Rubin's rules are applied:
+#' the total variance is \eqn{T = \bar W + (1 + 1/m) B}, where
+#' \eqn{\bar W} is the mean within-imputation variance and \eqn{B} is
+#' the between-imputation variance.
 #'
-#' Each imputed dataset is analyzed using the specified IP method:
-#'
-#' \emph{Liang et al. (2009):} Joint models the visiting process and outcome:
-#' \deqn{\lambda_i(t) = \eta_i \exp(\gamma' X_i^V) \lambda_0(t)}
-#' \deqn{Y_i(t) = \beta' X_i^Y(t) + b_i' Z_i^Y(t) + \epsilon_i(t)}
-#' with \eqn{E[b_i | \eta_i] = \theta(\eta_i - 1)} linking the processes.
-#'
-#' \emph{IIRR Weighting:} Weights observations by inverse visit intensity:
-#' \deqn{w_i(t) = 1/\hat{\lambda}_i(t)}
-#'
-#' \emph{IIRR Balancing:} Solves for weights satisfying balance constraints:
-#' \deqn{\sum_i w_i h_i(t) = \sum_i h_i(t) d\hat{\Lambda}_0(t)}
+#' S3 methods \code{print} are available for objects of class
+#' \code{"MI_IP_result"}.
 #'
 #' @references
-#' Liang, Y., Lu, W., & Ying, Z. (2009). Joint modeling and analysis of
-#' longitudinal data with informative observation times. Biometrics, 65, 377-384.
+#' Rubin, D. B. (1987). \emph{Multiple Imputation for Nonresponse in
+#' Surveys}. Wiley.
 #'
-#' Yiu, S. & Su, L. (2025). Accommodating informative visit times: a sensitivity
-#' analysis approach with balancing weights estimators. JRSS-C, 74, 824-843.
+#' van Buuren, S. and Groothuis-Oudshoorn, K. (2011). mice: Multivariate
+#' imputation by chained equations in R. \emph{Journal of Statistical
+#' Software}, \strong{45}(3), 1--67.
 #'
-#' Rubin, D. B. (1987). Multiple Imputation for Nonresponse in Surveys. Wiley.
+#' Liang, Y., Lu, W., and Ying, Z. (2009). Joint modeling and analysis of
+#' longitudinal data with informative observation times. \emph{Biometrics},
+#' \strong{65}(2), 377--384.
+#'
+#' Yiu, S. and Su, L. (2024). Accommodating informative visit times for
+#' analysing irregular longitudinal data: a sensitivity analysis approach
+#' with balancing weights estimators. \emph{Journal of the Royal
+#' Statistical Society: Series C}, \strong{74}, 824--843.
+#'
+#' @seealso
+#' \code{\link{LI_IP}} for the single-imputation (linear increment)
+#' counterpart;
+#' \code{\link[mice]{mice}} for the underlying imputation engine;
+#' \code{\link{JMVL_IP}}, \code{\link{IIRR_weighting}},
+#' \code{\link{IIRR_balancing}}, \code{\link{PairwiseLikelihood}}, and
+#' \code{\link{LMM}} for the individual IP methods.
 #'
 #' @examples
 #' \dontrun{
-#' # Example 1: Liang's method with default imputation
-#' # Imputation model: Y ~ Z + X + time + (1 | id)
+#' dat <- sim_data_gen(n = 500, seed = 42)
+#'
+#' # Liang's method with default MI settings
 #' result <- MI_IP(
-#'   data = mydata,
-#'   ip_method = "Liang",
+#'   data       = dat$long_data,
+#'   ip_method  = "Liang",
 #'   visit_covs = c("Z", "X"),
 #'   m = 5
 #' )
+#' result
 #'
-#' # Example 2: Specify imputation model explicitly
-#' # Imputation model: Y ~ Z + X + time + R + (1 + Z | id)
-#' result <- MI_IP(
-#'   data = mydata,
-#'   ip_method = "Liang",
-#'   visit_covs = c("Z", "X"),
-#'   impute_fixed = c("Z", "X", "time"),
-#'   impute_random = "Z",
-#'   impute_include_R = TRUE,
-#'   m = 5
-#' )
-#'
-#' # Example 3: IIRR balancing with sensitivity analysis (phi != 0)
-#' result <- MI_IP(
-#'   data = mydata,
-#'   ip_method = "IIRR_balancing",
-#'   visit_covs = c("Z", "X"),
+#' # IIRR balancing with sensitivity analysis
+#' result2 <- MI_IP(
+#'   data            = dat$long_data,
+#'   ip_method       = "IIRR_balancing",
+#'   visit_covs      = c("Z", "X"),
 #'   outcome_formula = Y ~ Z + X + time,
-#'   ip_args = list(phi = 0.3),  # Sensitivity parameter
+#'   ip_args         = list(phi = 0.3),
 #'   m = 10
 #' )
 #'
-#' # Example 4: Standard LMM with visit adjustment
-#' result <- MI_IP(
-#'   data = mydata,
-#'   ip_method = "LMM",
+#' # LMM with visit adjustment and Rubin's rules
+#' result3 <- MI_IP(
+#'   data            = dat$long_data,
+#'   ip_method       = "LMM",
 #'   outcome_formula = Y ~ Z + X + time,
-#'   random_formula = ~ 1 + Z | id,
-#'   ip_args = list(
-#'     method = "REML",
-#'     visit_adjust = "VA"  # Visit-aligned adjustment
-#'   )
-#' )
-#'
-#' # Example 5: Pairwise likelihood with subsampling for large data
-#' result <- MI_IP(
-#'   data = large_data,
-#'   ip_method = "PairLik",
-#'   outcome_formula = Y ~ Z + X + time,
-#'   ip_args = list(pair_sample = 5000),  # Sample 5000 pairs
-#'   m = 5
+#'   random_formula  = ~ 1 + Z | id,
+#'   ip_args         = list(visit_adjust = "VA"),
+#'   pool_method     = "rubin"
 #' )
 #' }
 #'
+#' @importFrom stats as.formula
 #' @export
 MI_IP <- function(
     data,
@@ -356,6 +396,7 @@ MI_IP <- function(
 #'   - b_0i is the random intercept for subject i
 #'   - b_li are the random slopes for subject i
 #' @keywords internal
+#' @noRd
 .mi_impute_outcome <- function(data, id, time, outcome, obs_indicator,
                                m, maxit, method, fixed_vars, random_vars,
                                include_R = TRUE) {
@@ -442,9 +483,22 @@ MI_IP <- function(
 }
 
 
-# ============================================
-# Internal: Apply IP Method
-# ============================================
+#' Apply an Informative Presence Adjustment Method
+#'
+#' Internal dispatcher that routes to the appropriate IP method function.
+#'
+#' @param data A completed \code{data.frame} (after imputation).
+#' @param ip_method Character string naming the method.
+#' @param id,time,outcome,obs_indicator Column name strings.
+#' @param visit_covs,outcome_covs,random_covs Character vectors of covariate
+#'   names.
+#' @param outcome_formula,random_formula Formula objects.
+#' @param ip_args Named list of additional method-specific arguments.
+#'
+#' @return A list with elements \code{coef} and \code{se}.
+#'
+#' @keywords internal
+#' @noRd
 .apply_ip_method <- function(data, ip_method, id, time, outcome, obs_indicator,
                              visit_covs, outcome_covs, random_covs,
                              outcome_formula, random_formula,
@@ -567,13 +621,31 @@ MI_IP <- function(
   result
 }
 
-# Null-coalescing operator (if not already defined)
+#' Null-coalescing operator
+#'
+#' Returns \code{y} if \code{x} is \code{NULL}, otherwise \code{x}.
+#'
+#' @param x,y Arbitrary objects.
+#' @return \code{x} if non-\code{NULL}, else \code{y}.
+#'
+#' @keywords internal
+#' @noRd
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
 
-# ============================================
-# Internal: Pool Estimates
-# ============================================
+#' Pool Estimates Across Imputations
+#'
+#' Combines point estimates (and optionally standard errors) across multiply
+#' imputed datasets using simple averaging or Rubin's rules.
+#'
+#' @param fits List of fit results, each with elements \code{coef} and
+#'   optionally \code{se}.
+#' @param method Character; \code{"mean"} or \code{"rubin"}.
+#'
+#' @return A list with elements \code{coef} and \code{se}.
+#'
+#' @keywords internal
+#' @noRd
 .pool_estimates <- function(fits, method = "mean") {
 
   # Extract coefficients
@@ -625,49 +697,4 @@ MI_IP <- function(
   if (!is.null(pooled_se)) names(pooled_se) <- coef_names
 
   list(coef = pooled_coef, se = pooled_se)
-}
-
-
-# ============================================
-# Print method
-# ============================================
-#' @export
-print.MI_IP_result <- function(x, ...) {
-  cat("Multiple Imputation with IP Adjustment\n")
-  cat("=======================================\n\n")
-
-  cat("Imputation Model:\n")
-  cat("  Method:", x$impute_method, "\n")
-  cat("  Fixed effects:", paste(x$impute_model$fixed, collapse = ", "), "\n")
-  cat("  Random effects: intercept")
-  if (!is.null(x$impute_model$random)) {
-    cat(",", paste(x$impute_model$random, collapse = ", "))
-  }
-  cat("\n")
-  cat("  Include R as predictor:", x$impute_model$include_R, "\n\n")
-
-  cat("IP Method:", x$ip_method, "\n")
-  if (length(x$ip_args) > 0) {
-    cat("IP Arguments:\n")
-    for (nm in names(x$ip_args)) {
-      cat("  ", nm, ":", x$ip_args[[nm]], "\n")
-    }
-  }
-  cat("Number of imputations:", x$m, "/", x$m_requested, "\n\n")
-
-  cat("Pooled Coefficients:\n")
-  if (!is.null(x$se)) {
-    print_df <- data.frame(
-      Estimate = x$coefficients,
-      SE = x$se,
-      row.names = names(x$coefficients)
-    )
-  } else {
-    print_df <- data.frame(
-      Estimate = x$coefficients,
-      row.names = names(x$coefficients)
-    )
-  }
-  print(round(print_df, 4))
-  invisible(x)
 }

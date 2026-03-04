@@ -1,39 +1,220 @@
-#' Generalized Informative Visiting and Examination in EHR with OU+PCL Extension
+#' Generalized Informative Visiting and Examination in EHR Data with
+#' Ornstein--Uhlenbeck Pairwise Composite Likelihood Extension
 #'
 #' @description
-#' Fits a joint model for longitudinal EHR data that simultaneously accounts for
-#' informative visiting processes (IP) and informative observation processes (IO),
-#' using an Ornstein-Uhlenbeck (OU) process for temporal serial correlation.
+#' Fits a three-stage semiparametric joint model for longitudinal electronic
+#' health record (EHR) data, extending \code{\link{GIVEHR}} by modelling
+#' temporal serial correlation in the observation process with a stationary
+#' Ornstein--Uhlenbeck (OU) process and estimating the observation-process
+#' parameters via pairwise composite likelihood (PCL).
 #'
-#' @param data A data frame in long format containing the longitudinal data.
-#' @param id_col Character string for subject identifier column. Default: \code{"id"}.
-#' @param time_col Character string for visit time column. Default: \code{"time"}.
-#' @param y_col Character string for outcome column. Default: \code{"Y"}.
-#' @param r_col Character string for observation indicator column. Default: \code{"R"}.
-#' @param covars_visit_XV Character vector of covariates for visiting process.
-#' @param covars_outcome_fixed_XY Character vector of fixed effect covariates for outcome.
-#' @param covars_outcome_link_ZY Character vector of latent link covariates for outcome.
-#' @param covars_obs_fixed_XO Character vector of fixed effect covariates for observation.
-#' @param covars_obs_random_ZO Character vector of random effect covariates for observation.
-#' @param pair_type Character: \code{"adjacent"} (default) or \code{"all"} pairs for PCL.
-#' @param phi_init Numeric initial value for OU decay parameter. Default: \code{0.1}.
-#' @param phi_bounds Numeric vector of length 2 for phi bounds. Default: \code{c(1e-4, 100)}.
-#' @param optim_method Optimization method passed to \code{optim}. Default: \code{"L-BFGS-B"}.
-#' @param verbose Logical for progress messages. Default: \code{TRUE}.
+#' Stage 1 estimates the visiting-process intensity via Andersen--Gill
+#' partial likelihood with a log-normal frailty (identical to
+#' \code{\link{GIVEHR}}). Stage 2 maximises a pairwise composite
+#' log-likelihood over adjacent (or all) within-subject visit pairs,
+#' integrating over the bivariate probit structure induced by the OU
+#' process. An analytic gradient is provided for efficiency. Stage 3
+#' estimates the longitudinal outcome coefficients by weighted least
+#' squares with risk-set centering and a robust sandwich variance
+#' estimator.
 #'
-#' @return An object of class \code{"GIVEHR_OU_PCL"} containing estimated parameters.
+#' @param data A \code{data.frame} in long (panel) format with one row per
+#'   subject-time combination. Must contain columns for subject identifier,
+#'   visit time, outcome, observation indicator, and all specified
+#'   covariates. Rows with \code{NA} in the time column are treated as
+#'   unvisited time points.
+#' @param id_col Character string giving the name of the subject identifier
+#'   column. Default is \code{"id"}.
+#' @param time_col Character string giving the name of the visit-time
+#'   column. Default is \code{"time"}.
+#' @param y_col Character string giving the name of the outcome column.
+#'   Default is \code{"Y"}.
+#' @param r_col Character string giving the name of the binary observation
+#'   indicator column (\code{1} = outcome observed, \code{0} = outcome
+#'   missing at visit). Default is \code{"R"}.
+#' @param covars_visit_XV Character vector of covariate column names for the
+#'   visiting-process intensity model. Default is \code{c("Z", "X")}.
+#' @param covars_outcome_fixed_XY Character vector of covariate column names
+#'   for the fixed-effect part of the longitudinal outcome model. No
+#'   intercept is added automatically. Default is \code{c("Z", "X")}.
+#' @param covars_outcome_link_ZY Character vector of covariate column names
+#'   that interact with the conditional expectation of the latent factor
+#'   \eqn{U_i} in the outcome model. An intercept is prepended
+#'   automatically. Including \code{time_col} adds a time-varying link.
+#'   Default is \code{c("Z")}.
+#' @param covars_obs_fixed_XO Character vector of covariate column names for
+#'   the fixed-effect part of the observation-process probit model. An
+#'   intercept is prepended automatically. Default is \code{c("Z", "X")}.
+#' @param covars_obs_random_ZO Character vector of covariate column names
+#'   receiving independent random effects in the observation process. An
+#'   intercept is prepended automatically. Set to \code{NULL} for a
+#'   fixed-effects-only probit (in which case PCL is skipped and a
+#'   standard probit GLM is fitted). Default is \code{"Z"}.
+#' @param pair_type Character string specifying which within-subject visit
+#'   pairs to use for the pairwise composite likelihood. One of:
+#'   \describe{
+#'     \item{\code{"adjacent"}}{(Default.) Use only temporally adjacent
+#'       pairs \eqn{(j, j+1)}. This is computationally cheaper and
+#'       typically sufficient.}
+#'     \item{\code{"all"}}{Use all \eqn{\binom{m_i}{2}} pairs per
+#'       subject. More informative but \eqn{O(m_i^2)} per subject.}
+#'   }
+#' @param phi_init Numeric scalar giving the starting value for the OU
+#'   decay parameter \eqn{\phi} in the optimisation. Default is
+#'   \code{0.1}.
+#' @param phi_bounds Numeric vector of length 2 giving the lower and upper
+#'   bounds for \eqn{\phi} (on the original scale; internally
+#'   log-transformed). Default is \code{c(1e-4, 100)}.
+#' @param optim_method Character string specifying the optimisation method
+#'   passed to \code{\link[stats]{optim}}. Default is \code{"L-BFGS-B"}.
+#' @param verbose Logical; if \code{TRUE}, progress messages are printed
+#'   during estimation. Default is \code{FALSE}.
+#'
+#' @return An object of class \code{"GIVEHR_OU_PCL"}, which is a named list
+#' with the following components:
+#'
+#' \describe{
+#'   \item{\code{visiting_process}}{A list with elements:
+#'     \describe{
+#'       \item{\code{gamma_V}}{Named numeric vector of visiting-process
+#'         regression coefficients.}
+#'       \item{\code{Lambda0_hat}}{Named numeric vector of Breslow baseline
+#'         hazard increments at each unique event time.}
+#'       \item{\code{sigma2_zeta}}{Numeric scalar; estimated log-normal
+#'         frailty variance on the log scale.}
+#'       \item{\code{mu_Ui}}{Named numeric vector of empirical Bayes
+#'         posterior means for \eqn{U_i}.}
+#'       \item{\code{sigma2_Ui}}{Named numeric vector of empirical Bayes
+#'         posterior variances for \eqn{U_i}.}
+#'     }
+#'   }
+#'   \item{\code{observation_process}}{A list with elements:
+#'     \describe{
+#'       \item{\code{alpha_fixed}}{Named numeric vector of fixed-effect
+#'         probit coefficients (including intercept).}
+#'       \item{\code{delta_latent_link}}{(Present only when random effects
+#'         are fitted.) Named numeric vector of latent-link coefficients
+#'         \eqn{\delta}.}
+#'       \item{\code{Sigma_q}}{(Present only when random effects are
+#'         fitted.) Named numeric vector of estimated random-effect
+#'         variances \eqn{\sigma_{q_l}^2}.}
+#'       \item{\code{phi_OU}}{(Present only when random effects are
+#'         fitted.) Numeric scalar; estimated OU decay parameter
+#'         \eqn{\phi}. Larger values indicate faster decay of serial
+#'         correlation.}
+#'       \item{\code{pcl_value}}{(Present only when random effects are
+#'         fitted.) Numeric scalar; minimised negative pairwise composite
+#'         log-likelihood.}
+#'       \item{\code{convergence}}{(Present only when random effects are
+#'         fitted.) Integer convergence code from
+#'         \code{\link[stats]{optim}}.}
+#'     }
+#'   }
+#'   \item{\code{longitudinal_outcome}}{A list with elements:
+#'     \describe{
+#'       \item{\code{beta_Y}}{Named numeric vector of outcome fixed-effect
+#'         coefficients.}
+#'       \item{\code{theta_Y}}{Named numeric vector of outcome latent-link
+#'         coefficients.}
+#'       \item{\code{se_beta}}{Named numeric vector of sandwich standard
+#'         errors for \code{beta_Y}.}
+#'       \item{\code{vcov_robust}}{Numeric matrix; sandwich
+#'         variance--covariance matrix for
+#'         \code{c(beta_Y, theta_Y)}.}
+#'     }
+#'   }
+#'   \item{\code{model_info}}{A list with elements:
+#'     \describe{
+#'       \item{\code{n_subjects}}{Integer; number of unique subjects.}
+#'       \item{\code{n_visits}}{Integer; total number of visits.}
+#'       \item{\code{n_observed}}{Integer; total number of visits with
+#'         \code{R = 1}.}
+#'       \item{\code{pair_type}}{Character string echoing the
+#'         \code{pair_type} argument.}
+#'       \item{\code{median_gap}}{Numeric scalar; median time gap between
+#'         consecutive visits within subjects.}
+#'     }
+#'   }
+#'   \item{\code{call}}{The matched call.}
+#' }
+#'
+#' @details
+#' The model extends \code{\link{GIVEHR}} by introducing an
+#' Ornstein--Uhlenbeck process \eqn{\xi_i(t)} in the observation model:
+#' \deqn{\tilde R_{ij} = \alpha^\top X_{ij}^O + \delta^\top Z_{ij}^O
+#'   \cdot U_i + q_i^\top Z_{ij}^O + \xi_i(t_{ij}),}
+#' where \eqn{R_{ij} = I(\tilde R_{ij} > 0)}, \eqn{q_i \sim N(0,
+#' \Sigma_q)}, and \eqn{\xi_i} is a stationary OU process with unit
+#' marginal variance and autocorrelation
+#' \eqn{\mathrm{Cor}(\xi_i(s), \xi_i(t)) = \exp(-\phi |t - s|)}. The
+#' OU component captures temporal serial correlation in the observation
+#' process that is not explained by covariates or the shared latent
+#' factor.
+#'
+#' \strong{Stage 2 -- Pairwise Composite Likelihood.}
+#' Because the full likelihood involves high-dimensional integrals over
+#' \eqn{\xi_i}, estimation proceeds via pairwise composite likelihood.
+#' For each within-subject visit pair \eqn{(j, k)} the bivariate probit
+#' probability \eqn{P(R_{ij} = r_j, R_{ik} = r_k)} is computed using
+#' \code{\link[pbivnorm]{pbivnorm}}, and the composite log-likelihood is
+#' \deqn{cl(\theta) = \sum_i \sum_{j < k} \log \Phi_2(d_j z_j,\, d_k
+#'   z_k;\; d_j d_k \rho_{jk}),}
+#' where \eqn{d_j = 2 R_{ij} - 1}, \eqn{z_j} is the standardised
+#' marginal probit argument, and \eqn{\rho_{jk}} combines the latent
+#' factor, random-effect, and OU contributions to the pairwise
+#' correlation. An analytic gradient is provided and the composite
+#' log-likelihood is maximised with \code{\link[stats]{optim}} using the
+#' specified \code{optim_method}.
+#'
+#' \strong{Stages 1 and 3} are identical to \code{\link{GIVEHR}}, except
+#' that Stage 3 uses a static (non-filtered) version of \eqn{\omega_i(t)}
+#' and \eqn{\kappa_i(t)}.
+#'
+#' S3 methods \code{print}, \code{summary}, \code{coef}, \code{vcov}, and
+#' \code{confint} are available for objects of class
+#' \code{"GIVEHR_OU_PCL"}.
 #'
 #' @references
-#' Yang, C.-H., Shi, X., & Mukherjee, B. (2025). A Joint Modeling Approach for
-#' Longitudinal EHR Data with Informative Visiting and Observation Processes.
+#' Yang, C.-H., Shi, X., and Mukherjee, B. (2026).
+#' "Joint Modeling of Longitudinal EHR Data with Shared Random Effects for Informative Visiting and Observation Processes."
+#' arXiv:2602.15374. doi:10.48550/arXiv.2602.15374.
+#'
+#'
+#' @seealso
+#' \code{\link{GIVEHR}} for the base version without OU serial
+#' correlation;
+#' \code{\link{GIVEHR_GH}} for the Gauss--Hermite quadrature variant;
+#' \code{\link{sim_data_gen}} for simulating data compatible with this
+#' model;
+#' \code{\link[pbivnorm]{pbivnorm}} for the bivariate normal CDF used
+#' internally.
 #'
 #' @examples
 #' \dontrun{
-#' dat <- sim_GIVEHR_OU_PCL(n = 500)
-#' fit <- GIVEHR_OU_PCL(data = dat$long_data, verbose = TRUE)
+#' # Simulate data with OU serial correlation
+#' dat <- sim_data_gen(n = 500, phi = 0.1, seed = 42)
+#'
+#' # Fit with adjacent pairs (faster)
+#' fit <- GIVEHR_OU_PCL(
+#'   data      = dat$long_data,
+#'   pair_type = "adjacent",
+#'   verbose   = TRUE
+#' )
+#' print(fit)
 #' summary(fit)
+#' confint(fit)
+#'
+#' # Fit with all pairs (more efficient)
+#' fit_all <- GIVEHR_OU_PCL(
+#'   data      = dat$long_data,
+#'   pair_type = "all",
+#'   verbose   = TRUE
+#' )
+#' coef(fit_all, type = "outcome")
 #' }
 #'
+#' @importFrom stats as.formula binomial coef dnorm glm model.matrix
+#'   optim pnorm qnorm reformulate
 #' @export
 GIVEHR_OU_PCL <- function(
     data,
@@ -675,7 +856,7 @@ GIVEHR_OU_PCL <- function(
   LHS <- crossprod(H_sub, D_sub)  # = t(H_sub) %*% D_sub
   RHS <- crossprod(H_sub, Y_sub)  # = t(H_sub) %*% Y_sub
 
-  coefs_final <- tryCatch(solve(LHS, RHS), error = function(e) qr.solve(LHS, RHS))
+  coefs_final <- tryCatch(solve(LHS, RHS), error = function(e) base::qr.solve(LHS, RHS))
   coefs_final <- as.vector(coefs_final)
 
   p_xy <- ncol(XY_all)
@@ -692,7 +873,7 @@ GIVEHR_OU_PCL <- function(
   score_contrib_i <- rowsum(H_sub * res, group = subj_index[rows_event_outcome])
   Meat <- crossprod(score_contrib_i)  # = t(S) %*% S where S is stacked scores
 
-  invBread <- tryCatch(solve(Bread), error = function(e) qr.solve(Bread))
+  invBread <- tryCatch(solve(Bread), error = function(e) base::qr.solve(Bread))
 
   # Sandwich: (H'D)^{-1} * Meat * (H'D)^{-T}
   V_robust <- invBread %*% Meat %*% t(invBread)
@@ -761,137 +942,3 @@ GIVEHR_OU_PCL <- function(
   )
 }
 
-
-# =============================================================================
-# S3 Methods
-# =============================================================================
-
-#' @export
-print.GIVEHR_OU_PCL <- function(x, ...) {
-  cat("\nGIVEHR Model with OU+PCL Extension\n")
-  cat(strrep("=", 40), "\n\n")
-
-  cat(sprintf("Subjects: %d | Visits: %d | Observed: %d (%.1f%%)\n",
-              x$model_info$n_subjects, x$model_info$n_visits, x$model_info$n_observed,
-              100 * x$model_info$n_observed / x$model_info$n_visits))
-
-  if (!is.null(x$observation_process$phi_OU) && !is.na(x$observation_process$phi_OU)) {
-    rho_med <- exp(-x$observation_process$phi_OU * x$model_info$median_gap)
-    cat(sprintf("OU decay (phi): %.4f | Correlation at median gap: %.4f\n",
-                x$observation_process$phi_OU, rho_med))
-  }
-
-  cat("\nOutcome fixed effects (beta):\n")
-  print(round(x$longitudinal_outcome$beta_Y, 4))
-
-  cat("\nUse summary() for full results.\n")
-  invisible(x)
-}
-
-#' @export
-summary.GIVEHR_OU_PCL <- function(object, ...) {
-  beta <- object$longitudinal_outcome$beta_Y
-  se <- object$longitudinal_outcome$se_beta
-  z <- beta / se
-  p <- 2 * pnorm(-abs(z))
-
-  coef_table <- data.frame(
-    Estimate = beta,
-    `Std.Error` = se,
-    `z value` = z,
-    `Pr(>|z|)` = p,
-    check.names = FALSE
-  )
-
-  structure(
-    list(
-      call = object$call,
-      model_info = object$model_info,
-      visiting = list(
-        gamma = object$visiting_process$gamma_V,
-        sigma2_zeta = object$visiting_process$sigma2_zeta
-      ),
-      observation = object$observation_process,
-      outcome = list(
-        coefficients = coef_table,
-        theta = object$longitudinal_outcome$theta_Y
-      )
-    ),
-    class = "summary.GIVEHR_OU_PCL"
-  )
-}
-
-#' @export
-print.summary.GIVEHR_OU_PCL <- function(x, digits = 4, ...) {
-  cat("\nGIVEHR Model with OU+PCL Extension\n")
-  cat(strrep("=", 50), "\n")
-
-  cat("\nCall:\n")
-  print(x$call)
-
-  cat("\n--- Visiting Process ---\n")
-  cat(sprintf("Frailty variance: %.4f\n", x$visiting$sigma2_zeta))
-  cat("Coefficients:\n")
-  print(round(x$visiting$gamma, digits))
-
-  cat("\n--- Observation Process ---\n")
-  cat("Fixed effects (alpha):\n")
-  print(round(x$observation$alpha_fixed, digits))
-
-  if (!is.null(x$observation$delta_latent_link)) {
-    cat("\nLatent link (delta):\n")
-    print(round(x$observation$delta_latent_link, digits))
-    cat("\nRandom effect variances (Sigma_q):\n")
-    print(round(x$observation$Sigma_q, digits))
-  }
-
-  if (!is.null(x$observation$phi_OU) && !is.na(x$observation$phi_OU)) {
-    rho_med <- exp(-x$observation$phi_OU * x$model_info$median_gap)
-    cat(sprintf("\nOU decay (phi): %.4f\n", x$observation$phi_OU))
-    cat(sprintf("Correlation at median gap (%.2f): %.4f\n",
-                x$model_info$median_gap, rho_med))
-  }
-
-  cat("\n--- Longitudinal Outcome ---\n")
-  cat("Fixed effects (beta):\n")
-  stats::printCoefmat(x$outcome$coefficients, digits = digits, signif.stars = TRUE)
-
-  if (length(x$outcome$theta) > 0) {
-    cat("\nLatent link (theta):\n")
-    print(round(x$outcome$theta, digits))
-  }
-
-  invisible(x)
-}
-
-#' @export
-coef.GIVEHR_OU_PCL <- function(object, type = c("outcome", "visiting", "observation"), ...) {
-  type <- match.arg(type)
-  switch(type,
-         outcome = c(object$longitudinal_outcome$beta_Y, object$longitudinal_outcome$theta_Y),
-         visiting = object$visiting_process$gamma_V,
-         observation = c(object$observation_process$alpha_fixed,
-                         object$observation_process$delta_latent_link)
-  )
-}
-
-#' @export
-vcov.GIVEHR_OU_PCL <- function(object, ...) {
-  object$longitudinal_outcome$vcov_robust
-}
-
-#' @export
-confint.GIVEHR_OU_PCL <- function(object, parm = NULL, level = 0.95, ...) {
-  beta <- object$longitudinal_outcome$beta_Y
-  se <- object$longitudinal_outcome$se_beta
-
-  a <- (1 - level) / 2
-  fac <- qnorm(1 - a)
-
-  ci <- cbind(beta - fac * se, beta + fac * se)
-  colnames(ci) <- paste0(format(100 * c(a, 1 - a), trim = TRUE), "%")
-  rownames(ci) <- names(beta)
-
-  if (!is.null(parm)) ci <- ci[parm, , drop = FALSE]
-  ci
-}

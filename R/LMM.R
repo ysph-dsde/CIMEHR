@@ -1,31 +1,115 @@
-#' Fit Linear Mixed Model for Longitudinal Data
+#' Fit a Linear Mixed Model for Longitudinal Data
 #'
-#' @param data A data frame containing longitudinal data.
-#' @param id Character string for subject ID column. Default is "id".
-#' @param fixed Formula for fixed effects (e.g., Y ~ Z + X + time).
-#' @param random Formula for random effects (e.g., ~ 1 + Z | id).
-#' @param obs_indicator Column name for observation indicator (keep rows where value != 0).
-#'        Default is NULL (use all rows).
-#' @param visit_adjust Type of visit count adjustment: NULL (none), "OA" (observed-adjusted,
-#'        count after filtering), or "VA" (visit-adjusted, count before filtering).
-#'        When specified, n_visits is automatically added to the fixed effects formula.
-#' @param method Estimation method: "REML" or "ML". Default is "REML".
-#' @param optimizer Optimizer: "nlminb" or "optim". Default is "nlminb".
+#' @description
+#' Fits a linear mixed-effects model to longitudinal data using
+#' \code{\link[nlme]{lme}}, with optional filtering by an observation
+#' indicator and optional visit-count adjustment. This provides a
+#' convenient wrapper for standard LMM, observed-adjusted LMM (OA-LMM),
+#' and visit-adjusted LMM (VA-LMM) estimators commonly used as
+#' benchmarks in informative-visiting analyses.
 #'
-#' @return Coefficient matrix from summary(lme(...)).
+#' @param data A \code{data.frame} in long (panel) format containing
+#'   longitudinal data with one row per subject-time combination.
+#' @param id Character string giving the name of the subject identifier
+#'   column. This is used for the visit-count adjustment (if requested)
+#'   and is referenced in the random-effects formula. Default is
+#'   \code{"id"}.
+#' @param fixed A \code{\link[stats]{formula}} specifying the fixed-effects
+#'   structure (e.g., \code{Y ~ Z + X + time}). When \code{visit_adjust}
+#'   is non-\code{NULL}, the term \code{n_visits} is appended
+#'   automatically. Default is \code{Y ~ 1}.
+#' @param random A one-sided \code{\link[stats]{formula}} specifying the
+#'   random-effects structure using \pkg{nlme} syntax (e.g.,
+#'   \code{~ 1 + Z | id}). Default is \code{~ 1 | id}.
+#' @param obs_indicator Character string giving the name of the
+#'   observation indicator column. Rows where this column equals \code{0}
+#'   are dropped before fitting. Set to \code{NULL} to use all rows.
+#'   Default is \code{NULL}.
+#' @param visit_adjust Character string specifying the type of visit-count
+#'   adjustment. One of:
+#'   \describe{
+#'     \item{\code{NULL}}{(Default.) No adjustment; a standard LMM is
+#'       fitted.}
+#'     \item{\code{"OA"}}{Observed-adjusted: the cumulative visit count
+#'       \code{n_visits} is computed \emph{after} filtering by
+#'       \code{obs_indicator}. This adjusts for the number of observed
+#'       (retained) visits.}
+#'     \item{\code{"VA"}}{Visit-adjusted: the cumulative visit count
+#'       \code{n_visits} is computed \emph{before} filtering by
+#'       \code{obs_indicator}. This adjusts for the total number of
+#'       visits regardless of whether the outcome was observed.}
+#'   }
+#'   When either \code{"OA"} or \code{"VA"} is specified, the variable
+#'   \code{n_visits} is automatically added to the \code{fixed}
+#'   formula.
+#' @param method Character string specifying the estimation method passed
+#'   to \code{\link[nlme]{lme}}. One of \code{"REML"} (restricted maximum
+#'   likelihood; default) or \code{"ML"} (maximum likelihood).
+#' @param optimizer Character string specifying the optimiser for the
+#'   \code{\link[nlme]{lmeControl}} object. One of \code{"nlminb"}
+#'   (default) or \code{"optim"}.
+#'
+#' @return A numeric matrix of fixed-effect estimates, identical to the
+#'   \code{tTable} component of \code{summary(\link[nlme]{lme}(...))}. The
+#'   matrix has one row per fixed effect and columns \code{Value},
+#'   \code{Std.Error}, \code{DF}, \code{t-value}, and \code{p-value}.
+#'
+#' @details
+#' This function is a convenience wrapper that:
+#' \enumerate{
+#'   \item Optionally computes a within-subject cumulative visit counter
+#'     (\code{n_visits}) either before or after filtering by the
+#'     observation indicator.
+#'   \item Filters out rows where \code{obs_indicator == 0} (if
+#'     specified).
+#'   \item Removes incomplete cases.
+#'   \item Fits a linear mixed model with \code{\link[nlme]{lme}} using
+#'     the specified fixed and random formulas, estimation method, and
+#'     optimiser.
+#' }
+#'
+#' The OA-LMM and VA-LMM adjustments were proposed as simple corrections
+#' for informative visit times. OA-LMM conditions on the number of
+#' visits that yielded observed outcomes, while VA-LMM conditions on the
+#' total number of visits. Neither fully accounts for the visiting
+#' process but can reduce bias compared to a naive LMM.
+#'
+#' @references
+#' Pullenayegum, E. M. and Lim, L. S. (2016). Longitudinal data subject
+#' to irregular observation: a review of methods with a focus on visit
+#' processes, assumptions, and study design. \emph{Statistical Methods in
+#' Medical Research}, \strong{25}(6), 2992--3014.
+#'
+#' Pinheiro, J. C. and Bates, D. M. (2000). \emph{Mixed-Effects Models
+#' in S and S-PLUS}. Springer.
+#'
+#' @seealso
+#' \code{\link[nlme]{lme}} for the underlying fitting function;
+#' \code{\link{GIVEHR}} for a joint model that explicitly accounts for
+#' informative visiting;
+#' \code{\link{IIRR_weighting}} for an inverse-intensity-weighting
+#' approach;
+#' \code{\link{MI_IP}} and \code{\link{LI_IP}} for combining imputation
+#' with IP adjustment.
 #'
 #' @examples
+#' \dontrun{
+#' dat <- sim_data_gen(n = 500, seed = 42)
+#'
 #' # Standard LMM
-#' LMM(data, fixed = Y ~ Z + X + time, random = ~ 1 | id, obs_indicator = "R")
+#' LMM(dat$long_data, fixed = Y ~ Z + X + time, random = ~ 1 | id,
+#'     obs_indicator = "R")
 #'
-#' # OA-LMM (n_visits automatically added to formula)
-#' LMM(data, fixed = Y ~ Z + X + time, random = ~ 1 | id,
-#'         obs_indicator = "R", visit_adjust = "OA")
+#' # OA-LMM (n_visits added automatically)
+#' LMM(dat$long_data, fixed = Y ~ Z + X + time, random = ~ 1 | id,
+#'     obs_indicator = "R", visit_adjust = "OA")
 #'
-#' # VA-LMM (n_visits automatically added to formula)
-#' LMM(data, fixed = Y ~ Z + X + time, random = ~ 1 | id,
-#'         obs_indicator = "R", visit_adjust = "VA")
+#' # VA-LMM (n_visits added automatically)
+#' LMM(dat$long_data, fixed = Y ~ Z + X + time, random = ~ 1 + Z | id,
+#'     obs_indicator = "R", visit_adjust = "VA")
+#' }
 #'
+#' @importFrom stats na.omit update
 #' @export
 LMM <- function(data,
                     id = "id",

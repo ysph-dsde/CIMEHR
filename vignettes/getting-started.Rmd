@@ -1,0 +1,114 @@
+---
+title: "Getting started with SIMMER (GIVEHR-focused)"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with SIMMER (GIVEHR-focused)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4
+)
+```
+
+SIMMER provides methods for estimating longitudinal associations in electronic health record (EHR) data when:
+
+- *visit times* are informative (patients are observed more/less often depending on health status and covariates), and
+- *measurement availability* at a visit is informative (the biomarker/outcome is missing not at random).
+
+The **recommended entry point** is **`GIVEHR()`**, which fits a **three-stage semiparametric joint model**:
+(1) visiting intensity, (2) observation indicator, and (3) longitudinal outcome.
+
+## Installation
+
+```r
+# install.packages("devtools")
+devtools::install_github("ysph-dsde/SIMMER")
+```
+
+```{r}
+library(SIMMER)
+```
+
+## Data layout expected by `GIVEHR()`
+
+`GIVEHR()` expects **long/panel** data with one row per subject-time combination. At minimum, you need:
+
+- `id`: subject identifier
+- `time`: visit time (can be `NA` to represent an unvisited candidate time point)
+- `Y`: longitudinal outcome (may be missing)
+- `R`: observation indicator (typically 1 if `Y` observed at that time, 0 otherwise)
+- `C`: censoring time (often study end; can be constant across subjects)
+- covariates for the visiting / observation / outcome stages
+
+The package provides a simulator that produces data in the correct format.
+
+## Worked example: simulate data and fit GIVEHR
+
+```{r}
+dat <- sim_data_gen(n = 300, seed = 1)
+
+# Inspect the first few rows
+head(dat)
+```
+
+### Fit the model
+
+```{r}
+fit <- GIVEHR_GH(
+     data = dat$long_data,
+     covars_visit_XV         = c("Z", "X"),
+     covars_outcome_fixed_XY = c("Z", "X"),
+     covars_outcome_link_ZY  = "Z",
+     covars_obs_fixed_XO     = c("Z", "X"),
+     covars_obs_random_ZO    = "Z",
+     gh_points_U = 7,
+     gh_points_q = 5,
+     verbose     = TRUE
+     )
+
+fit
+```
+
+### Summarize results
+
+```{r}
+summary(fit)
+```
+
+The printed summary is organized by model stage:
+
+- **Visiting process**: regression coefficients governing visit intensity (and frailty variance, if estimated).
+- **Observation process**: probit regression for measurement availability, with optional latent-factor linkage.
+- **Outcome model**: fixed effects for the longitudinal outcome association (the main target in most analyses).
+
+## Programmatic access to estimates
+
+`GIVEHR()` returns a structured object. Useful slots include:
+
+```{r}
+names(fit)
+```
+
+### Outcome stage (primary)
+
+```{r}
+fit$outcome$beta
+```
+
+### Visiting stage
+
+```{r}
+fit$visiting$coefficients
+```
+
+### Observation stage
+
+```{r}
+fit$observation$alpha
+```
