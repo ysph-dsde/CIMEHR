@@ -1,11 +1,14 @@
 # SIMMER
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/ysph-dsde/SIMMER/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ysph-dsde/SIMMER/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 > A unified semiparametric joint modeling framework that
 > simultaneously characterizes the visiting, biomarker observation,
 > and longitudinal outcome processes.
 
 ---
-
 ## Overview
 
 **SIMMER** fits semiparametric joint models for longitudinal EHR data
