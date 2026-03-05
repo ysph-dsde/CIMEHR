@@ -1,7 +1,7 @@
-# SIMMER
+# CIMEHR
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/ysph-dsde/SIMMER/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ysph-dsde/SIMMER/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/ysph-dsde/CIMEHR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ysph-dsde/CIMEHR/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 > A unified semiparametric joint modeling framework that
@@ -11,7 +11,7 @@
 ---
 ## Overview
 
-**SIMMER** fits semiparametric joint models for longitudinal EHR data
+**CIMEHR** fits semiparametric joint models for longitudinal EHR data
 that simultaneously correct for two sources of informative presence
 bias: an **informative visiting process** (when patients visit) and an
 **informative observation process** (whether outcomes are recorded at
@@ -35,13 +35,13 @@ variance estimators provide robust inference throughout.
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("ysph-dsde/SIMMER")
+devtools::install_github("ysph-dsde/CIMEHR")
 ```
 
 ## Quick example
 
 ``` r
-library(SIMMER)
+library(CIMEHR)
 
 # Simulate EHR data with informative visiting and observation
 dat <- sim_data_gen(n = 500, seed = 42)
@@ -114,7 +114,7 @@ The package includes several comparison methods for simulation and benchmark stu
 
 ## Getting help
 
-- Run `vignette("getting-started", package = "SIMMER")` for a complete
+- Run `vignette("getting-started", package = "CIMEHR")` for a complete
   tutorial.
 - Open an issue on GitHub for bugs or feature requests.
 

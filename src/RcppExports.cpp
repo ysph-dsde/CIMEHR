@@ -12,7 +12,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 
 // pw_total_softplus_rcpp
 double pw_total_softplus_rcpp(const NumericVector& y, const NumericVector& mu, const IntegerVector& offsets, const IntegerVector& g1, const IntegerVector& g2);
-RcppExport SEXP _SIMMER_pw_total_softplus_rcpp(SEXP ySEXP, SEXP muSEXP, SEXP offsetsSEXP, SEXP g1SEXP, SEXP g2SEXP) {
+RcppExport SEXP _CIMEHR_pw_total_softplus_rcpp(SEXP ySEXP, SEXP muSEXP, SEXP offsetsSEXP, SEXP g1SEXP, SEXP g2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -27,7 +27,7 @@ END_RCPP
 }
 // pw_total_gaussian_rcpp
 double pw_total_gaussian_rcpp(const NumericVector& y, const NumericVector& mu, const IntegerVector& offsets, const IntegerVector& g1, const IntegerVector& g2);
-RcppExport SEXP _SIMMER_pw_total_gaussian_rcpp(SEXP ySEXP, SEXP muSEXP, SEXP offsetsSEXP, SEXP g1SEXP, SEXP g2SEXP) {
+RcppExport SEXP _CIMEHR_pw_total_gaussian_rcpp(SEXP ySEXP, SEXP muSEXP, SEXP offsetsSEXP, SEXP g1SEXP, SEXP g2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -42,12 +42,12 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_SIMMER_pw_total_softplus_rcpp", (DL_FUNC) &_SIMMER_pw_total_softplus_rcpp, 5},
-    {"_SIMMER_pw_total_gaussian_rcpp", (DL_FUNC) &_SIMMER_pw_total_gaussian_rcpp, 5},
+    {"_CIMEHR_pw_total_softplus_rcpp", (DL_FUNC) &_CIMEHR_pw_total_softplus_rcpp, 5},
+    {"_CIMEHR_pw_total_gaussian_rcpp", (DL_FUNC) &_CIMEHR_pw_total_gaussian_rcpp, 5},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_SIMMER(DllInfo *dll) {
+RcppExport void R_init_CIMEHR(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

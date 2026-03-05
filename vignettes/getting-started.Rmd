@@ -1,8 +1,8 @@
 ---
-title: "Getting Started with SIMMER"
+title: "Getting Started with CIMEHR"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Getting Started with SIMMER}
+  %\VignetteIndexEntry{Getting Started with CIMEHR}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -30,12 +30,12 @@ sources of bias that are typically absent from designed studies:
    latent factors that drive the outcome.
 
 Ignoring either source produces biased estimates of longitudinal
-associations. **SIMMER** provides `GIVEHR()`, a three-stage
+associations. **CIMEHR** provides `GIVEHR()`, a three-stage
 semiparametric estimator that jointly models both mechanisms and yields
 consistent estimates of the outcome regression coefficients.
 
 ```{r}
-library(SIMMER)
+library(CIMEHR)
 ```
 
 ## 1. Simulating data
@@ -199,7 +199,7 @@ summary(fit_ou)
 
 ## 5. Benchmark methods
 
-SIMMER includes several alternative estimators for comparative studies.
+CIMEHR includes several alternative estimators for comparative studies.
 These methods generally address only the visiting process (not the
 observation process) or ignore informative presence entirely.
 

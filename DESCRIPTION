@@ -1,5 +1,5 @@
-Package: SIMMER
-Title: Gaussian Informative Visiting and observation processes in Electronic Health Record (EHR) dtaa
+Package: CIMEHR
+Title: Gaussian clinicially informative visiting and observation processes in Electronic Health Record (EHR) data
 Version: 0.0.0.9000
 Authors@R:  c(
   person(given = "Cheng-Han", family = "Yang",
@@ -33,6 +33,6 @@ Imports:
     slim
 LinkingTo:
     Rcpp
-URL: https://github.com/ysph-dsde/SIMMER
-BugReports: https://github.com/ysph-dsde/SIMMER/issues
+URL: https://github.com/ysph-dsde/CIMEHR
+BugReports: https://github.com/ysph-dsde/CIMEHR/issues
 VignetteBuilder: knitr

@@ -2,10 +2,10 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 pw_total_softplus_rcpp <- function(y, mu, offsets, g1, g2) {
-    .Call(`_SIMMER_pw_total_softplus_rcpp`, y, mu, offsets, g1, g2)
+    .Call(`_CIMEHR_pw_total_softplus_rcpp`, y, mu, offsets, g1, g2)
 }
 
 pw_total_gaussian_rcpp <- function(y, mu, offsets, g1, g2) {
-    .Call(`_SIMMER_pw_total_gaussian_rcpp`, y, mu, offsets, g1, g2)
+    .Call(`_CIMEHR_pw_total_gaussian_rcpp`, y, mu, offsets, g1, g2)
 }
 
