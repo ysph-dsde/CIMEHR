@@ -53,7 +53,7 @@ dat$long_data$C <- 60
 fit <- GIVEHR(data = dat$long_data)
 
 # Outcome fixed effects with SE and 95% CI
-fit
+print(fit)
 
 # Full summary of all three processes
 summary(fit)
