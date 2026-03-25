@@ -13,7 +13,7 @@ CIMEHR
 # Overview
 
 **CIMEHR**, which stands for **C**linical **I**nformative **M**issingness for **E**lectronic 
-**H**ealth **R**ecord data, fits semiparametric joint models for longitudinal EHR 
+**H**ealth **R**ecord (EHR) data, fits semiparametric joint models for longitudinal EHR 
 data that simultaneously correct for two sources of informative presence bias: 
 an **informative visiting process** (when patients visit) and an 
 **informative observation process** (whether outcomes are recorded at visits).
