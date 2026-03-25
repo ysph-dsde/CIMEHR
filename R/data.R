@@ -1,7 +1,7 @@
 #' Simulated Electronic Health Record (EHR) Longitudinal Data
 #'
 #' A pre-generated longitudinal dataset from the joint model implemented in
-#' \code{\link{sim_data_gen}}, containing 1 500 subjects with informative
+#' \code{\link{sim_data_gen}}, containing 2000 subjects with informative
 #' visiting and observation processes.
 #'
 #' The data were generated with \code{sim_data_gen(n = 1500, seed = 2026)}
