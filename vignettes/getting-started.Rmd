@@ -34,7 +34,7 @@ three-stage semiparametric methods that jointly model both mechanisms ---
 together with nine benchmark comparison methods for simulation studies.
 
 This vignette walks through a complete analysis using the pre-generated
-example dataset `sim_ehr_data` (1 500 subjects).
+example dataset `sim_ehr_data` (2000 subjects).
 
 ```{r load-package}
 library(CIMEHR)
