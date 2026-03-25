@@ -23,9 +23,9 @@ Prints outcome fixed-effect estimates from the joint model without a
 separate observation process.
 }
 \examples{
-\dontrun{
-dat <- sim_data_gen(n = 500, seed = 42)
-fit <- EHRJoint(dat$long_data)
+\donttest{
+data(sim_ehr_data)
+fit <- EHRJoint(sim_ehr_data)
 fit
 }
 

@@ -23,9 +23,9 @@ Displays visiting-process and outcome estimates under both balancing
 and MLE weights, including the sensitivity parameter.
 }
 \examples{
-\dontrun{
-dat <- sim_data_gen(n = 500, seed = 42)
-fit <- IIRR_balancing(dat$long_data, formula = ~ Z + X)
+\donttest{
+data(sim_ehr_data)
+fit <- IIRR_balancing(sim_ehr_data, visit_covs = c("Z", "X"))
 summary(fit)
 }
 

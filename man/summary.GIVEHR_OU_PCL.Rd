@@ -25,9 +25,9 @@ including the OU decay parameter. Robust standard errors are shown
 where available.
 }
 \examples{
-\dontrun{
-dat <- sim_data_gen(n = 500, seed = 42)
-fit <- GIVEHR_OU_PCL(data = dat$long_data)
+\donttest{
+data(sim_ehr_data)
+fit <- GIVEHR_OU_PCL(data = sim_ehr_data)
 summary(fit)
 }
 

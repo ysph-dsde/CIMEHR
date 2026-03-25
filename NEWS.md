@@ -1,0 +1,5 @@
+## Package Updates
+
+### Changes in Version 0.1.0 (2026-03-04)
+*  First version released on GitHub (<https://github.com/ysph-dsde/CIMEHR>)
+

@@ -49,24 +49,11 @@
 #' methods such as \code{\link{GIVEHR}}.
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 500, seed = 42)
-#'
-#' # Mean outcome regressed on Z and X
-#' SummaryStat(
-#'   data    = dat$long_data,
-#'   outcome = "Y",
-#'   stat    = "mean",
-#'   formula = ~ Z + X
-#' )
-#'
-#' # Median outcome with per-covariate summarisation
-#' SummaryStat(
-#'   data     = dat$long_data,
-#'   stat     = "median",
-#'   formula  = ~ Z + X,
-#'   cov_stat = list(X = "mean", Z = "mean")
-#' )
+#' \donttest{
+#' data(sim_ehr_data)
+#' fit <- SummaryStat(sim_ehr_data, formula = ~ Z + X)
+#' print(fit)
+#' summary(fit)
 #' }
 #'
 #' @importFrom stats aggregate as.formula lm median

@@ -3,6 +3,7 @@
 ^LICENSE\.md$
 ^README\.Rmd$
 ^NEWS.Rmd$
+^data-raw$
 ^\.github$
 ^README_files$
 ^\.git$

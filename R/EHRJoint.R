@@ -1,4 +1,4 @@
-#' Joint estimation for longitudinal processes (EHRJoint)
+#' Joint Estimation for Electronic Health Record (EHR) Longitudinal Processes (EHRJoint)
 #'
 #' Fit a joint workflow for visiting, observation, and outcome processes for
 #' irregularly observed longitudinal data.
@@ -28,9 +28,10 @@
 #' \doi{10.48550/arXiv.2410.13113}. \url{https://arxiv.org/abs/2410.13113}.
 #'
 #' @examples
-#' \dontrun{
-#' fit <- EHRJoint(dat_long)
-#' fit
+#' \donttest{
+#' data(sim_ehr_data)
+#' fit <- EHRJoint(sim_ehr_data)
+#' print(fit)
 #' summary(fit)
 #' }
 #'

@@ -22,9 +22,9 @@
 Displays estimates for the visiting, observation, and outcome processes.
 }
 \examples{
-\dontrun{
-dat <- sim_data_gen(n = 500, seed = 42)
-fit <- EHRJoint(dat$long_data)
+\donttest{
+data(sim_ehr_data)
+fit <- EHRJoint(sim_ehr_data)
 summary(fit)
 }
 

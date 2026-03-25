@@ -24,9 +24,9 @@ Displays estimates for all three stages of the Gauss--Hermite variant.
 Standard errors are shown where available.
 }
 \examples{
-\dontrun{
-dat <- sim_data_gen(n = 500, seed = 42)
-fit <- GIVEHR_GH(data = dat$long_data)
+\donttest{
+data(sim_ehr_data)
+fit <- GIVEHR_GH(data = sim_ehr_data)
 summary(fit)
 }
 

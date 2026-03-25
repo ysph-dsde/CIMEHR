@@ -2,7 +2,7 @@
 % Please edit documentation in R/LI_IP.R
 \name{LI_IP}
 \alias{LI_IP}
-\title{Linear Increment Imputation with Informative Presence Adjustment}
+\title{Linear Increment (LI) Imputation with Informative Presence (IP) Adjustment}
 \usage{
 LI_IP(
   data,
@@ -67,7 +67,7 @@ applied to the completed dataset. One of:
 \item{\code{"LMM"}}{Standard linear mixed model via
 \code{\link{LMM}} (no IP adjustment; included for comparison).}
 \item{\code{"Liang"}}{Joint model of Liang et al. (2009) via
-\code{\link{JMVL_IP}}.}
+\code{\link{JMVL_Liang}}.}
 \item{\code{"IIRR_weighting"}}{Inverse intensity rate ratio
 weighting via \code{\link{IIRR_balancing}} (using MLE weights).}
 \item{\code{"IIRR_balancing"}}{Balancing-weights estimator of
@@ -165,34 +165,12 @@ S3 methods \code{print} and \code{summary} are available for objects
 of class \code{"LI_IP_result"}.
 }
 \examples{
-\dontrun{
-dat <- sim_data_gen(n = 500, seed = 42)
-
-# Liang's method with default LI imputation
-result <- LI_IP(
-  data       = dat$long_data,
-  ip_method  = "Liang",
-  visit_covs = c("Z", "X")
-)
-result
-
-# Custom LI model with IIRR weighting
-result2 <- LI_IP(
-  data          = dat$long_data,
-  ip_method     = "IIRR_weighting",
-  li_formula    = Y ~ Z + X + time,
-  li_covariance = "randomwalk",
-  visit_covs    = c("Z", "X")
-)
-
-# IIRR balancing with sensitivity analysis
-result3 <- LI_IP(
-  data       = dat$long_data,
-  ip_method  = "IIRR_balancing",
-  visit_covs = c("Z", "X"),
-  ip_args    = list(phi = 0.3)
-)
-summary(result3)
+\donttest{
+data(sim_ehr_data)
+dat <- sim_ehr_data[, c("id", "Z", "X", "time", "R", "Y", "C")]
+fit <- LI_IP(dat, ip_method = "LMM", visit_covs = c("Z", "X"))
+print(fit)
+summary(fit)
 }
 
 }

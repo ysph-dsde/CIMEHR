@@ -1,4 +1,4 @@
-#' Inverse Intensity Rate Ratio Weighting Estimator
+#' Inverse Intensity Rate Ratio (IIRR) Weighting Estimator
 #'
 #' @description
 #' Estimates marginal regression coefficients for a longitudinal outcome by
@@ -27,12 +27,15 @@
 #' @param visit_covs Character vector of covariate column names for the
 #'   visiting-process intensity model. These enter the exponent of the
 #'   multiplicative intensity. Default is \code{c("Z", "X")}.
-#' @param formula A one-sided \code{\link[stats]{formula}} specifying the
-#'   design matrix for the longitudinal outcome model (e.g.,
-#'   \code{~ Z + X + time}). An intercept is included by default. Default
-#'   is \code{~ Z + X + time}.
+#' @param formula An optional \code{\link[stats]{formula}} specifying the
+#'   design matrix for the longitudinal outcome model. When \code{NULL}
+#'   (the default), the formula is constructed automatically as
+#'   \code{outcome ~ visit_covs + time} from the column-name arguments.
+#'   A user-supplied formula overrides this (e.g.,
+#'   \code{Y ~ Z + X + Z:X + time} for interactions).
 #'
-#' @return A named list with two components:
+#' @return An object of class \code{"IIRR_weighting"}, which is a named
+#'   list with two components:
 #'
 #' \describe{
 #'   \item{\code{gamma_hat}}{Named numeric vector of visiting-process
@@ -60,8 +63,7 @@
 #' \deqn{\sum_{i,j} w_i^{-1} X_{ij} (Y_{ij} - X_{ij}^\top \beta) = 0.}
 #'
 #' @note
-#' This function requires the \pkg{nleqslv} package. It will attempt to
-#' install the package automatically if it is not available.
+#' This function requires the \pkg{nleqslv} package.
 #'
 #' No standard errors are returned. For inference, consider using
 #' \code{\link{IIRR_balancing}} which provides balancing-weights
@@ -73,19 +75,19 @@
 #' \emph{The Canadian Journal of Statistics}, 35(4), 485--500. \doi{10.1002/cjs.5550350402}.
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 500, seed = 42)
+#' \donttest{
+#' data(sim_ehr_data)
 #'
-#' fit <- IIRR_weighting(
-#'   data      = dat$long_data,
-#'   visit_covs = c("Z", "X"),
-#'   formula   = ~ Z + X + time
-#' )
-#' fit$gamma_hat
-#' fit$beta_hat
+#' # Formula is built automatically from visit_covs and time
+#' fit <- IIRR_weighting(sim_ehr_data, visit_covs = c("Z", "X"))
+#' print(fit)
+#' summary(fit)
+#'
+#' # Equivalent explicit formula
+#' fit2 <- IIRR_weighting(sim_ehr_data, formula = ~ Z + X + time)
 #' }
 #'
-#' @importFrom stats model.frame model.matrix na.pass
+#' @importFrom stats as.formula model.frame model.matrix na.pass
 #' @export
 IIRR_weighting <- function(data,
                            id = "id",
@@ -93,11 +95,25 @@ IIRR_weighting <- function(data,
                            outcome = "Y",
                            obs_indicator = "R",
                            visit_covs = c("Z", "X"),
-                           formula = ~ Z + X + time) {
+                           formula = NULL) {
 
   if (!requireNamespace("nleqslv", quietly = TRUE)) {
     stop("Package 'nleqslv' is required. Install it with: install.packages('nleqslv')",
          call. = FALSE)
+  }
+
+  # Build formula from column-name arguments if not supplied
+  if (is.null(formula)) {
+    formula <- as.formula(
+      paste("~", paste(c(visit_covs, time), collapse = " + "))
+    )
+  }
+
+  # Build formula from column-name arguments if not supplied
+  if (is.null(formula)) {
+    formula <- stats::as.formula(
+      paste("~", paste(c(visit_covs, time), collapse = " + "))
+    )
   }
 
   # Filter to observed data only (R == 1 or R is NA)

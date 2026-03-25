@@ -24,9 +24,9 @@ intervals for all three stages: visiting process, observation process,
 and longitudinal outcome.
 }
 \examples{
-\dontrun{
-dat <- sim_data_gen(n = 500, seed = 42)
-fit <- GIVEHR(data = dat$long_data)
+\donttest{
+data(sim_ehr_data)
+fit <- GIVEHR(data = sim_ehr_data)
 summary(fit)
 summary(fit, level = 0.90)
 }

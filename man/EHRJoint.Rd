@@ -2,7 +2,7 @@
 % Please edit documentation in R/EHRJoint.R
 \name{EHRJoint}
 \alias{EHRJoint}
-\title{Joint estimation for longitudinal processes (EHRJoint)}
+\title{Joint Estimation for Electronic Health Record (EHR) Longitudinal Processes (EHRJoint)}
 \usage{
 EHRJoint(
   data,
@@ -47,9 +47,10 @@ Fit a joint workflow for visiting, observation, and outcome processes for
 irregularly observed longitudinal data.
 }
 \examples{
-\dontrun{
-fit <- EHRJoint(dat_long)
-fit
+\donttest{
+data(sim_ehr_data)
+fit <- EHRJoint(sim_ehr_data)
+print(fit)
 summary(fit)
 }
 

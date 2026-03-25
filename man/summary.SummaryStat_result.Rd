@@ -20,9 +20,9 @@
 Displays the regression coefficient table.
 }
 \examples{
-\dontrun{
-dat <- sim_data_gen(n = 500, seed = 42)
-fit <- SummaryStat(dat$long_data, formula = ~ Z + X)
+\donttest{
+data(sim_ehr_data)
+fit <- SummaryStat(sim_ehr_data, formula = ~ Z + X)
 summary(fit)
 }
 

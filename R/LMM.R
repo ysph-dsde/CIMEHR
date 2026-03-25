@@ -4,8 +4,8 @@
 #' Fits a linear mixed-effects model (LMM) to longitudinal data using
 #' \code{\link[nlme]{lme}}, with optional filtering by an observation
 #' indicator and optional visit-count adjustment. This provides a
-#' convenient wrapper for standard LMM, observed-adjusted LMM (OA-LMM),
-#' and visit-adjusted LMM (VA-LMM) estimators commonly used as
+#' convenient wrapper for standard LMM, Observation-Adjusted LMM (OA-LMM),
+#' and Visit-Adjusted LMM (VA-LMM) estimators commonly used as
 #' benchmarks in informative-visiting analyses.
 #'
 #' @param data A \code{data.frame} in long (panel) format containing
@@ -83,20 +83,12 @@
 #' \emph{Biometrics}, 38(4), 963--974.
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 500, seed = 42)
-#'
-#' # Standard LMM
-#' LMM(dat$long_data, fixed = Y ~ Z + X + time, random = ~ 1 | id,
-#'     obs_indicator = "R")
-#'
-#' # OA-LMM (n_visits added automatically)
-#' LMM(dat$long_data, fixed = Y ~ Z + X + time, random = ~ 1 | id,
-#'     obs_indicator = "R", visit_adjust = "OA")
-#'
-#' # VA-LMM (n_visits added automatically)
-#' LMM(dat$long_data, fixed = Y ~ Z + X + time, random = ~ 1 + Z | id,
-#'     obs_indicator = "R", visit_adjust = "VA")
+#' \donttest{
+#' data(sim_ehr_data)
+#' fit <- LMM(sim_ehr_data, fixed = Y ~ Z + X + time,
+#'            random = ~ 1 | id, obs_indicator = "R")
+#' print(fit)
+#' summary(fit)
 #' }
 #'
 #' @importFrom stats ave na.omit update

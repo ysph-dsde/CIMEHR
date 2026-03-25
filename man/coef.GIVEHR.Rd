@@ -28,9 +28,9 @@ Named numeric vector.
 Extract Coefficients from a GIVEHR Fit
 }
 \examples{
-\dontrun{
-dat <- sim_data_gen(n = 500, seed = 42)
-fit <- GIVEHR(data = dat$long_data)
+\donttest{
+data(sim_ehr_data)
+fit <- GIVEHR(data = sim_ehr_data)
 coef(fit)
 coef(fit, type = "visiting")
 }

@@ -2,8 +2,8 @@
 % Please edit documentation in R/GIVEHR_OU_PCL.R
 \name{GIVEHR_OU_PCL}
 \alias{GIVEHR_OU_PCL}
-\title{Generalized Informative Visiting and Examination in EHR Data with
-Ornstein--Uhlenbeck Pairwise Composite Likelihood Extension}
+\title{Generalized Informative Visiting and observation processes in Electronic Health Records (GIVEHR)
+with Ornstein--Uhlenbeck (OU) Pairwise Composite Likelihood (PCL) Extension}
 \usage{
 GIVEHR_OU_PCL(
   data,
@@ -160,11 +160,11 @@ consecutive visits within subjects.}
 }
 }
 \description{
-Fits a three-stage semiparametric joint model for longitudinal electronic
-health record (EHR) data, extending \code{\link{GIVEHR}} by modelling
+Fits a three-stage semiparametric joint model for longitudinal Electronic
+Health Record (EHR) data, extending \code{\link{GIVEHR}} by modelling
 temporal serial correlation in the observation process with a stationary
 Ornstein--Uhlenbeck (OU) process and estimating the observation-process
-parameters via pairwise composite likelihood (PCL).
+parameters via Pairwise Composite Likelihood (PCL).
 
 Stage 1 estimates the visiting-process intensity via Andersen--Gill
 partial likelihood with a log-normal frailty (identical to
@@ -213,27 +213,12 @@ S3 methods \code{print}, \code{summary}, \code{coef}, \code{vcov}, and
 \code{"GIVEHR_OU_PCL"}.
 }
 \examples{
-\dontrun{
-# Simulate data with OU serial correlation
-dat <- sim_data_gen(n = 500, phi = 0.1, seed = 42)
-
-# Fit with adjacent pairs (faster)
-fit <- GIVEHR_OU_PCL(
-  data      = dat$long_data,
-  pair_type = "adjacent",
-  verbose   = TRUE
-)
+\donttest{
+data(sim_ehr_data)
+fit <- GIVEHR_OU_PCL(data = sim_ehr_data, pair_type = "adjacent")
 print(fit)
 summary(fit)
 confint(fit)
-
-# Fit with all pairs (more efficient)
-fit_all <- GIVEHR_OU_PCL(
-  data      = dat$long_data,
-  pair_type = "all",
-  verbose   = TRUE
-)
-coef(fit_all, type = "outcome")
 }
 
 }

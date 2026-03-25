@@ -24,9 +24,10 @@ Prints coefficients with naive standard errors (from the inverse
 Hessian) when available.
 }
 \examples{
-\dontrun{
-dat <- sim_data_gen(n = 500, seed = 42)
-fit <- PairwiseLikelihood(Y ~ Z + X, data = dat$long_data, id = "id")
+\donttest{
+data(sim_ehr_data)
+obs_data <- sim_ehr_data[sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
+fit <- PairwiseLikelihood(obs_data, formula = Y ~ Z + X + time, pair_sample = 5000)
 fit
 }
 

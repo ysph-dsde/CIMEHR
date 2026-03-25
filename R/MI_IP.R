@@ -1,4 +1,4 @@
-#' Multiple Imputation with Informative Presence Adjustment
+#' Multiple Imputation (MI) with Informative Presence (IP) Adjustment
 #'
 #' @description
 #' Implements a two-stage procedure that first imputes missing outcome values
@@ -63,7 +63,7 @@
 #'     \item{\code{"LMM"}}{Standard linear mixed model via
 #'       \code{\link{LMM}} (no IP adjustment; for comparison).}
 #'     \item{\code{"Liang"}}{Joint model of Liang et al. (2009) via
-#'       \code{\link{JMVL_IP}}.}
+#'       \code{\link{JMVL_Liang}}.}
 #'     \item{\code{"IIRR_weighting"}}{Inverse intensity rate ratio
 #'       weighting via \code{\link{IIRR_balancing}} (MLE weights).}
 #'     \item{\code{"IIRR_balancing"}}{Balancing-weights estimator of
@@ -165,37 +165,14 @@
 #' John Wiley & Sons. \doi{10.1002/9780470316696}.
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 500, seed = 42)
-#'
-#' # Liang's method with default MI settings
-#' result <- MI_IP(
-#'   data       = dat$long_data,
-#'   ip_method  = "Liang",
-#'   visit_covs = c("Z", "X"),
-#'   m = 5
-#' )
-#' result
-#'
-#' # IIRR balancing with sensitivity analysis
-#' result2 <- MI_IP(
-#'   data            = dat$long_data,
-#'   ip_method       = "IIRR_balancing",
-#'   visit_covs      = c("Z", "X"),
-#'   outcome_formula = Y ~ Z + X + time,
-#'   ip_args         = list(phi = 0.3),
-#'   m = 10
-#' )
-#'
-#' # LMM with visit adjustment and Rubin's rules
-#' result3 <- MI_IP(
-#'   data            = dat$long_data,
-#'   ip_method       = "LMM",
-#'   outcome_formula = Y ~ Z + X + time,
-#'   random_formula  = ~ 1 + Z | id,
-#'   ip_args         = list(visit_adjust = "VA"),
-#'   pool_method     = "rubin"
-#' )
+#' \donttest{
+#' data(sim_ehr_data)
+#' # Subset to required columns to avoid issues with extra simulation columns
+#' dat <- sim_ehr_data[, c("id", "Z", "X", "time", "R", "Y", "C")]
+#' fit <- MI_IP(dat, ip_method = "LMM",
+#'              visit_covs = c("Z", "X"), m = 3)
+#' print(fit)
+#' summary(fit)
 #' }
 #'
 #' @importFrom stats as.formula sd var
@@ -504,7 +481,7 @@ MI_IP <- function(
                    },
 
                    "Liang" = {
-                     fit <- JMVL_IP(
+                     fit <- JMVL_Liang(
                        data = data,
                        id = id,
                        time = time,

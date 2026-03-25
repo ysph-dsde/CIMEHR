@@ -2,7 +2,7 @@
 % Please edit documentation in R/GIVEHR.R
 \name{GIVEHR}
 \alias{GIVEHR}
-\title{Generalized Informative Visiting and Examination in Electronic Health Record (EHR) Data}
+\title{Generalized Informative Visiting and observation processes in Electronic Health Records (GIVEHR)}
 \usage{
 GIVEHR(
   data,
@@ -134,13 +134,13 @@ variance-covariance matrix for the full coefficient vector
 }
 }
 \description{
-Fits a three-stage semiparametric joint model for longitudinal electronic
-health record (EHR) data that simultaneously accounts for an informative
+Fits a three-stage semiparametric joint model for longitudinal Electronic
+Health Record (EHR) data that simultaneously accounts for an informative
 visiting process and an informative observation process. Stage 1 estimates
 the visiting-process intensity via partial likelihood with a log-normal
 frailty. Stage 2 models the observation indicator with a probit regression
 that may include latent-factor-linked random effects. Stage 3 estimates the
-longitudinal outcome coefficients by weighted least squares with risk-set
+longitudinal outcome coefficients by Weighted Least Squares (WLS) with risk-set
 centering. Sandwich variance estimators are provided for all three stages.
 }
 \details{
@@ -187,30 +187,13 @@ observation probability \eqn{\varpi_i(t)} and the visit intensity.
 A sandwich estimator provides standard errors for \eqn{\beta}.
 }
 \examples{
-\dontrun{
-# Simulate data
-dat <- sim_data_gen(n = 500, seed = 42)
-
-# Fit the GIVEHR model
-fit <- GIVEHR(
-  data          = dat$long_data,
-  id_col        = "id",
-  time_col      = "time",
-  y_col         = "Y",
-  r_col         = "R",
-  censor_col    = "C",
-  covars_visit_XV         = c("Z", "X"),
-  covars_outcome_fixed_XY = c("Z", "X"),
-  covars_outcome_link_ZY  = "Z",
-  covars_obs_fixed_XO     = c("Z", "X"),
-  covars_obs_random_ZO    = "Z"
-)
-
-# Inspect results
-fit$visiting_process$gamma_V
-fit$longitudinal_outcome$beta_Y
-fit$longitudinal_outcome$se_beta_naive
+\donttest{
+data(sim_ehr_data)
+fit <- GIVEHR(data = sim_ehr_data)
+print(fit)
 summary(fit)
+coef(fit)
+confint(fit)
 }
 
 }

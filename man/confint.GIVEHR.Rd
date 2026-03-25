@@ -26,9 +26,9 @@ standard errors are unavailable.
 Computes Wald confidence intervals using sandwich standard errors.
 }
 \examples{
-\dontrun{
-dat <- sim_data_gen(n = 500, seed = 42)
-fit <- GIVEHR(data = dat$long_data)
+\donttest{
+data(sim_ehr_data)
+fit <- GIVEHR(data = sim_ehr_data)
 confint(fit)
 confint(fit, parm = "Z", level = 0.90)
 }

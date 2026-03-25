@@ -23,9 +23,9 @@ Prints outcome fixed-effect estimates from the inverse intensity rate
 ratio weighting estimator.
 }
 \examples{
-\dontrun{
-dat <- sim_data_gen(n = 500, seed = 42)
-fit <- IIRR_weighting(dat$long_data, formula = ~ Z + X)
+\donttest{
+data(sim_ehr_data)
+fit <- IIRR_weighting(sim_ehr_data, visit_covs = c("Z", "X"))
 fit
 }
 

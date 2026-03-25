@@ -20,9 +20,9 @@
 Displays the fixed-effects coefficient table.
 }
 \examples{
-\dontrun{
-dat <- sim_data_gen(n = 500, seed = 42)
-fit <- LMM(dat$long_data, fixed = Y ~ Z + X + time,
+\donttest{
+data(sim_ehr_data)
+fit <- LMM(sim_ehr_data, fixed = Y ~ Z + X + time,
            random = ~ 1 | id, obs_indicator = "R")
 summary(fit)
 }

@@ -72,9 +72,9 @@
 #' @seealso \code{\link{summary.GIVEHR}}, \code{\link{GIVEHR}}
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 500, seed = 42)
-#' fit <- GIVEHR(data = dat$long_data)
+#' \donttest{
+#' data(sim_ehr_data)
+#' fit <- GIVEHR(data = sim_ehr_data)
 #' fit            # outcome beta with SE and 95% CI
 #' summary(fit)   # all three processes
 #' }
@@ -109,9 +109,9 @@ print.GIVEHR <- function(x, digits = 4, level = 0.95, ...) {
 #' @seealso \code{\link{print.GIVEHR}}, \code{\link{GIVEHR}}
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 500, seed = 42)
-#' fit <- GIVEHR(data = dat$long_data)
+#' \donttest{
+#' data(sim_ehr_data)
+#' fit <- GIVEHR(data = sim_ehr_data)
 #' summary(fit)
 #' summary(fit, level = 0.90)
 #' }
@@ -201,9 +201,9 @@ summary.GIVEHR <- function(object, level = 0.95, digits = 4, ...) {
 #' @seealso \code{\link{summary.GIVEHR_GH}}, \code{\link{GIVEHR_GH}}
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 500, seed = 42)
-#' fit <- GIVEHR_GH(data = dat$long_data)
+#' \donttest{
+#' data(sim_ehr_data)
+#' fit <- GIVEHR_GH(data = sim_ehr_data)
 #' fit
 #' }
 #'
@@ -215,7 +215,9 @@ print.GIVEHR_GH <- function(x, digits = 4, level = 0.95, ...) {
   tbl <- .givehr_coef_table(x$longitudinal_outcome$beta_Y, se = NULL, level = level)
   print(round(tbl, digits))
 
-  cat("\nUse summary() for all process estimates.\n")
+  cat("\nNote: Standard errors are not available for GIVEHR_GH.",
+      "Consider using GIVEHR() or bootstrap for inference.\n")
+  cat("Use summary() for all process estimates.\n")
   invisible(x)
 }
 
@@ -235,9 +237,9 @@ print.GIVEHR_GH <- function(x, digits = 4, level = 0.95, ...) {
 #' @seealso \code{\link{print.GIVEHR_GH}}, \code{\link{GIVEHR_GH}}
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 500, seed = 42)
-#' fit <- GIVEHR_GH(data = dat$long_data)
+#' \donttest{
+#' data(sim_ehr_data)
+#' fit <- GIVEHR_GH(data = sim_ehr_data)
 #' summary(fit)
 #' }
 #'
@@ -247,6 +249,8 @@ summary.GIVEHR_GH <- function(object, level = 0.95, digits = 4, ...) {
 
   cat("\nGIVEHR Joint Model (Gauss-Hermite) -- Summary\n")
   cat(strrep("=", width), "\n")
+  cat("\nNote: Standard errors are not available for this method.\n")
+  cat("Consider using GIVEHR() or bootstrap for inference.\n")
 
   vp <- object$visiting_process
   .print_section(
@@ -313,9 +317,9 @@ summary.GIVEHR_GH <- function(object, level = 0.95, digits = 4, ...) {
 #'   \code{\link{GIVEHR_OU_PCL}}
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 500, seed = 42)
-#' fit <- GIVEHR_OU_PCL(data = dat$long_data)
+#' \donttest{
+#' data(sim_ehr_data)
+#' fit <- GIVEHR_OU_PCL(data = sim_ehr_data)
 #' fit
 #' }
 #'
@@ -351,9 +355,9 @@ print.GIVEHR_OU_PCL <- function(x, digits = 4, level = 0.95, ...) {
 #'   \code{\link{GIVEHR_OU_PCL}}
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 500, seed = 42)
-#' fit <- GIVEHR_OU_PCL(data = dat$long_data)
+#' \donttest{
+#' data(sim_ehr_data)
+#' fit <- GIVEHR_OU_PCL(data = sim_ehr_data)
 #' summary(fit)
 #' }
 #'
@@ -444,9 +448,9 @@ summary.GIVEHR_OU_PCL <- function(object, level = 0.95, digits = 4, ...) {
 #' @return Named numeric vector.
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 500, seed = 42)
-#' fit <- GIVEHR(data = dat$long_data)
+#' \donttest{
+#' data(sim_ehr_data)
+#' fit <- GIVEHR(data = sim_ehr_data)
 #' coef(fit)
 #' coef(fit, type = "visiting")
 #' }
@@ -499,9 +503,9 @@ coef.GIVEHR_OU_PCL <- function(object, type = c("outcome", "visiting", "observat
 #' @return Numeric matrix.
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 500, seed = 42)
-#' fit <- GIVEHR(data = dat$long_data)
+#' \donttest{
+#' data(sim_ehr_data)
+#' fit <- GIVEHR(data = sim_ehr_data)
 #' vcov(fit)
 #' }
 #'
@@ -534,9 +538,9 @@ vcov.GIVEHR_OU_PCL <- function(object, ...) {
 #'   standard errors are unavailable.
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 500, seed = 42)
-#' fit <- GIVEHR(data = dat$long_data)
+#' \donttest{
+#' data(sim_ehr_data)
+#' fit <- GIVEHR(data = sim_ehr_data)
 #' confint(fit)
 #' confint(fit, parm = "Z", level = 0.90)
 #' }

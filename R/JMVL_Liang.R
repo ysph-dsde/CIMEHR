@@ -1,4 +1,5 @@
-#' Joint Model for Visiting and Longitudinal Processes (Liang's Method)
+#' Joint Model for Visiting and Longitudinal (JMVL) Processes with
+#' Informative Presence (IP) Adjustment (Liang's Method)
 #'
 #' @description
 #' Fits a joint model for longitudinal data with an informative visiting
@@ -94,29 +95,22 @@
 #' \doi{10.1111/j.1541-0420.2008.01104.x}.
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 500, seed = 42)
-#'
-#' fit <- JMVL_IP(
-#'   data       = dat$long_data,
-#'   visit_covs = c("Z", "X"),
-#'   long_covs  = c("Z", "X"),
-#'   random_covs = "Z"
-#' )
-#' fit$gamma_hat
-#' fit$beta_hat
-#' fit$sigma_sq_hat
+#' \donttest{
+#' data(sim_ehr_data)
+#' fit <- JMVL_Liang(sim_ehr_data)
+#' print(fit)
+#' summary(fit)
 #' }
 #'
 #' @export
-JMVL_IP <- function(data,
-                    id = "id",
-                    time = "time",
-                    outcome = "Y",
-                    obs_indicator = "R",
-                    visit_covs = c("Z", "X"),
-                    long_covs = c("Z", "X"),
-                    random_covs = "Z") {
+JMVL_Liang <- function(data,
+                       id = "id",
+                       time = "time",
+                       outcome = "Y",
+                       obs_indicator = "R",
+                       visit_covs = c("Z", "X"),
+                       long_covs = c("Z", "X"),
+                       random_covs = "Z") {
 
   if (!requireNamespace("nleqslv", quietly = TRUE)) {
     stop("Package 'nleqslv' is required. Install it with: install.packages('nleqslv')",
@@ -241,5 +235,5 @@ JMVL_IP <- function(data,
     Lambda_C_est = Lambda_C_est,
     sigma_sq_hat = sigma_sq_hat,
     beta_hat = beta_hat
-  ), class = "JMVL_IP"))
+  ), class = "JMVL_Liang"))
 }

@@ -1,13 +1,13 @@
-#' Pairwise Composite Likelihood Generalized Linear Model (GLM) Estimation
+#' Pairwise Composite Likelihood (PCL) Generalized Linear Model (GLM) Estimation
 #'
 #' @description
-#' Fits a generalized linear model (GLM) using pairwise composite likelihood
-#' (PCL). For each pair of subjects, the contribution to the composite
-#' log-likelihood is based on the difference \eqn{Y_i - Y_j} (Gaussian
-#' family) or a logistic-style softplus function (binomial family).
-#' This approach yields consistent slope estimates without requiring a
-#' correctly specified within-cluster correlation structure, and is
-#' robust to informative cluster sizes.
+#' Fits a Generalized Linear Model (GLM) using Pairwise Composite
+#' Likelihood (PCL). For each pair of subjects, the contribution to the
+#' composite log-likelihood is based on the difference \eqn{Y_i - Y_j}
+#' (Gaussian family) or a logistic-style softplus function (binomial
+#' family). This approach yields consistent slope estimates without
+#' requiring a correctly specified within-cluster correlation structure,
+#' and is robust to informative cluster sizes.
 #'
 #' The intercept is not identifiable in pairwise differences and is
 #' automatically removed if present in the formula.
@@ -16,8 +16,9 @@
 #'   data. Rows with missing values in the outcome, covariates, or
 #'   identifier columns are removed.
 #' @param formula A \code{\link[stats]{formula}} specifying the model
-#'   (e.g., \code{Y ~ Z + X + time}). If an intercept is present it is
-#'   removed automatically with a message (when \code{verbose = TRUE}).
+#'   (e.g., \code{Y ~ Z + X + time}). Must be supplied by the user;
+#'   there is no default. If an intercept is present it is removed
+#'   automatically with a message (when \code{verbose = TRUE}).
 #' @param id_col Character string giving the name of the subject/cluster
 #'   identifier column. Default is \code{"id"}.
 #' @param time_col Character string giving the name of the time variable
@@ -34,8 +35,8 @@
 #'       Requires \eqn{Y \in \{0, 1\}}.}
 #'   }
 #' @param start Optional numeric vector of starting values for the
-#'   regression coefficients. Default is \code{NULL}, which uses Ordinal Least
-#'   Squares (Gaussian) or GLM (binomial) estimates.
+#'   regression coefficients. Default is \code{NULL}, which uses Ordinary
+#'   Least Squares (Gaussian) or GLM (binomial) estimates.
 #' @param pair_sample Optional positive integer; if the total number of
 #'   subject pairs exceeds this value, a random subsample of pairs is
 #'   used. Default is \code{NULL} (use all pairs).
@@ -93,7 +94,7 @@
 #'   -\log\bigl[1 + \exp\bigl((Y_s - Y_t)(\mu_t - \mu_s)\bigr)\bigr].}
 #'
 #' The inner loops are implemented in C++ via \pkg{Rcpp} for efficiency.
-#' Optimzation is performed with \code{\link[stats]{optim}} using BFGS.
+#' Optimization is performed with \code{\link[stats]{optim}} using BFGS.
 #'
 #' S3 methods \code{print} and \code{summary} are available for objects
 #' of class \code{"PairwiseLikelihood"}.
@@ -104,31 +105,27 @@
 #' \code{pw_total_softplus_rcpp} are compiled on first use.
 #'
 #' @references
+#' Weining Shen, Suyu Liu, Yong Chen, and Jing Ning (2019). Regression analysis of
+#' longitudinal data with outcome-dependent sampling and informative censoring.
+#' \emph{Scandinavian Journal of Statistics}, 46(3), 831--847. \doi{doi/10.1111/sjos.12373}.
+#'
 #' Yong Chen, Jing Ning, and Chunyan Cai (2015). Regression analysis of longitudinal data
 #' with irregular and informative observation times. \emph{Biostatistics},
 #' 16(4), 727--739. \doi{10.1093/biostatistics/kxv008}.
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 300, seed = 42)
-#' obs_data <- dat$long_data[dat$long_data$R == 1, ]
+#' \donttest{
+#' data(sim_ehr_data)
+#' obs_data <- sim_ehr_data[sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
 #'
-#' # Gaussian PCL
+#' # Gaussian PCL -- formula must be supplied explicitly
 #' fit <- PairwiseLikelihood(
-#'   data    = obs_data,
-#'   formula = Y ~ Z + X + time,
-#'   family  = "gaussian",
-#'   verbose = TRUE
-#' )
-#' fit$coef
-#' summary(fit)
-#'
-#' # With pair subsampling for large data
-#' fit2 <- PairwiseLikelihood(
 #'   data        = obs_data,
 #'   formula     = Y ~ Z + X + time,
 #'   pair_sample = 5000
 #' )
+#' print(fit)
+#' summary(fit)
 #' }
 #'
 #' @importFrom stats coef complete.cases glm.fit lm.fit model.frame
@@ -136,7 +133,7 @@
 #' @export
 PairwiseLikelihood <- function(
     data,
-    formula     = Y ~ Z + X + time,
+    formula,
     id_col      = "id",
     time_col    = "time",
     y_col       = "Y",

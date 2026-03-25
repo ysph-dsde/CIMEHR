@@ -22,9 +22,9 @@
 Displays visiting-process and outcome estimates.
 }
 \examples{
-\dontrun{
-dat <- sim_data_gen(n = 500, seed = 42)
-fit <- IIRR_weighting(dat$long_data, formula = ~ Z + X)
+\donttest{
+data(sim_ehr_data)
+fit <- IIRR_weighting(sim_ehr_data, visit_covs = c("Z", "X"))
 summary(fit)
 }
 

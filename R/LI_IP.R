@@ -1,4 +1,4 @@
-#' Linear Increment Imputation with Informative Presence Adjustment
+#' Linear Increment (LI) Imputation with Informative Presence (IP) Adjustment
 #'
 #' @description
 #' Implements a two-stage procedure that first imputes missing outcome values
@@ -50,7 +50,7 @@
 #'     \item{\code{"LMM"}}{Standard linear mixed model via
 #'       \code{\link{LMM}} (no IP adjustment; included for comparison).}
 #'     \item{\code{"Liang"}}{Joint model of Liang et al. (2009) via
-#'       \code{\link{JMVL_IP}}.}
+#'       \code{\link{JMVL_Liang}}.}
 #'     \item{\code{"IIRR_weighting"}}{Inverse intensity rate ratio
 #'       weighting via \code{\link{IIRR_balancing}} (using MLE weights).}
 #'     \item{\code{"IIRR_balancing"}}{Balancing-weights estimator of
@@ -134,34 +134,12 @@
 #' 11(3), 453--472. \doi{10.1093/biostatistics/kxq014}.
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 500, seed = 42)
-#'
-#' # Liang's method with default LI imputation
-#' result <- LI_IP(
-#'   data       = dat$long_data,
-#'   ip_method  = "Liang",
-#'   visit_covs = c("Z", "X")
-#' )
-#' result
-#'
-#' # Custom LI model with IIRR weighting
-#' result2 <- LI_IP(
-#'   data          = dat$long_data,
-#'   ip_method     = "IIRR_weighting",
-#'   li_formula    = Y ~ Z + X + time,
-#'   li_covariance = "randomwalk",
-#'   visit_covs    = c("Z", "X")
-#' )
-#'
-#' # IIRR balancing with sensitivity analysis
-#' result3 <- LI_IP(
-#'   data       = dat$long_data,
-#'   ip_method  = "IIRR_balancing",
-#'   visit_covs = c("Z", "X"),
-#'   ip_args    = list(phi = 0.3)
-#' )
-#' summary(result3)
+#' \donttest{
+#' data(sim_ehr_data)
+#' dat <- sim_ehr_data[, c("id", "Z", "X", "time", "R", "Y", "C")]
+#' fit <- LI_IP(dat, ip_method = "LMM", visit_covs = c("Z", "X"))
+#' print(fit)
+#' summary(fit)
 #' }
 #'
 #' @importFrom stats as.formula model.frame model.matrix predict
@@ -335,7 +313,10 @@ LI_IP <- function(
   }
 
   # Create keyed data.table for fitting
-  dt_fit <- dt[fit_idx]
+  # Use which() to convert logical to integer indices -- required because
+
+  # Create keyed data.table for fitting
+  dt_fit <- dt[which(fit_idx), ]
   data.table::setkeyv(dt_fit, c(id, time))
 
   if (nrow(dt_fit) < 10) {
@@ -362,8 +343,9 @@ LI_IP <- function(
 
   # Predict missing Y values and fill in
   if (n_imputed > 0) {
+
     # Create keyed data.table for prediction
-    dt_pred <- dt[pred_idx]
+    dt_pred <- dt[which(pred_idx), ]
     data.table::setkeyv(dt_pred, c(id, time))
 
     # Get predictions for missing values
@@ -426,7 +408,7 @@ LI_IP <- function(
                    },
 
                    "Liang" = {
-                     fit <- JMVL_IP(
+                     fit <- JMVL_Liang(
                        data = data,
                        id = id,
                        time = time,

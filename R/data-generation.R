@@ -1,11 +1,11 @@
-#' Simulate Longitudinal EHR Data with Informative Visiting and Observation
-#' Processes
+#' Simulate Longitudinal Electronic Health Record (EHR) Data with Informative
+#' Visiting and Observation Processes
 #'
 #' @description
 #' Generates synthetic longitudinal data from a joint model that includes an
 #' informative visiting process (Poisson with log-normal frailty), an
 #' informative observation process (probit with latent-factor-linked random
-#' effects and an Ornstein--Uhlenbeck serial correlation component), and a
+#' effects and an Ornstein--Uhlenbeck (OU) serial correlation component), and a
 #' linear longitudinal outcome model with latent-factor-linked random effects.
 #' The data-generating mechanism matches the model specification in
 #' Yang, Shi, and Mukherjee (2025, Web Appendix S9) and is suitable for
@@ -101,25 +101,11 @@
 #' \code{\link{GIVEHR}}, \code{\link{GIVEHR_GH}}, and
 #' \code{\link{GIVEHR_OU_PCL}} for fitting models to the simulated data.
 #'
-#'@examples
-#' \dontrun{
-#' # Simulate data
-#' dat <- sim_data_gen(n = 500, seed = 42)
-#'
-#' # Fit the GIVEHR model
-#' fit <- GIVEHR(
-#'   data          = dat$long_data,
-#'   id_col        = "id",
-#'   time_col      = "time",
-#'   y_col         = "Y",
-#'   r_col         = "R",
-#'   censor_col    = "C",
-#'   covars_visit_XV         = c("Z", "X"),
-#'   covars_outcome_fixed_XY = c("Z", "X"),
-#'   covars_outcome_link_ZY  = "Z",
-#'   covars_obs_fixed_XO     = c("Z", "X"),
-#'   covars_obs_random_ZO    = "Z"
-#' )
+#' @examples
+#' \donttest{
+#' dat <- sim_data_gen(n = 1500, seed = 42)
+#' head(dat$long_data)
+#' dat$params$beta
 #' }
 #'
 #' @importFrom stats rbinom rnorm rexp median

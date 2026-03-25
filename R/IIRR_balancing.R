@@ -1,4 +1,4 @@
-#' Inverse Intensity Rate Ratio Estimator with Balancing Weights
+#' Inverse Intensity Rate Ratio (IIRR) Estimator with Balancing Weights
 #'
 #' @description
 #' Estimates marginal regression coefficients for a longitudinal outcome
@@ -7,8 +7,8 @@
 #' equation, and the outcome coefficients are obtained from weighted
 #' estimating equations using two alternative weight sets: (i) balancing
 #' weights that satisfy covariate-balance constraints in the spirit of
-#' entropy balancing, and (ii) conventional maximum-likelihood-based
-#' inverse intensity weights.
+#' entropy balancing, and (ii) conventional Maximum Likelihood Estimation
+#' (MLE) based inverse intensity weights.
 #'
 #' A sensitivity parameter \eqn{\phi} allows the analyst to explore
 #' departures from the assumption that the visiting process is fully
@@ -32,10 +32,12 @@
 #' @param balance_covs Character vector of covariate column names for
 #'   which covariate-balance constraints are imposed. If \code{NULL}
 #'   (the default), \code{visit_covs} is used.
-#' @param formula A one-sided \code{\link[stats]{formula}} specifying the
-#'   design matrix for the longitudinal outcome model (e.g.,
-#'   \code{~ Z + X + time}). An intercept is included by default. Default
-#'   is \code{~ Z + X + time}.
+#' @param formula An optional \code{\link[stats]{formula}} specifying the
+#'   design matrix for the longitudinal outcome model. When \code{NULL}
+#'   (the default), the formula is constructed automatically as
+#'   \code{outcome ~ visit_covs + time} from the column-name arguments.
+#'   A user-supplied formula overrides this (e.g.,
+#'   \code{Y ~ Z + X + Z:X + time} for interactions).
 #' @param phi Numeric scalar; sensitivity parameter controlling departures
 #'   from the semiparametric visiting-process model. When
 #'   \eqn{\phi = 0} (the default), the estimator coincides with the
@@ -120,30 +122,14 @@
 #' 74(3), 824--843. \doi{10.1093/jrsssc/qlaf002}.
 #'
 #' @examples
-#' \dontrun{
-#' dat <- sim_data_gen(n = 500, seed = 42)
-#'
-#' # Default (phi = 0)
-#' fit <- IIRR_balancing(
-#'   data       = dat$long_data,
-#'   visit_covs = c("Z", "X"),
-#'   formula    = ~ Z + X + time
-#' )
-#' fit$beta_bal
-#' fit$beta_mle
+#' \donttest{
+#' data(sim_ehr_data)
+#' fit <- IIRR_balancing(sim_ehr_data, visit_covs = c("Z", "X"))
+#' print(fit)
 #' summary(fit)
-#'
-#' # Sensitivity analysis with phi = 0.3
-#' fit_sa <- IIRR_balancing(
-#'   data       = dat$long_data,
-#'   visit_covs = c("Z", "X"),
-#'   formula    = ~ Z + X + time,
-#'   phi        = 0.3
-#' )
-#' fit_sa$beta_bal
 #' }
 #'
-#' @importFrom stats model.frame model.matrix optim
+#' @importFrom stats as.formula model.frame model.matrix optim na.pass
 #' @export
 IIRR_balancing <- function(data,
                            id = "id",
@@ -152,13 +138,27 @@ IIRR_balancing <- function(data,
                            obs_indicator = "R",
                            visit_covs = c("Z", "X"),
                            balance_covs = NULL,
-                           formula = ~ Z + X + time,
+                           formula = NULL,
                            phi = 0) {
 
   if (!requireNamespace("nleqslv", quietly = TRUE)) {
     stop("Package 'nleqslv' is required. Install it with: install.packages('nleqslv')")
   }
 
+  # Build formula from column-name arguments if not supplied
+  if (is.null(formula)) {
+    formula <- as.formula(
+      paste("~", paste(c(visit_covs, time), collapse = " + "))
+    )
+  }
+
+
+  # Build formula from column-name arguments if not supplied
+  if (is.null(formula)) {
+    formula <- stats::as.formula(
+      paste("~", paste(c(visit_covs, time), collapse = " + "))
+    )
+  }
 
   # ============================================
   # Data Preparation

@@ -2,8 +2,8 @@
 % Please edit documentation in R/GIVEHR_GH.R
 \name{GIVEHR_GH}
 \alias{GIVEHR_GH}
-\title{Generalized Informative Visiting and Examination in Electronic Health Record (EHR) Data
-(Gauss-Hermite Quadrature Version)}
+\title{Generalized Informative Visiting and observation processes in Electronic Health Records (GIVEHR)
+with Gauss--Hermite (GH) Quadrature}
 \usage{
 GIVEHR_GH(
   data,
@@ -146,10 +146,10 @@ coefficients.}
 }
 }
 \description{
-Fits a three-stage semiparametric joint model for longitudinal electronic
-health record (EHR) data, extending \code{\link{GIVEHR}} by replacing the
+Fits a three-stage semiparametric joint model for longitudinal Electronic
+Health Record (EHR) data, extending \code{\link{GIVEHR}} by replacing the
 closed-form marginal observation-probability approximation with
-Gauss--Hermite quadrature and an online Laplace filter. This enables
+Gauss--Hermite (GH) quadrature and an online Laplace filter. This enables
 exact integration over both the shared latent factor \eqn{U_i} and the
 observation-process random effects \eqn{q_i}, and supports a
 time-varying observation process through a lagged observation indicator.
@@ -196,26 +196,11 @@ and the number of subjects. For very large datasets, consider using
 \code{\link{GIVEHR}} (which avoids quadrature) as a faster alternative.
 }
 \examples{
-\dontrun{
-# Simulate data
-dat <- sim_data_gen(n = 300, seed = 1)
-
-# Fit with default quadrature settings
-fit <- GIVEHR_GH(
-  data = dat$long_data,
-  covars_visit_XV         = c("Z", "X"),
-  covars_outcome_fixed_XY = c("Z", "X"),
-  covars_outcome_link_ZY  = "Z",
-  covars_obs_fixed_XO     = c("Z", "X"),
-  covars_obs_random_ZO    = "Z",
-  gh_points_U = 7,
-  gh_points_q = 5,
-  verbose     = TRUE
-)
-
-# Examine outcome coefficients
-fit$longitudinal_outcome$beta_Y
-fit$longitudinal_outcome$theta_Y
+\donttest{
+data(sim_ehr_data)
+fit <- GIVEHR_GH(data = sim_ehr_data, gh_points_U = 7, gh_points_q = 5)
+print(fit)
+summary(fit)
 }
 
 }

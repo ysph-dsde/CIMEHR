@@ -2,7 +2,7 @@
 % Please edit documentation in R/IIRR_balancing.R
 \name{IIRR_balancing}
 \alias{IIRR_balancing}
-\title{Inverse Intensity Rate Ratio Estimator with Balancing Weights}
+\title{Inverse Intensity Rate Ratio (IIRR) Estimator with Balancing Weights}
 \usage{
 IIRR_balancing(
   data,
@@ -12,7 +12,7 @@ IIRR_balancing(
   obs_indicator = "R",
   visit_covs = c("Z", "X"),
   balance_covs = NULL,
-  formula = ~Z + X + time,
+  formula = NULL,
   phi = 0
 )
 }
@@ -42,10 +42,12 @@ visiting-process intensity model. Default is \code{c("Z", "X")}.}
 which covariate-balance constraints are imposed. If \code{NULL}
 (the default), \code{visit_covs} is used.}
 
-\item{formula}{A one-sided \code{\link[stats]{formula}} specifying the
-design matrix for the longitudinal outcome model (e.g.,
-\code{~ Z + X + time}). An intercept is included by default. Default
-is \code{~ Z + X + time}.}
+\item{formula}{An optional \code{\link[stats]{formula}} specifying the
+design matrix for the longitudinal outcome model. When \code{NULL}
+(the default), the formula is constructed automatically as
+\code{outcome ~ visit_covs + time} from the column-name arguments.
+A user-supplied formula overrides this (e.g.,
+\code{Y ~ Z + X + Z:X + time} for interactions).}
 
 \item{phi}{Numeric scalar; sensitivity parameter controlling departures
 from the semiparametric visiting-process model. When
@@ -94,8 +96,8 @@ visiting-process intensity is modelled via a partial-likelihood score
 equation, and the outcome coefficients are obtained from weighted
 estimating equations using two alternative weight sets: (i) balancing
 weights that satisfy covariate-balance constraints in the spirit of
-entropy balancing, and (ii) conventional maximum-likelihood-based
-inverse intensity weights.
+entropy balancing, and (ii) conventional Maximum Likelihood Estimation
+(MLE) based inverse intensity weights.
 
 A sensitivity parameter \eqn{\phi} allows the analyst to explore
 departures from the assumption that the visiting process is fully
@@ -140,27 +142,11 @@ of class \code{"IIRR_balancing"}.
 This function requires the \pkg{nleqslv} package.
 }
 \examples{
-\dontrun{
-dat <- sim_data_gen(n = 500, seed = 42)
-
-# Default (phi = 0)
-fit <- IIRR_balancing(
-  data       = dat$long_data,
-  visit_covs = c("Z", "X"),
-  formula    = ~ Z + X + time
-)
-fit$beta_bal
-fit$beta_mle
+\donttest{
+data(sim_ehr_data)
+fit <- IIRR_balancing(sim_ehr_data, visit_covs = c("Z", "X"))
+print(fit)
 summary(fit)
-
-# Sensitivity analysis with phi = 0.3
-fit_sa <- IIRR_balancing(
-  data       = dat$long_data,
-  visit_covs = c("Z", "X"),
-  formula    = ~ Z + X + time,
-  phi        = 0.3
-)
-fit_sa$beta_bal
 }
 
 }
