@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Getting Started with CIMEHR</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Getting Started with CIMEHR</h1>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>Longitudinal analyses of Electronic Health Record (EHR) data face two
+sources of bias that are typically absent from designed studies:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Informative visiting</strong>: patients visit more or less
+frequently depending on their health status and covariates, so the
+observation <em>times</em> are not independent of the outcome
+process.</li>
+<li><strong>Informative observation</strong>: even at a visit, the
+biomarker or outcome may not be measured. Whether it is recorded can
+depend on the same latent factors that drive the outcome.</li>
+</ol>
+<p>Ignoring either source produces biased estimates of longitudinal
+associations. <strong>CIMEHR</strong> provides the <code>GIVEHR()</code>
+family of estimators — three-stage semiparametric methods that jointly
+model both mechanisms — together with nine benchmark comparison methods
+for simulation studies.</p>
+<p>This vignette walks through a complete analysis using the
+pre-generated example dataset <code>sim_ehr_data</code> (2000
+subjects).</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(CIMEHR)</span></code></pre></div>
+</div>
+<div id="the-example-dataset" class="section level2">
+<h2>1. The Example Dataset</h2>
+<p>CIMEHR contains <code>sim_ehr_data</code>, a longitudinal dataset
+generated by <code>sim_data_gen(n = 2000, seed = 2026)</code>. It
+contains an informative visiting process (Poisson with log-normal
+frailty), an informative observation process (probit with
+latent-factor-linked random effects and Ornstein–Uhlenbeck (OU) serial
+correlation), and a linear outcome model with shared random effects.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;sim_ehr_data&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">head</span>(sim_ehr_data)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt;   id Z        X       time R         Y          U       eta q_intercept</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; 1  1 1 1.770565  0.9747043 1 -2.766441 -0.9281387 0.2397548   0.4636619</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; 2  1 1 1.770565  5.5252858 1 -2.401533 -0.9281387 0.2397548   0.4636619</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; 3  1 1 1.770565  6.5620505 1 -3.212795 -0.9281387 0.2397548   0.4636619</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; 4  1 1 1.770565  7.3734143 1 -3.560503 -0.9281387 0.2397548   0.4636619</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; 5  1 1 1.770565 13.2452309 1 -1.083870 -0.9281387 0.2397548   0.4636619</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; 6  1 1 1.770565 16.0111325 1 -2.974147 -0.9281387 0.2397548   0.4636619</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt;         q_Z b_intercept        b_Z  C</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; 1 0.1512068  -0.5893077 -0.3293876 60</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; 2 0.1512068  -0.5893077 -0.3293876 60</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; 3 0.1512068  -0.5893077 -0.3293876 60</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; 4 0.1512068  -0.5893077 -0.3293876 60</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; 5 0.1512068  -0.5893077 -0.3293876 60</span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt; 6 0.1512068  -0.5893077 -0.3293876 60</span></span></code></pre></div>
+<p>Key columns:</p>
+<ul>
+<li><code>id</code> — subject identifier</li>
+<li><code>Z</code> — binary covariate</li>
+<li><code>X</code> — continuous covariate</li>
+<li><code>time</code> — visit time (<code>NA</code> for subjects with
+zero visits)</li>
+<li><code>R</code> — observation indicator (1 = outcome observed, 0 =
+missing)</li>
+<li><code>Y</code> — longitudinal outcome (<code>NA</code> when
+<code>R = 0</code>)</li>
+<li><code>C</code> — censoring time (end of follow-up)</li>
+</ul>
+<p>The true parameter values are stored as an attribute:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>true_params <span class="ot">&lt;-</span> <span class="fu">attr</span>(sim_ehr_data, <span class="st">&quot;true_params&quot;</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co"># True outcome coefficients</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>true_params<span class="sc">$</span>beta</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; intercept         Z         X </span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt;      -2.0      -0.5       0.5</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co"># True visiting-process coefficients</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>true_params<span class="sc">$</span>gamma</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; intercept         Z         X </span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt;      -2.2       1.0       1.0</span></span></code></pre></div>
+</div>
+<div id="covariate-flexibility" class="section level2">
+<h2>2. Covariate Flexibility</h2>
+<p>All functions in CIMEHR accept user-defined column names and
+covariate sets. The GIVEHR family uses character vectors to specify
+covariates:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># If your data has columns &quot;patient_id&quot;, &quot;age&quot;, &quot;female&quot;, &quot;visit_time&quot;,</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co"># &quot;hba1c&quot;, &quot;measured&quot;, &quot;followup_end&quot;:</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">GIVEHR</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">data     =</span> my_data,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">id_col   =</span> <span class="st">&quot;patient_id&quot;</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">time_col =</span> <span class="st">&quot;visit_time&quot;</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">y_col    =</span> <span class="st">&quot;hba1c&quot;</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">r_col    =</span> <span class="st">&quot;measured&quot;</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="at">censor_col =</span> <span class="st">&quot;followup_end&quot;</span>,</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  <span class="at">covars_visit_XV         =</span> <span class="fu">c</span>(<span class="st">&quot;age&quot;</span>, <span class="st">&quot;female&quot;</span>),</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  <span class="at">covars_outcome_fixed_XY =</span> <span class="fu">c</span>(<span class="st">&quot;age&quot;</span>, <span class="st">&quot;female&quot;</span>),</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>  <span class="at">covars_outcome_link_ZY  =</span> <span class="st">&quot;female&quot;</span>,</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>  <span class="at">covars_obs_fixed_XO     =</span> <span class="fu">c</span>(<span class="st">&quot;age&quot;</span>, <span class="st">&quot;female&quot;</span>),</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>  <span class="at">covars_obs_random_ZO    =</span> <span class="st">&quot;female&quot;</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>)</span></code></pre></div>
+<p>The formula-based methods (Linear Mixed Model (LMM), Inverse
+Intensity Rate Ratio (IIRR), Pairwise Composite Likelihood (PCL)) use
+standard R formulas:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">LMM</span>(my_data,</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>    <span class="at">id    =</span> <span class="st">&quot;patient_id&quot;</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>    <span class="at">fixed =</span> hba1c <span class="sc">~</span> age <span class="sc">+</span> female <span class="sc">+</span> visit_time,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>    <span class="at">random =</span> <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> patient_id,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>    <span class="at">obs_indicator =</span> <span class="st">&quot;measured&quot;</span>)</span></code></pre></div>
+</div>
+<div id="the-givehr-family-primary-methods" class="section level2">
+<h2>3. The GIVEHR Family (Primary Methods)</h2>
+<div id="givehr" class="section level3">
+<h3>3.1 GIVEHR</h3>
+<p>The core Generalized Informative Visiting and Electronic Health
+Record (GIVEHR) estimator uses three stages: (1) partial likelihood for
+the visiting process with a log-normal frailty; (2) probit regression
+for the observation process with latent-factor-linked random effects;
+and (3) weighted least squares (WLS) with risk-set centering for the
+longitudinal outcome. Sandwich variance estimators provide standard
+errors for all three stages.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>fit_givehr <span class="ot">&lt;-</span> <span class="fu">GIVEHR</span>(<span class="at">data =</span> sim_ehr_data)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co"># Quick look: outcome fixed effects with SE and 95% CI</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="fu">print</span>(fit_givehr)</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; GIVEHR -- Outcome Fixed Effects (beta)</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; ================================================== </span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt;   Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; Z  -0.7669    0.1651 -1.0904 -0.4434</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; X   0.4385    0.0822  0.2774  0.5995</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; Use summary() for all three process estimates.</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co"># Detailed look: all three stages</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="fu">summary</span>(fit_givehr)</span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; GIVEHR Joint Model -- Summary</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; ============================================================ </span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; Visiting Process (gamma)</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt;   Estimate Std.Error CI.low CI.high</span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; Z   1.1069    0.1342 0.8439  1.3699</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt; X   0.9701    0.1142 0.7463  1.1938</span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt;   Frailty variance (sigma^2_zeta): 1.9276</span></span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt; Observation Process -- Fixed Effects (alpha)</span></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt;             Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="co">#&gt; (Intercept)   1.8955    0.1229  1.6545  2.1364</span></span>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="co">#&gt; Z            -0.4293    0.1418 -0.7072 -0.1514</span></span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt; X            -0.3360    0.0329 -0.4005 -0.2715</span></span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt; Observation Process -- Latent Link (delta)</span></span>
+<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="co">#&gt;             Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -0.5476    0.1130 -0.7690 -0.3263</span></span>
+<span id="cb6-39"><a href="#cb6-39" tabindex="-1"></a><span class="co">#&gt; Z            -0.6858    0.1435 -0.9671 -0.4046</span></span>
+<span id="cb6-40"><a href="#cb6-40" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-41"><a href="#cb6-41" tabindex="-1"></a><span class="co">#&gt;   Random-effect SD (Sigma_q):</span></span>
+<span id="cb6-42"><a href="#cb6-42" tabindex="-1"></a><span class="co">#&gt; (Intercept)           Z </span></span>
+<span id="cb6-43"><a href="#cb6-43" tabindex="-1"></a><span class="co">#&gt;      0.2173      0.0000 </span></span>
+<span id="cb6-44"><a href="#cb6-44" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-45"><a href="#cb6-45" tabindex="-1"></a><span class="co">#&gt; Longitudinal Outcome -- Fixed Effects (beta)</span></span>
+<span id="cb6-46"><a href="#cb6-46" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb6-47"><a href="#cb6-47" tabindex="-1"></a><span class="co">#&gt;   Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb6-48"><a href="#cb6-48" tabindex="-1"></a><span class="co">#&gt; Z  -0.7669    0.1651 -1.0904 -0.4434</span></span>
+<span id="cb6-49"><a href="#cb6-49" tabindex="-1"></a><span class="co">#&gt; X   0.4385    0.0822  0.2774  0.5995</span></span>
+<span id="cb6-50"><a href="#cb6-50" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-51"><a href="#cb6-51" tabindex="-1"></a><span class="co">#&gt; Longitudinal Outcome -- Latent Link (theta)</span></span>
+<span id="cb6-52"><a href="#cb6-52" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb6-53"><a href="#cb6-53" tabindex="-1"></a><span class="co">#&gt;           Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb6-54"><a href="#cb6-54" tabindex="-1"></a><span class="co">#&gt; Intercept   0.7232    0.1279  0.4724  0.9739</span></span>
+<span id="cb6-55"><a href="#cb6-55" tabindex="-1"></a><span class="co">#&gt; Z           0.3419    0.2237 -0.0966  0.7804</span></span></code></pre></div>
+<p>S3 generics for programmatic access:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># Outcome coefficients</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">coef</span>(fit_givehr)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt;          Z          X </span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; -0.7669117  0.4384534</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co"># Visiting-process coefficients</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="fu">coef</span>(fit_givehr, <span class="at">type =</span> <span class="st">&quot;visiting&quot;</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt;         Z         X </span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; 1.1069328 0.9700671</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co"># Sandwich variance-covariance matrix</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="fu">vcov</span>(fit_givehr)</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt;                      Z           X    Intercept            Z</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; Z          0.027246834 0.001840932  0.011968955 -0.023719580</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; X          0.001840932 0.006753752  0.001374455  0.003407868</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; Intercept  0.011968955 0.001374455  0.016367143 -0.015576036</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; Z         -0.023719580 0.003407868 -0.015576036  0.050055841</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co"># Wald confidence intervals (default 95%)</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="fu">confint</span>(fit_givehr)</span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt;         2.5%      97.5%</span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; Z -1.0904354 -0.4433880</span></span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt; X  0.2773812  0.5995257</span></span>
+<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a></span>
+<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a><span class="co"># 90% CI for a single parameter</span></span>
+<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a><span class="fu">confint</span>(fit_givehr, <span class="at">parm =</span> <span class="st">&quot;Z&quot;</span>, <span class="at">level =</span> <span class="fl">0.90</span>)</span>
+<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a><span class="co">#&gt;          5%       95%</span></span>
+<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="co">#&gt; Z -1.038421 -0.495402</span></span></code></pre></div>
+</div>
+<div id="givehr-with-gausshermite-quadrature-givehr_gh" class="section level3">
+<h3>3.2 GIVEHR with Gauss–Hermite Quadrature (GIVEHR_GH)</h3>
+<p>GIVEHR_GH replaces the closed-form marginal approximation in Stage 2
+with Gauss–Hermite (GH) quadrature and an online Laplace filter. This is
+more accurate when the frailty variance is large or when a time-varying
+observation process is needed.</p>
+<p><strong>Note:</strong> Standard errors are not currently available
+for GIVEHR_GH. Use <code>GIVEHR()</code> or bootstrap for inference.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>fit_gh <span class="ot">&lt;-</span> <span class="fu">GIVEHR_GH</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="at">data        =</span> sim_ehr_data,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">gh_points_U =</span> <span class="dv">7</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">gh_points_q =</span> <span class="dv">5</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>)</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="fu">print</span>(fit_gh)</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; GIVEHR (Gauss-Hermite) -- Outcome Fixed Effects (beta)</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; ================================================== </span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt;   Estimate</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; Z  -0.7670</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; X   0.4363</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; Note: Standard errors are not available for GIVEHR_GH. Consider using GIVEHR() or bootstrap for inference.</span></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt; Use summary() for all process estimates.</span></span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="fu">summary</span>(fit_gh)</span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co">#&gt; GIVEHR Joint Model (Gauss-Hermite) -- Summary</span></span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt; ============================================================ </span></span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a><span class="co">#&gt; Note: Standard errors are not available for this method.</span></span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a><span class="co">#&gt; Consider using GIVEHR() or bootstrap for inference.</span></span>
+<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a><span class="co">#&gt; Visiting Process (gamma)</span></span>
+<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a><span class="co">#&gt;   Estimate</span></span>
+<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a><span class="co">#&gt; Z   1.1069</span></span>
+<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a><span class="co">#&gt; X   0.9701</span></span>
+<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a><span class="co">#&gt;   Frailty variance (sigma^2_zeta): 1.9276</span></span>
+<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a><span class="co">#&gt; Observation Process -- Fixed Effects (alpha)</span></span>
+<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb8-35"><a href="#cb8-35" tabindex="-1"></a><span class="co">#&gt;             Estimate</span></span>
+<span id="cb8-36"><a href="#cb8-36" tabindex="-1"></a><span class="co">#&gt; (Intercept)   1.8783</span></span>
+<span id="cb8-37"><a href="#cb8-37" tabindex="-1"></a><span class="co">#&gt; Z            -0.1801</span></span>
+<span id="cb8-38"><a href="#cb8-38" tabindex="-1"></a><span class="co">#&gt; X            -0.3764</span></span>
+<span id="cb8-39"><a href="#cb8-39" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-40"><a href="#cb8-40" tabindex="-1"></a><span class="co">#&gt; Observation Process -- Latent Link (delta)</span></span>
+<span id="cb8-41"><a href="#cb8-41" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb8-42"><a href="#cb8-42" tabindex="-1"></a><span class="co">#&gt;             Estimate</span></span>
+<span id="cb8-43"><a href="#cb8-43" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -0.4293</span></span>
+<span id="cb8-44"><a href="#cb8-44" tabindex="-1"></a><span class="co">#&gt; Z            -1.0708</span></span>
+<span id="cb8-45"><a href="#cb8-45" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-46"><a href="#cb8-46" tabindex="-1"></a><span class="co">#&gt; Longitudinal Outcome -- Fixed Effects (beta)</span></span>
+<span id="cb8-47"><a href="#cb8-47" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb8-48"><a href="#cb8-48" tabindex="-1"></a><span class="co">#&gt;   Estimate</span></span>
+<span id="cb8-49"><a href="#cb8-49" tabindex="-1"></a><span class="co">#&gt; Z  -0.7670</span></span>
+<span id="cb8-50"><a href="#cb8-50" tabindex="-1"></a><span class="co">#&gt; X   0.4363</span></span>
+<span id="cb8-51"><a href="#cb8-51" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-52"><a href="#cb8-52" tabindex="-1"></a><span class="co">#&gt; Longitudinal Outcome -- Latent Link (theta)</span></span>
+<span id="cb8-53"><a href="#cb8-53" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb8-54"><a href="#cb8-54" tabindex="-1"></a><span class="co">#&gt;           Estimate</span></span>
+<span id="cb8-55"><a href="#cb8-55" tabindex="-1"></a><span class="co">#&gt; Intercept   0.7099</span></span>
+<span id="cb8-56"><a href="#cb8-56" tabindex="-1"></a><span class="co">#&gt; Z           0.3272</span></span></code></pre></div>
+</div>
+<div id="givehr-with-ornsteinuhlenbeck-pairwise-composite-likelihood-givehr_ou_pcl" class="section level3">
+<h3>3.3 GIVEHR with Ornstein–Uhlenbeck Pairwise Composite Likelihood
+(GIVEHR_OU_PCL)</h3>
+<p>GIVEHR_OU_PCL extends Stage 2 by modelling serial correlation in the
+observation process with a stationary OU process, estimated via PCL over
+within-subject visit pairs.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>fit_ou <span class="ot">&lt;-</span> <span class="fu">GIVEHR_OU_PCL</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="at">data      =</span> sim_ehr_data,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">pair_type =</span> <span class="st">&quot;adjacent&quot;</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>)</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="fu">print</span>(fit_ou)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; GIVEHR (OU + PCL) -- Outcome Fixed Effects (beta)</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; ================================================== </span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt;   Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; Z  -0.7690    0.1656 -1.0935 -0.4444</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; X   0.4375    0.0823  0.2761  0.5989</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; Use summary() for all process estimates.</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="fu">summary</span>(fit_ou)</span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; GIVEHR Joint Model (OU + PCL) -- Summary</span></span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt; ============================================================ </span></span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt;   Subjects: 2000 | Visits: 38822 | Observed: 20816 (53.6%)</span></span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt; Visiting Process (gamma)</span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt;   Estimate</span></span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt; Z   1.1069</span></span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt; X   0.9701</span></span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a><span class="co">#&gt;   Frailty variance (sigma^2_zeta): 1.9276</span></span>
+<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a><span class="co">#&gt; Observation Process -- Fixed Effects (alpha)</span></span>
+<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a><span class="co">#&gt;             Estimate</span></span>
+<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a><span class="co">#&gt; (Intercept)   1.7045</span></span>
+<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="co">#&gt; Z            -0.3793</span></span>
+<span id="cb9-35"><a href="#cb9-35" tabindex="-1"></a><span class="co">#&gt; X            -0.3020</span></span>
+<span id="cb9-36"><a href="#cb9-36" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-37"><a href="#cb9-37" tabindex="-1"></a><span class="co">#&gt; Observation Process -- Latent Link (delta)</span></span>
+<span id="cb9-38"><a href="#cb9-38" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb9-39"><a href="#cb9-39" tabindex="-1"></a><span class="co">#&gt;             Estimate</span></span>
+<span id="cb9-40"><a href="#cb9-40" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -0.4865</span></span>
+<span id="cb9-41"><a href="#cb9-41" tabindex="-1"></a><span class="co">#&gt; Z            -0.6305</span></span>
+<span id="cb9-42"><a href="#cb9-42" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-43"><a href="#cb9-43" tabindex="-1"></a><span class="co">#&gt;   OU decay (phi): 0.0913 | Correlation at median gap: 0.9486</span></span>
+<span id="cb9-44"><a href="#cb9-44" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-45"><a href="#cb9-45" tabindex="-1"></a><span class="co">#&gt; Longitudinal Outcome -- Fixed Effects (beta)</span></span>
+<span id="cb9-46"><a href="#cb9-46" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb9-47"><a href="#cb9-47" tabindex="-1"></a><span class="co">#&gt;   Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb9-48"><a href="#cb9-48" tabindex="-1"></a><span class="co">#&gt; Z  -0.7690    0.1656 -1.0935 -0.4444</span></span>
+<span id="cb9-49"><a href="#cb9-49" tabindex="-1"></a><span class="co">#&gt; X   0.4375    0.0823  0.2761  0.5989</span></span>
+<span id="cb9-50"><a href="#cb9-50" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-51"><a href="#cb9-51" tabindex="-1"></a><span class="co">#&gt; Longitudinal Outcome -- Latent Link (theta)</span></span>
+<span id="cb9-52"><a href="#cb9-52" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb9-53"><a href="#cb9-53" tabindex="-1"></a><span class="co">#&gt;           Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb9-54"><a href="#cb9-54" tabindex="-1"></a><span class="co">#&gt; Intercept   0.7202    0.1288  0.4678  0.9727</span></span>
+<span id="cb9-55"><a href="#cb9-55" tabindex="-1"></a><span class="co">#&gt; Z           0.3445    0.2243 -0.0951  0.7841</span></span>
+<span id="cb9-56"><a href="#cb9-56" tabindex="-1"></a><span class="fu">confint</span>(fit_ou)</span>
+<span id="cb9-57"><a href="#cb9-57" tabindex="-1"></a><span class="co">#&gt;         2.5%      97.5%</span></span>
+<span id="cb9-58"><a href="#cb9-58" tabindex="-1"></a><span class="co">#&gt; Z -1.0935329 -0.4443871</span></span>
+<span id="cb9-59"><a href="#cb9-59" tabindex="-1"></a><span class="co">#&gt; X  0.2761329  0.5988966</span></span></code></pre></div>
+</div>
+</div>
+<div id="benchmark-comparison-methods" class="section level2">
+<h2>4. Benchmark Comparison Methods</h2>
+<p>CIMEHR includes nine benchmark estimators for comparative studies.
+These methods generally address only the visiting process (not the
+observation process) or ignore informative presence entirely.</p>
+<div id="ehrjoint" class="section level3">
+<h3>4.1 EHRJoint</h3>
+<p>A joint model for the visiting, observation, and outcome processes
+using estimating equations (Du, Shi, and Mukherjee, 2025). Unlike the
+GIVEHR family, this method does not provide standard errors.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>fit_ej <span class="ot">&lt;-</span> <span class="fu">EHRJoint</span>(sim_ehr_data)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="fu">print</span>(fit_ej)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt; EHRJoint -- Outcome Fixed Effects (beta)</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; ================================================== </span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt;   Estimate</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; Z   0.1389</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; X  -0.1415</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; Note: Standard errors are not available for EHRJoint. Consider bootstrap for inference.</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; Use summary() for all process estimates.</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="fu">summary</span>(fit_ej)</span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; EHRJoint Model -- Summary</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; ============================================================ </span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt; Note: Standard errors are not available for this method.</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt; Consider bootstrap for inference.</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; Visiting Process (gamma)</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt;   Estimate</span></span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt; Z   1.0954</span></span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt; X   0.9605</span></span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="co">#&gt;   Frailty variance: 5.9885</span></span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a><span class="co">#&gt; Observation Process (alpha)</span></span>
+<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb10-30"><a href="#cb10-30" tabindex="-1"></a><span class="co">#&gt;             Estimate</span></span>
+<span id="cb10-31"><a href="#cb10-31" tabindex="-1"></a><span class="co">#&gt; (Intercept)   1.8641</span></span>
+<span id="cb10-32"><a href="#cb10-32" tabindex="-1"></a><span class="co">#&gt; Z            -1.6711</span></span>
+<span id="cb10-33"><a href="#cb10-33" tabindex="-1"></a><span class="co">#&gt; X            -0.4755</span></span>
+<span id="cb10-34"><a href="#cb10-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-35"><a href="#cb10-35" tabindex="-1"></a><span class="co">#&gt; Longitudinal Outcome -- Fixed Effects (beta)</span></span>
+<span id="cb10-36"><a href="#cb10-36" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb10-37"><a href="#cb10-37" tabindex="-1"></a><span class="co">#&gt;   Estimate</span></span>
+<span id="cb10-38"><a href="#cb10-38" tabindex="-1"></a><span class="co">#&gt; Z   0.1389</span></span>
+<span id="cb10-39"><a href="#cb10-39" tabindex="-1"></a><span class="co">#&gt; X  -0.1415</span></span>
+<span id="cb10-40"><a href="#cb10-40" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-41"><a href="#cb10-41" tabindex="-1"></a><span class="co">#&gt; Longitudinal Outcome -- Latent Link (theta)</span></span>
+<span id="cb10-42"><a href="#cb10-42" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb10-43"><a href="#cb10-43" tabindex="-1"></a><span class="co">#&gt;   Estimate</span></span>
+<span id="cb10-44"><a href="#cb10-44" tabindex="-1"></a><span class="co">#&gt; 1   0.0100</span></span>
+<span id="cb10-45"><a href="#cb10-45" tabindex="-1"></a><span class="co">#&gt; 2  -2.5585</span></span></code></pre></div>
+</div>
+<div id="jmvl_liang-liangluying-joint-model" class="section level3">
+<h3>4.2 JMVL_Liang (Liang–Lu–Ying Joint Model)</h3>
+<p>The Joint Model for Visiting and Longitudinal processes (JMVL)
+estimating-equations approach of Liang, Lu, and Ying (2009). This method
+does not model a separate observation process. Standard errors are not
+available.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>fit_liang <span class="ot">&lt;-</span> <span class="fu">JMVL_Liang</span>(sim_ehr_data)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">print</span>(fit_liang)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; JMVL_Liang -- Outcome Fixed Effects (beta)</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; ================================================== </span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt;   Estimate</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; Z  -0.8115</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; X   0.3398</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt; Note: Standard errors are not available for JMVL_Liang. Consider bootstrap for inference.</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt; Use summary() for all process estimates.</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="fu">summary</span>(fit_liang)</span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co">#&gt; JMVL_Liang Joint Model -- Summary</span></span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co">#&gt; ============================================================ </span></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="co">#&gt; Note: Standard errors are not available for this method.</span></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a><span class="co">#&gt; Consider bootstrap for inference.</span></span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a><span class="co">#&gt; Visiting Process (gamma)</span></span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a><span class="co">#&gt;   Estimate</span></span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a><span class="co">#&gt; Z   0.5145</span></span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a><span class="co">#&gt; X   0.7651</span></span>
+<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a><span class="co">#&gt;   Frailty variance: 0.7227</span></span>
+<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a><span class="co">#&gt; Longitudinal Outcome -- Fixed Effects (beta)</span></span>
+<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a><span class="co">#&gt;   Estimate</span></span>
+<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a><span class="co">#&gt; Z  -0.8115</span></span>
+<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a><span class="co">#&gt; X   0.3398</span></span></code></pre></div>
+</div>
+<div id="inverse-intensity-rate-ratio-weighting-iirr_weighting" class="section level3">
+<h3>4.3 Inverse Intensity Rate Ratio Weighting (IIRR_weighting)</h3>
+<p>Weights each observation by the inverse of its estimated visit
+intensity (Buzkova and Lumley, 2007). Standard errors are not available;
+consider bootstrap for inference.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Formula is auto-constructed from visit_covs and time</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>fit_iirr <span class="ot">&lt;-</span> <span class="fu">IIRR_weighting</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  sim_ehr_data,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">visit_covs =</span> <span class="fu">c</span>(<span class="st">&quot;Z&quot;</span>, <span class="st">&quot;X&quot;</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>)</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="fu">print</span>(fit_iirr)</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt; IIRR Weighting -- Outcome Fixed Effects (beta)</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt; ================================================== </span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt;             Estimate</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -1.5422</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt; Z            -0.6446</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a><span class="co">#&gt; X             0.3848</span></span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt; time          0.1003</span></span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt; Note: Standard errors are not available for IIRR_weighting. Consider bootstrap for inference.</span></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="co">#&gt; Use summary() for all process estimates.</span></span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="fu">summary</span>(fit_iirr)</span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a><span class="co">#&gt; IIRR Weighting Estimator -- Summary</span></span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a><span class="co">#&gt; ============================================================ </span></span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a><span class="co">#&gt; Note: Standard errors are not available for this method.</span></span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a><span class="co">#&gt; Consider bootstrap for inference.</span></span>
+<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a><span class="co">#&gt; Visiting Process (gamma)</span></span>
+<span id="cb12-27"><a href="#cb12-27" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb12-28"><a href="#cb12-28" tabindex="-1"></a><span class="co">#&gt;   Estimate</span></span>
+<span id="cb12-29"><a href="#cb12-29" tabindex="-1"></a><span class="co">#&gt; Z   0.5145</span></span>
+<span id="cb12-30"><a href="#cb12-30" tabindex="-1"></a><span class="co">#&gt; X   0.7651</span></span>
+<span id="cb12-31"><a href="#cb12-31" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-32"><a href="#cb12-32" tabindex="-1"></a><span class="co">#&gt; Longitudinal Outcome -- Fixed Effects (beta)</span></span>
+<span id="cb12-33"><a href="#cb12-33" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb12-34"><a href="#cb12-34" tabindex="-1"></a><span class="co">#&gt;             Estimate</span></span>
+<span id="cb12-35"><a href="#cb12-35" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -1.5422</span></span>
+<span id="cb12-36"><a href="#cb12-36" tabindex="-1"></a><span class="co">#&gt; Z            -0.6446</span></span>
+<span id="cb12-37"><a href="#cb12-37" tabindex="-1"></a><span class="co">#&gt; X             0.3848</span></span>
+<span id="cb12-38"><a href="#cb12-38" tabindex="-1"></a><span class="co">#&gt; time          0.1003</span></span>
+<span id="cb12-39"><a href="#cb12-39" tabindex="-1"></a></span>
+<span id="cb12-40"><a href="#cb12-40" tabindex="-1"></a><span class="co"># Equivalent with explicit formula</span></span>
+<span id="cb12-41"><a href="#cb12-41" tabindex="-1"></a>fit_iirr2 <span class="ot">&lt;-</span> <span class="fu">IIRR_weighting</span>(sim_ehr_data, <span class="at">formula =</span> <span class="sc">~</span> Z <span class="sc">+</span> X <span class="sc">+</span> time)</span></code></pre></div>
+</div>
+<div id="iirr-with-balancing-weights-iirr_balancing" class="section level3">
+<h3>4.4 IIRR with Balancing Weights (IIRR_balancing)</h3>
+<p>The balancing-weights approach of Yiu and Su (2025) with an optional
+sensitivity parameter. Returns both balancing-weight and maximum
+likelihood estimation (MLE) weight estimates. Standard errors are not
+available.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># Formula is auto-constructed from visit_covs and time</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>fit_bal <span class="ot">&lt;-</span> <span class="fu">IIRR_balancing</span>(</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  sim_ehr_data,</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">visit_covs =</span> <span class="fu">c</span>(<span class="st">&quot;Z&quot;</span>, <span class="st">&quot;X&quot;</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>)</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; Warning in value[[3L]](cond): Balancing weight estimation failed: initial value of fn function contains non-finite values (starting at index=2)</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt;   Check initial x and/or correctness of function. Falling back to MLE weights.</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="fu">print</span>(fit_bal)</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; IIRR Balancing -- Outcome Fixed Effects (beta)</span></span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="co">#&gt; ================================================== </span></span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a><span class="co">#&gt; Balancing weights:</span></span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a><span class="co">#&gt;             Estimate</span></span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -1.4161</span></span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a><span class="co">#&gt; Z            -0.8436</span></span>
+<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a><span class="co">#&gt; X             0.3151</span></span>
+<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a><span class="co">#&gt; time          0.1007</span></span>
+<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a><span class="co">#&gt; MLE weights:</span></span>
+<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a><span class="co">#&gt;             Estimate</span></span>
+<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -1.4161</span></span>
+<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a><span class="co">#&gt; Z            -0.8436</span></span>
+<span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a><span class="co">#&gt; X             0.3151</span></span>
+<span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a><span class="co">#&gt; time          0.1007</span></span>
+<span id="cb13-26"><a href="#cb13-26" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-27"><a href="#cb13-27" tabindex="-1"></a><span class="co">#&gt; Note: Standard errors are not available for IIRR_balancing. Consider bootstrap for inference.</span></span>
+<span id="cb13-28"><a href="#cb13-28" tabindex="-1"></a><span class="co">#&gt; Use summary() for all process estimates.</span></span>
+<span id="cb13-29"><a href="#cb13-29" tabindex="-1"></a><span class="fu">summary</span>(fit_bal)</span>
+<span id="cb13-30"><a href="#cb13-30" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-31"><a href="#cb13-31" tabindex="-1"></a><span class="co">#&gt; IIRR Balancing-Weights Estimator -- Summary</span></span>
+<span id="cb13-32"><a href="#cb13-32" tabindex="-1"></a><span class="co">#&gt; ============================================================ </span></span>
+<span id="cb13-33"><a href="#cb13-33" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-34"><a href="#cb13-34" tabindex="-1"></a><span class="co">#&gt; Note: Standard errors are not available for this method.</span></span>
+<span id="cb13-35"><a href="#cb13-35" tabindex="-1"></a><span class="co">#&gt; Consider bootstrap for inference.</span></span>
+<span id="cb13-36"><a href="#cb13-36" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-37"><a href="#cb13-37" tabindex="-1"></a><span class="co">#&gt;   Sensitivity parameter (phi): 0.0000</span></span>
+<span id="cb13-38"><a href="#cb13-38" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-39"><a href="#cb13-39" tabindex="-1"></a><span class="co">#&gt; Visiting Process (gamma)</span></span>
+<span id="cb13-40"><a href="#cb13-40" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb13-41"><a href="#cb13-41" tabindex="-1"></a><span class="co">#&gt;   Estimate</span></span>
+<span id="cb13-42"><a href="#cb13-42" tabindex="-1"></a><span class="co">#&gt; Z        0</span></span>
+<span id="cb13-43"><a href="#cb13-43" tabindex="-1"></a><span class="co">#&gt; X        0</span></span>
+<span id="cb13-44"><a href="#cb13-44" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-45"><a href="#cb13-45" tabindex="-1"></a><span class="co">#&gt; Outcome (beta) -- Balancing Weights</span></span>
+<span id="cb13-46"><a href="#cb13-46" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb13-47"><a href="#cb13-47" tabindex="-1"></a><span class="co">#&gt;             Estimate</span></span>
+<span id="cb13-48"><a href="#cb13-48" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -1.4161</span></span>
+<span id="cb13-49"><a href="#cb13-49" tabindex="-1"></a><span class="co">#&gt; Z            -0.8436</span></span>
+<span id="cb13-50"><a href="#cb13-50" tabindex="-1"></a><span class="co">#&gt; X             0.3151</span></span>
+<span id="cb13-51"><a href="#cb13-51" tabindex="-1"></a><span class="co">#&gt; time          0.1007</span></span>
+<span id="cb13-52"><a href="#cb13-52" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-53"><a href="#cb13-53" tabindex="-1"></a><span class="co">#&gt; Outcome (beta) -- MLE Weights</span></span>
+<span id="cb13-54"><a href="#cb13-54" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb13-55"><a href="#cb13-55" tabindex="-1"></a><span class="co">#&gt;             Estimate</span></span>
+<span id="cb13-56"><a href="#cb13-56" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -1.4161</span></span>
+<span id="cb13-57"><a href="#cb13-57" tabindex="-1"></a><span class="co">#&gt; Z            -0.8436</span></span>
+<span id="cb13-58"><a href="#cb13-58" tabindex="-1"></a><span class="co">#&gt; X             0.3151</span></span>
+<span id="cb13-59"><a href="#cb13-59" tabindex="-1"></a><span class="co">#&gt; time          0.1007</span></span>
+<span id="cb13-60"><a href="#cb13-60" tabindex="-1"></a></span>
+<span id="cb13-61"><a href="#cb13-61" tabindex="-1"></a><span class="co"># Sensitivity analysis with phi = 0.3</span></span>
+<span id="cb13-62"><a href="#cb13-62" tabindex="-1"></a>fit_bal_sa <span class="ot">&lt;-</span> <span class="fu">IIRR_balancing</span>(</span>
+<span id="cb13-63"><a href="#cb13-63" tabindex="-1"></a>  sim_ehr_data,</span>
+<span id="cb13-64"><a href="#cb13-64" tabindex="-1"></a>  <span class="at">visit_covs =</span> <span class="fu">c</span>(<span class="st">&quot;Z&quot;</span>, <span class="st">&quot;X&quot;</span>),</span>
+<span id="cb13-65"><a href="#cb13-65" tabindex="-1"></a>  <span class="at">phi        =</span> <span class="fl">0.3</span></span>
+<span id="cb13-66"><a href="#cb13-66" tabindex="-1"></a>)</span>
+<span id="cb13-67"><a href="#cb13-67" tabindex="-1"></a><span class="co">#&gt; Warning in value[[3L]](cond): Balancing weight estimation failed: initial value of fn function contains non-finite values (starting at index=2)</span></span>
+<span id="cb13-68"><a href="#cb13-68" tabindex="-1"></a><span class="co">#&gt;   Check initial x and/or correctness of function. Falling back to MLE weights.</span></span></code></pre></div>
+</div>
+<div id="linear-mixed-model-lmm" class="section level3">
+<h3>4.5 Linear Mixed Model (LMM)</h3>
+<p>A wrapper around <code>nlme::lme()</code> with three variants:
+standard LMM, Observation-Adjusted LMM (OA-LMM), and Visit-Adjusted LMM
+(VA-LMM). Standard errors, t-values, and p-values are available from the
+model.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Standard LMM (observed data only)</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>fit_lmm <span class="ot">&lt;-</span> <span class="fu">LMM</span>(</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  sim_ehr_data,</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="at">fixed         =</span> Y <span class="sc">~</span> Z <span class="sc">+</span> X <span class="sc">+</span> time,</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>  <span class="at">random        =</span> <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> Z <span class="sc">|</span> id,</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>  <span class="at">obs_indicator =</span> <span class="st">&quot;R&quot;</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>)</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="fu">print</span>(fit_lmm)</span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co">#&gt; Linear Mixed Model -- Fixed Effects</span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co">#&gt; ================================================== </span></span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="co">#&gt;               Value Std.Error    DF  t-value p-value</span></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a><span class="co">#&gt; (Intercept) -1.8523    0.0441 19006 -42.0040       0</span></span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a><span class="co">#&gt; Z           -0.6638    0.0750  1806  -8.8541       0</span></span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a><span class="co">#&gt; X            0.3740    0.0367  1806  10.1889       0</span></span>
+<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a><span class="co">#&gt; time         0.0996    0.0004 19006 228.8998       0</span></span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a><span class="fu">summary</span>(fit_lmm)</span>
+<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a><span class="co">#&gt; Linear Mixed Model -- Summary</span></span>
+<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a><span class="co">#&gt; ============================================================ </span></span>
+<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a><span class="co">#&gt; Fixed Effects:</span></span>
+<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------ </span></span>
+<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a><span class="co">#&gt;               Value Std.Error    DF  t-value p-value</span></span>
+<span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a><span class="co">#&gt; (Intercept) -1.8523    0.0441 19006 -42.0040       0</span></span>
+<span id="cb14-26"><a href="#cb14-26" tabindex="-1"></a><span class="co">#&gt; Z           -0.6638    0.0750  1806  -8.8541       0</span></span>
+<span id="cb14-27"><a href="#cb14-27" tabindex="-1"></a><span class="co">#&gt; X            0.3740    0.0367  1806  10.1889       0</span></span>
+<span id="cb14-28"><a href="#cb14-28" tabindex="-1"></a><span class="co">#&gt; time         0.0996    0.0004 19006 228.8998       0</span></span>
+<span id="cb14-29"><a href="#cb14-29" tabindex="-1"></a></span>
+<span id="cb14-30"><a href="#cb14-30" tabindex="-1"></a><span class="co"># Visit-Adjusted LMM (n_visits added automatically)</span></span>
+<span id="cb14-31"><a href="#cb14-31" tabindex="-1"></a>fit_va <span class="ot">&lt;-</span> <span class="fu">LMM</span>(</span>
+<span id="cb14-32"><a href="#cb14-32" tabindex="-1"></a>  sim_ehr_data,</span>
+<span id="cb14-33"><a href="#cb14-33" tabindex="-1"></a>  <span class="at">fixed         =</span> Y <span class="sc">~</span> Z <span class="sc">+</span> X <span class="sc">+</span> time,</span>
+<span id="cb14-34"><a href="#cb14-34" tabindex="-1"></a>  <span class="at">random        =</span> <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> Z <span class="sc">|</span> id,</span>
+<span id="cb14-35"><a href="#cb14-35" tabindex="-1"></a>  <span class="at">obs_indicator =</span> <span class="st">&quot;R&quot;</span>,</span>
+<span id="cb14-36"><a href="#cb14-36" tabindex="-1"></a>  <span class="at">visit_adjust  =</span> <span class="st">&quot;VA&quot;</span></span>
+<span id="cb14-37"><a href="#cb14-37" tabindex="-1"></a>)</span>
+<span id="cb14-38"><a href="#cb14-38" tabindex="-1"></a><span class="fu">print</span>(fit_va)</span>
+<span id="cb14-39"><a href="#cb14-39" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-40"><a href="#cb14-40" tabindex="-1"></a><span class="co">#&gt; Linear Mixed Model -- Fixed Effects</span></span>
+<span id="cb14-41"><a href="#cb14-41" tabindex="-1"></a><span class="co">#&gt; ================================================== </span></span>
+<span id="cb14-42"><a href="#cb14-42" tabindex="-1"></a><span class="co">#&gt;               Value Std.Error    DF  t-value p-value</span></span>
+<span id="cb14-43"><a href="#cb14-43" tabindex="-1"></a><span class="co">#&gt; (Intercept) -1.8405    0.0449 19005 -41.0247  0.0000</span></span>
+<span id="cb14-44"><a href="#cb14-44" tabindex="-1"></a><span class="co">#&gt; Z           -0.6687    0.0750  1806  -8.9213  0.0000</span></span>
+<span id="cb14-45"><a href="#cb14-45" tabindex="-1"></a><span class="co">#&gt; X            0.3698    0.0368  1806  10.0528  0.0000</span></span>
+<span id="cb14-46"><a href="#cb14-46" tabindex="-1"></a><span class="co">#&gt; time         0.0991    0.0006 19005 174.0914  0.0000</span></span>
+<span id="cb14-47"><a href="#cb14-47" tabindex="-1"></a><span class="co">#&gt; n_visits     0.0006    0.0004 19005   1.3661  0.1719</span></span>
+<span id="cb14-48"><a href="#cb14-48" tabindex="-1"></a></span>
+<span id="cb14-49"><a href="#cb14-49" tabindex="-1"></a><span class="co"># Observation-Adjusted LMM</span></span>
+<span id="cb14-50"><a href="#cb14-50" tabindex="-1"></a>fit_oa <span class="ot">&lt;-</span> <span class="fu">LMM</span>(</span>
+<span id="cb14-51"><a href="#cb14-51" tabindex="-1"></a>  sim_ehr_data,</span>
+<span id="cb14-52"><a href="#cb14-52" tabindex="-1"></a>  <span class="at">fixed         =</span> Y <span class="sc">~</span> Z <span class="sc">+</span> X <span class="sc">+</span> time,</span>
+<span id="cb14-53"><a href="#cb14-53" tabindex="-1"></a>  <span class="at">random        =</span> <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> Z <span class="sc">|</span> id,</span>
+<span id="cb14-54"><a href="#cb14-54" tabindex="-1"></a>  <span class="at">obs_indicator =</span> <span class="st">&quot;R&quot;</span>,</span>
+<span id="cb14-55"><a href="#cb14-55" tabindex="-1"></a>  <span class="at">visit_adjust  =</span> <span class="st">&quot;OA&quot;</span></span>
+<span id="cb14-56"><a href="#cb14-56" tabindex="-1"></a>)</span>
+<span id="cb14-57"><a href="#cb14-57" tabindex="-1"></a><span class="fu">print</span>(fit_oa)</span>
+<span id="cb14-58"><a href="#cb14-58" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-59"><a href="#cb14-59" tabindex="-1"></a><span class="co">#&gt; Linear Mixed Model -- Fixed Effects</span></span>
+<span id="cb14-60"><a href="#cb14-60" tabindex="-1"></a><span class="co">#&gt; ================================================== </span></span>
+<span id="cb14-61"><a href="#cb14-61" tabindex="-1"></a><span class="co">#&gt;               Value Std.Error    DF  t-value p-value</span></span>
+<span id="cb14-62"><a href="#cb14-62" tabindex="-1"></a><span class="co">#&gt; (Intercept) -1.8477    0.0450 19005 -41.0789  0.0000</span></span>
+<span id="cb14-63"><a href="#cb14-63" tabindex="-1"></a><span class="co">#&gt; Z           -0.6648    0.0750  1806  -8.8667  0.0000</span></span>
+<span id="cb14-64"><a href="#cb14-64" tabindex="-1"></a><span class="co">#&gt; X            0.3725    0.0368  1806  10.1196  0.0000</span></span>
+<span id="cb14-65"><a href="#cb14-65" tabindex="-1"></a><span class="co">#&gt; time         0.0994    0.0006 19005 165.5660  0.0000</span></span>
+<span id="cb14-66"><a href="#cb14-66" tabindex="-1"></a><span class="co">#&gt; n_visits     0.0004    0.0007 19005   0.5034  0.6147</span></span></code></pre></div>
+</div>
+<div id="summary-statistic-regression-summarystat" class="section level3">
+<h3>4.6 Summary-Statistic Regression (SummaryStat)</h3>
+<p>A naive baseline that collapses each subject’s outcome to a single
+summary statistic (e.g., mean) and fits a cross-sectional linear model.
+Standard errors are available from <code>lm()</code>.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>fit_ss <span class="ot">&lt;-</span> <span class="fu">SummaryStat</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>  sim_ehr_data,</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>  <span class="at">formula =</span> <span class="sc">~</span> Z <span class="sc">+</span> X</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>)</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="fu">print</span>(fit_ss)</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt; Summary-Statistic Regression -- Coefficients</span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="co">#&gt; ================================================== </span></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="co">#&gt;             Estimate Std. Error t value Pr(&gt;|t|)</span></span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="co">#&gt; (Intercept)   1.0736     0.0657 16.3467        0</span></span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="co">#&gt; Z            -0.6176     0.0909 -6.7944        0</span></span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a><span class="co">#&gt; X             0.3430     0.0480  7.1462        0</span></span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a><span class="fu">summary</span>(fit_ss)</span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a><span class="co">#&gt; Summary-Statistic Regression -- Summary</span></span>
+<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a><span class="co">#&gt; ============================================================ </span></span>
+<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------ </span></span>
+<span id="cb15-20"><a href="#cb15-20" tabindex="-1"></a><span class="co">#&gt;             Estimate Std. Error t value Pr(&gt;|t|)</span></span>
+<span id="cb15-21"><a href="#cb15-21" tabindex="-1"></a><span class="co">#&gt; (Intercept)   1.0736     0.0657 16.3467        0</span></span>
+<span id="cb15-22"><a href="#cb15-22" tabindex="-1"></a><span class="co">#&gt; Z            -0.6176     0.0909 -6.7944        0</span></span>
+<span id="cb15-23"><a href="#cb15-23" tabindex="-1"></a><span class="co">#&gt; X             0.3430     0.0480  7.1462        0</span></span></code></pre></div>
+</div>
+<div id="pairwise-composite-likelihood-pairwiselikelihood" class="section level3">
+<h3>4.7 Pairwise Composite Likelihood (PairwiseLikelihood)</h3>
+<p>Fits a Generalized Linear Model (GLM) using PCL. Naive standard
+errors are available from the inverse Hessian.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>obs_data <span class="ot">&lt;-</span> sim_ehr_data[sim_ehr_data<span class="sc">$</span>R <span class="sc">==</span> <span class="dv">1</span> <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(sim_ehr_data<span class="sc">$</span>R), ]</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>fit_pl <span class="ot">&lt;-</span> <span class="fu">PairwiseLikelihood</span>(</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>  <span class="at">data        =</span> obs_data,</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>  <span class="at">formula     =</span> Y <span class="sc">~</span> Z <span class="sc">+</span> X <span class="sc">+</span> time,</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>  <span class="at">pair_sample =</span> <span class="dv">5000</span></span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>)</span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a><span class="fu">print</span>(fit_pl)</span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="co">#&gt; Pairwise Likelihood -- Coefficients</span></span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a><span class="co">#&gt; ================================================== </span></span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a><span class="co">#&gt;      Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a><span class="co">#&gt; Z     -0.8779    0.0018 -0.8814 -0.8743</span></span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a><span class="co">#&gt; X      0.3697    0.0010  0.3678  0.3716</span></span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a><span class="co">#&gt; time   0.1008    0.0001  0.1007  0.1009</span></span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a><span class="co">#&gt; Converged: TRUE | Log-likelihood: -2063578.69</span></span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a><span class="fu">summary</span>(fit_pl)</span>
+<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a><span class="co">#&gt; Pairwise Likelihood -- Summary</span></span>
+<span id="cb16-21"><a href="#cb16-21" tabindex="-1"></a><span class="co">#&gt; ============================================================ </span></span>
+<span id="cb16-22"><a href="#cb16-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-23"><a href="#cb16-23" tabindex="-1"></a><span class="co">#&gt;   Observations: 20816 | Clusters: 1809 | Pairs: 5000</span></span>
+<span id="cb16-24"><a href="#cb16-24" tabindex="-1"></a><span class="co">#&gt;   Converged: TRUE | Log-likelihood: -2063578.69</span></span>
+<span id="cb16-25"><a href="#cb16-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-26"><a href="#cb16-26" tabindex="-1"></a><span class="co">#&gt; Coefficients</span></span>
+<span id="cb16-27"><a href="#cb16-27" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb16-28"><a href="#cb16-28" tabindex="-1"></a><span class="co">#&gt;      Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb16-29"><a href="#cb16-29" tabindex="-1"></a><span class="co">#&gt; Z     -0.8779    0.0018 -0.8814 -0.8743</span></span>
+<span id="cb16-30"><a href="#cb16-30" tabindex="-1"></a><span class="co">#&gt; X      0.3697    0.0010  0.3678  0.3716</span></span>
+<span id="cb16-31"><a href="#cb16-31" tabindex="-1"></a><span class="co">#&gt; time   0.1008    0.0001  0.1007  0.1009</span></span></code></pre></div>
+</div>
+<div id="linear-increment-imputation-with-informative-presence-adjustment-li_ip" class="section level3">
+<h3>4.8 Linear Increment Imputation with Informative Presence Adjustment
+(LI_IP)</h3>
+<p>A two-stage procedure: (1) impute missing outcomes using the Linear
+Increment (LI) model (Aalen and Gunnes, 2010), then (2) apply an
+Informative Presence (IP) adjustment method to the completed
+dataset.</p>
+<p>Standard error availability depends on the downstream IP method
+chosen. Single imputation does not capture imputation uncertainty.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>fit_li <span class="ot">&lt;-</span> <span class="fu">LI_IP</span>(</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>  <span class="at">data       =</span> sim_ehr_data,</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>  <span class="at">ip_method  =</span> <span class="st">&quot;LMM&quot;</span>,</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>  <span class="at">visit_covs =</span> <span class="fu">c</span>(<span class="st">&quot;Z&quot;</span>, <span class="st">&quot;X&quot;</span>)</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>)</span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="co">#&gt; Stage 1: Linear Increment Imputation...</span></span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a><span class="co">#&gt;   LI model: Y ~ Z + X + time</span></span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a><span class="co">#&gt;   Covariance structure: randomwalk</span></span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="co">#&gt;   Imputed 18006 missing values</span></span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a><span class="co">#&gt; Stage 2: Applying LMM...</span></span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a><span class="co">#&gt; Done!</span></span>
+<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a><span class="fu">print</span>(fit_li)</span>
+<span id="cb17-14"><a href="#cb17-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb17-15"><a href="#cb17-15" tabindex="-1"></a><span class="co">#&gt; Linear Increment + IP -- Outcome Coefficients</span></span>
+<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a><span class="co">#&gt; ================================================== </span></span>
+<span id="cb17-17"><a href="#cb17-17" tabindex="-1"></a><span class="co">#&gt;             Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb17-18"><a href="#cb17-18" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -1.8742    0.0578 -1.9875 -1.7609</span></span>
+<span id="cb17-19"><a href="#cb17-19" tabindex="-1"></a><span class="co">#&gt; Z            -0.6333    0.0769 -0.7841 -0.4826</span></span>
+<span id="cb17-20"><a href="#cb17-20" tabindex="-1"></a><span class="co">#&gt; X             0.3485    0.0408  0.2685  0.4284</span></span>
+<span id="cb17-21"><a href="#cb17-21" tabindex="-1"></a><span class="co">#&gt; time          0.0996    0.0004  0.0988  0.1005</span></span>
+<span id="cb17-22"><a href="#cb17-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb17-23"><a href="#cb17-23" tabindex="-1"></a><span class="co">#&gt; Note: Standard errors do not account for imputation uncertainty.</span></span>
+<span id="cb17-24"><a href="#cb17-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb17-25"><a href="#cb17-25" tabindex="-1"></a><span class="co">#&gt; IP method: LMM | Values imputed: 18006</span></span>
+<span id="cb17-26"><a href="#cb17-26" tabindex="-1"></a><span class="fu">summary</span>(fit_li)</span>
+<span id="cb17-27"><a href="#cb17-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb17-28"><a href="#cb17-28" tabindex="-1"></a><span class="co">#&gt; Linear Increment Imputation + IP Adjustment -- Summary</span></span>
+<span id="cb17-29"><a href="#cb17-29" tabindex="-1"></a><span class="co">#&gt; ============================================================ </span></span>
+<span id="cb17-30"><a href="#cb17-30" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb17-31"><a href="#cb17-31" tabindex="-1"></a><span class="co">#&gt;   LI formula: Y ~ Z + X + time</span></span>
+<span id="cb17-32"><a href="#cb17-32" tabindex="-1"></a><span class="co">#&gt;   Covariance: randomwalk | Values imputed: 18006</span></span>
+<span id="cb17-33"><a href="#cb17-33" tabindex="-1"></a><span class="co">#&gt;   IP method: LMM</span></span>
+<span id="cb17-34"><a href="#cb17-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb17-35"><a href="#cb17-35" tabindex="-1"></a><span class="co">#&gt;   Note: Standard errors do not account for imputation uncertainty.</span></span>
+<span id="cb17-36"><a href="#cb17-36" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb17-37"><a href="#cb17-37" tabindex="-1"></a><span class="co">#&gt; Outcome Coefficients</span></span>
+<span id="cb17-38"><a href="#cb17-38" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb17-39"><a href="#cb17-39" tabindex="-1"></a><span class="co">#&gt;             Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb17-40"><a href="#cb17-40" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -1.8742    0.0578 -1.9875 -1.7609</span></span>
+<span id="cb17-41"><a href="#cb17-41" tabindex="-1"></a><span class="co">#&gt; Z            -0.6333    0.0769 -0.7841 -0.4826</span></span>
+<span id="cb17-42"><a href="#cb17-42" tabindex="-1"></a><span class="co">#&gt; X             0.3485    0.0408  0.2685  0.4284</span></span>
+<span id="cb17-43"><a href="#cb17-43" tabindex="-1"></a><span class="co">#&gt; time          0.0996    0.0004  0.0988  0.1005</span></span></code></pre></div>
+</div>
+<div id="multiple-imputation-with-informative-presence-adjustment-mi_ip" class="section level3">
+<h3>4.9 Multiple Imputation with Informative Presence Adjustment
+(MI_IP)</h3>
+<p>A three-stage procedure: (1) multiply impute missing outcomes via
+<code>mice</code>, (2) apply an IP method to each completed dataset, and
+(3) pool results. Standard error availability depends on the downstream
+IP method.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>fit_mi <span class="ot">&lt;-</span> <span class="fu">MI_IP</span>(</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>  <span class="at">data       =</span> sim_ehr_data,</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>  <span class="at">ip_method  =</span> <span class="st">&quot;LMM&quot;</span>,</span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>  <span class="at">visit_covs =</span> <span class="fu">c</span>(<span class="st">&quot;Z&quot;</span>, <span class="st">&quot;X&quot;</span>),</span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a>  <span class="at">m          =</span> <span class="dv">5</span></span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>)</span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a><span class="co">#&gt; Stage 1: Imputing missing outcomes...</span></span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a><span class="co">#&gt;   Imputation model: Y ~ Z + X + time + (1 | id)</span></span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a><span class="co">#&gt; Warning: Number of logged events: 1</span></span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a><span class="co">#&gt;   Imputing 18006 missing values out of 38822 visits</span></span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a><span class="co">#&gt;   Fixed effects: Z, X, time, R</span></span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a><span class="co">#&gt;   Random effects: intercept</span></span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a><span class="co">#&gt; Warning: Number of logged events: 250</span></span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a><span class="co">#&gt; Stage 2: Applying LMM to each imputed dataset...</span></span>
+<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a><span class="co">#&gt;   Processing imputation 1/5</span></span>
+<span id="cb18-17"><a href="#cb18-17" tabindex="-1"></a><span class="co">#&gt;   Processing imputation 2/5</span></span>
+<span id="cb18-18"><a href="#cb18-18" tabindex="-1"></a><span class="co">#&gt;   Processing imputation 3/5</span></span>
+<span id="cb18-19"><a href="#cb18-19" tabindex="-1"></a><span class="co">#&gt;   Processing imputation 4/5</span></span>
+<span id="cb18-20"><a href="#cb18-20" tabindex="-1"></a><span class="co">#&gt;   Processing imputation 5/5</span></span>
+<span id="cb18-21"><a href="#cb18-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb18-22"><a href="#cb18-22" tabindex="-1"></a><span class="co">#&gt; Stage 3: Pooling results using mean method...</span></span>
+<span id="cb18-23"><a href="#cb18-23" tabindex="-1"></a><span class="co">#&gt; Done!</span></span>
+<span id="cb18-24"><a href="#cb18-24" tabindex="-1"></a><span class="fu">print</span>(fit_mi)</span>
+<span id="cb18-25"><a href="#cb18-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb18-26"><a href="#cb18-26" tabindex="-1"></a><span class="co">#&gt; Multiple Imputation + IP -- Outcome Coefficients</span></span>
+<span id="cb18-27"><a href="#cb18-27" tabindex="-1"></a><span class="co">#&gt; ================================================== </span></span>
+<span id="cb18-28"><a href="#cb18-28" tabindex="-1"></a><span class="co">#&gt;             Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb18-29"><a href="#cb18-29" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -1.8742         0 -1.8742 -1.8742</span></span>
+<span id="cb18-30"><a href="#cb18-30" tabindex="-1"></a><span class="co">#&gt; Z            -0.6333         0 -0.6333 -0.6333</span></span>
+<span id="cb18-31"><a href="#cb18-31" tabindex="-1"></a><span class="co">#&gt; X             0.3485         0  0.3485  0.3485</span></span>
+<span id="cb18-32"><a href="#cb18-32" tabindex="-1"></a><span class="co">#&gt; time          0.0996         0  0.0996  0.0996</span></span>
+<span id="cb18-33"><a href="#cb18-33" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb18-34"><a href="#cb18-34" tabindex="-1"></a><span class="co">#&gt; IP method: LMM | Imputations: 5/5</span></span>
+<span id="cb18-35"><a href="#cb18-35" tabindex="-1"></a><span class="fu">summary</span>(fit_mi)</span>
+<span id="cb18-36"><a href="#cb18-36" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb18-37"><a href="#cb18-37" tabindex="-1"></a><span class="co">#&gt; Multiple Imputation + IP Adjustment -- Summary</span></span>
+<span id="cb18-38"><a href="#cb18-38" tabindex="-1"></a><span class="co">#&gt; ============================================================ </span></span>
+<span id="cb18-39"><a href="#cb18-39" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb18-40"><a href="#cb18-40" tabindex="-1"></a><span class="co">#&gt;   Imputation method: 2l.pan</span></span>
+<span id="cb18-41"><a href="#cb18-41" tabindex="-1"></a><span class="co">#&gt;   Imputations used: 5 / 5 requested</span></span>
+<span id="cb18-42"><a href="#cb18-42" tabindex="-1"></a><span class="co">#&gt;   IP method: LMM</span></span>
+<span id="cb18-43"><a href="#cb18-43" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb18-44"><a href="#cb18-44" tabindex="-1"></a><span class="co">#&gt; Pooled Outcome Coefficients</span></span>
+<span id="cb18-45"><a href="#cb18-45" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb18-46"><a href="#cb18-46" tabindex="-1"></a><span class="co">#&gt;             Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb18-47"><a href="#cb18-47" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -1.8742         0 -1.8742 -1.8742</span></span>
+<span id="cb18-48"><a href="#cb18-48" tabindex="-1"></a><span class="co">#&gt; Z            -0.6333         0 -0.6333 -0.6333</span></span>
+<span id="cb18-49"><a href="#cb18-49" tabindex="-1"></a><span class="co">#&gt; X             0.3485         0  0.3485  0.3485</span></span>
+<span id="cb18-50"><a href="#cb18-50" tabindex="-1"></a><span class="co">#&gt; time          0.0996         0  0.0996  0.0996</span></span></code></pre></div>
+</div>
+</div>
+<div id="comparing-results-across-methods" class="section level2">
+<h2>5. Comparing Results Across Methods</h2>
+<p>A typical simulation study compares the outcome beta estimates. Here
+we collect results from the methods fitted above:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>  <span class="at">Method =</span> <span class="fu">c</span>(<span class="st">&quot;GIVEHR&quot;</span>, <span class="st">&quot;GIVEHR_GH&quot;</span>, <span class="st">&quot;GIVEHR_OU_PCL&quot;</span>,</span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a>             <span class="st">&quot;EHRJoint&quot;</span>, <span class="st">&quot;JMVL_Liang&quot;</span>, <span class="st">&quot;IIRR_weighting&quot;</span>,</span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>             <span class="st">&quot;IIRR_balancing&quot;</span>, <span class="st">&quot;LMM&quot;</span>, <span class="st">&quot;SummaryStat&quot;</span>),</span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a>  <span class="at">beta_Z =</span> <span class="fu">c</span>(</span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a>    <span class="fu">coef</span>(fit_givehr)[<span class="st">&quot;Z&quot;</span>],</span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a>    fit_gh<span class="sc">$</span>longitudinal_outcome<span class="sc">$</span>beta_Y[<span class="st">&quot;Z&quot;</span>],</span>
+<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a>    fit_ou<span class="sc">$</span>longitudinal_outcome<span class="sc">$</span>beta_Y[<span class="st">&quot;Z&quot;</span>],</span>
+<span id="cb19-9"><a href="#cb19-9" tabindex="-1"></a>    fit_ej<span class="sc">$</span>beta_hat[<span class="st">&quot;Z&quot;</span>],</span>
+<span id="cb19-10"><a href="#cb19-10" tabindex="-1"></a>    fit_liang<span class="sc">$</span>beta_hat[<span class="st">&quot;Z&quot;</span>],</span>
+<span id="cb19-11"><a href="#cb19-11" tabindex="-1"></a>    fit_iirr<span class="sc">$</span>beta_hat[<span class="st">&quot;Z&quot;</span>],</span>
+<span id="cb19-12"><a href="#cb19-12" tabindex="-1"></a>    fit_bal<span class="sc">$</span>beta_bal[<span class="st">&quot;Z&quot;</span>],</span>
+<span id="cb19-13"><a href="#cb19-13" tabindex="-1"></a>    fit_lmm<span class="sc">$</span>coefficients[<span class="st">&quot;Z&quot;</span>, <span class="st">&quot;Value&quot;</span>],</span>
+<span id="cb19-14"><a href="#cb19-14" tabindex="-1"></a>    fit_ss<span class="sc">$</span>coefficients[<span class="st">&quot;Z&quot;</span>, <span class="st">&quot;Estimate&quot;</span>]</span>
+<span id="cb19-15"><a href="#cb19-15" tabindex="-1"></a>  ),</span>
+<span id="cb19-16"><a href="#cb19-16" tabindex="-1"></a>  <span class="at">beta_X =</span> <span class="fu">c</span>(</span>
+<span id="cb19-17"><a href="#cb19-17" tabindex="-1"></a>    <span class="fu">coef</span>(fit_givehr)[<span class="st">&quot;X&quot;</span>],</span>
+<span id="cb19-18"><a href="#cb19-18" tabindex="-1"></a>    fit_gh<span class="sc">$</span>longitudinal_outcome<span class="sc">$</span>beta_Y[<span class="st">&quot;X&quot;</span>],</span>
+<span id="cb19-19"><a href="#cb19-19" tabindex="-1"></a>    fit_ou<span class="sc">$</span>longitudinal_outcome<span class="sc">$</span>beta_Y[<span class="st">&quot;X&quot;</span>],</span>
+<span id="cb19-20"><a href="#cb19-20" tabindex="-1"></a>    fit_ej<span class="sc">$</span>beta_hat[<span class="st">&quot;X&quot;</span>],</span>
+<span id="cb19-21"><a href="#cb19-21" tabindex="-1"></a>    fit_liang<span class="sc">$</span>beta_hat[<span class="st">&quot;X&quot;</span>],</span>
+<span id="cb19-22"><a href="#cb19-22" tabindex="-1"></a>    fit_iirr<span class="sc">$</span>beta_hat[<span class="st">&quot;X&quot;</span>],</span>
+<span id="cb19-23"><a href="#cb19-23" tabindex="-1"></a>    fit_bal<span class="sc">$</span>beta_bal[<span class="st">&quot;X&quot;</span>],</span>
+<span id="cb19-24"><a href="#cb19-24" tabindex="-1"></a>    fit_lmm<span class="sc">$</span>coefficients[<span class="st">&quot;X&quot;</span>, <span class="st">&quot;Value&quot;</span>],</span>
+<span id="cb19-25"><a href="#cb19-25" tabindex="-1"></a>    fit_ss<span class="sc">$</span>coefficients[<span class="st">&quot;X&quot;</span>, <span class="st">&quot;Estimate&quot;</span>]</span>
+<span id="cb19-26"><a href="#cb19-26" tabindex="-1"></a>  )</span>
+<span id="cb19-27"><a href="#cb19-27" tabindex="-1"></a>)</span>
+<span id="cb19-28"><a href="#cb19-28" tabindex="-1"></a></span>
+<span id="cb19-29"><a href="#cb19-29" tabindex="-1"></a><span class="co"># Add true values</span></span>
+<span id="cb19-30"><a href="#cb19-30" tabindex="-1"></a>results<span class="sc">$</span>true_Z <span class="ot">&lt;-</span> true_params<span class="sc">$</span>beta[<span class="st">&quot;Z&quot;</span>]</span>
+<span id="cb19-31"><a href="#cb19-31" tabindex="-1"></a>results<span class="sc">$</span>true_X <span class="ot">&lt;-</span> true_params<span class="sc">$</span>beta[<span class="st">&quot;X&quot;</span>]</span>
+<span id="cb19-32"><a href="#cb19-32" tabindex="-1"></a>results<span class="sc">$</span>bias_Z <span class="ot">&lt;-</span> results<span class="sc">$</span>beta_Z <span class="sc">-</span> results<span class="sc">$</span>true_Z</span>
+<span id="cb19-33"><a href="#cb19-33" tabindex="-1"></a>results<span class="sc">$</span>bias_X <span class="ot">&lt;-</span> results<span class="sc">$</span>beta_X <span class="sc">-</span> results<span class="sc">$</span>true_X</span>
+<span id="cb19-34"><a href="#cb19-34" tabindex="-1"></a></span>
+<span id="cb19-35"><a href="#cb19-35" tabindex="-1"></a><span class="fu">print</span>(results, <span class="at">digits =</span> <span class="dv">3</span>)</span>
+<span id="cb19-36"><a href="#cb19-36" tabindex="-1"></a><span class="co">#&gt;           Method beta_Z beta_X true_Z true_X bias_Z  bias_X</span></span>
+<span id="cb19-37"><a href="#cb19-37" tabindex="-1"></a><span class="co">#&gt; 1         GIVEHR -0.767  0.438   -0.5    0.5 -0.267 -0.0615</span></span>
+<span id="cb19-38"><a href="#cb19-38" tabindex="-1"></a><span class="co">#&gt; 2      GIVEHR_GH -0.767  0.436   -0.5    0.5 -0.267 -0.0637</span></span>
+<span id="cb19-39"><a href="#cb19-39" tabindex="-1"></a><span class="co">#&gt; 3  GIVEHR_OU_PCL -0.769  0.438   -0.5    0.5 -0.269 -0.0625</span></span>
+<span id="cb19-40"><a href="#cb19-40" tabindex="-1"></a><span class="co">#&gt; 4       EHRJoint  0.139 -0.142   -0.5    0.5  0.639 -0.6415</span></span>
+<span id="cb19-41"><a href="#cb19-41" tabindex="-1"></a><span class="co">#&gt; 5     JMVL_Liang -0.811  0.340   -0.5    0.5 -0.311 -0.1602</span></span>
+<span id="cb19-42"><a href="#cb19-42" tabindex="-1"></a><span class="co">#&gt; 6 IIRR_weighting -0.645  0.385   -0.5    0.5 -0.145 -0.1152</span></span>
+<span id="cb19-43"><a href="#cb19-43" tabindex="-1"></a><span class="co">#&gt; 7 IIRR_balancing -0.844  0.315   -0.5    0.5 -0.344 -0.1849</span></span>
+<span id="cb19-44"><a href="#cb19-44" tabindex="-1"></a><span class="co">#&gt; 8            LMM -0.664  0.374   -0.5    0.5 -0.164 -0.1260</span></span>
+<span id="cb19-45"><a href="#cb19-45" tabindex="-1"></a><span class="co">#&gt; 9    SummaryStat -0.618  0.343   -0.5    0.5 -0.118 -0.1570</span></span></code></pre></div>
+</div>
+<div id="uncertainty-quantification-summary" class="section level2">
+<h2>6. Uncertainty Quantification Summary</h2>
+<p>Not all methods provide standard errors. The table below summarises
+what is available:</p>
+<table>
+<colgroup>
+<col width="24%" />
+<col width="51%" />
+<col width="24%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Method</th>
+<th align="left">Standard Errors</th>
+<th align="left">Source</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">GIVEHR</td>
+<td align="left">Yes (all stages)</td>
+<td align="left">Sandwich variance</td>
+</tr>
+<tr class="even">
+<td align="left">GIVEHR_GH</td>
+<td align="left"><strong>No</strong></td>
+<td align="left">Use GIVEHR or bootstrap</td>
+</tr>
+<tr class="odd">
+<td align="left">GIVEHR_OU_PCL</td>
+<td align="left">Yes (outcome)</td>
+<td align="left">Sandwich variance</td>
+</tr>
+<tr class="even">
+<td align="left">EHRJoint</td>
+<td align="left"><strong>No</strong></td>
+<td align="left">Bootstrap</td>
+</tr>
+<tr class="odd">
+<td align="left">JMVL_Liang</td>
+<td align="left"><strong>No</strong></td>
+<td align="left">Bootstrap</td>
+</tr>
+<tr class="even">
+<td align="left">IIRR_weighting</td>
+<td align="left"><strong>No</strong></td>
+<td align="left">Bootstrap</td>
+</tr>
+<tr class="odd">
+<td align="left">IIRR_balancing</td>
+<td align="left"><strong>No</strong></td>
+<td align="left">Bootstrap</td>
+</tr>
+<tr class="even">
+<td align="left">LMM</td>
+<td align="left">Yes</td>
+<td align="left">Model-based (nlme)</td>
+</tr>
+<tr class="odd">
+<td align="left">SummaryStat</td>
+<td align="left">Yes</td>
+<td align="left">Model-based (lm)</td>
+</tr>
+<tr class="even">
+<td align="left">PairwiseLikelihood</td>
+<td align="left">Yes (naive)</td>
+<td align="left">Inverse Hessian</td>
+</tr>
+<tr class="odd">
+<td align="left">LI_IP</td>
+<td align="left">Depends on IP method</td>
+<td align="left">Passes through; no imputation uncertainty</td>
+</tr>
+<tr class="even">
+<td align="left">MI_IP</td>
+<td align="left">Depends on IP method</td>
+<td align="left">Rubin’s rules when SE available</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="generating-custom-datasets" class="section level2">
+<h2>7. Generating Custom Datasets</h2>
+<p>To generate your own simulated data with different parameters:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">sim_data_gen</span>(</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>  <span class="at">n          =</span> <span class="dv">2000</span>,</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a>  <span class="at">seed       =</span> <span class="dv">42</span>,</span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a>  <span class="at">gamma      =</span> <span class="fu">c</span>(<span class="at">intercept =</span> <span class="sc">-</span><span class="fl">2.0</span>, <span class="at">Z =</span> <span class="fl">0.8</span>, <span class="at">X =</span> <span class="fl">0.5</span>),</span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a>  <span class="at">beta       =</span> <span class="fu">c</span>(<span class="at">intercept =</span> <span class="sc">-</span><span class="fl">1.0</span>, <span class="at">Z =</span> <span class="sc">-</span><span class="fl">1.0</span>, <span class="at">X =</span> <span class="fl">0.3</span>),</span>
+<span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a>  <span class="at">sigma_zeta =</span> <span class="fl">0.8</span>,</span>
+<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a>  <span class="at">phi        =</span> <span class="fl">0.2</span></span>
+<span id="cb20-8"><a href="#cb20-8" tabindex="-1"></a>)</span>
+<span id="cb20-9"><a href="#cb20-9" tabindex="-1"></a><span class="co">#&gt; Simulation summary (n=2000):</span></span>
+<span id="cb20-10"><a href="#cb20-10" tabindex="-1"></a><span class="co">#&gt;   Subjects with no visits: 2.9%</span></span>
+<span id="cb20-11"><a href="#cb20-11" tabindex="-1"></a><span class="co">#&gt;   Total visits: 29503</span></span>
+<span id="cb20-12"><a href="#cb20-12" tabindex="-1"></a><span class="co">#&gt;   Median visits per subject: 9.0</span></span>
+<span id="cb20-13"><a href="#cb20-13" tabindex="-1"></a><span class="co">#&gt;   Observation rate: 62.8%</span></span>
+<span id="cb20-14"><a href="#cb20-14" tabindex="-1"></a><span class="co">#&gt;   Total observed outcomes: 18523</span></span>
+<span id="cb20-15"><a href="#cb20-15" tabindex="-1"></a></span>
+<span id="cb20-16"><a href="#cb20-16" tabindex="-1"></a><span class="co"># The long_data needs a censoring time column for GIVEHR</span></span>
+<span id="cb20-17"><a href="#cb20-17" tabindex="-1"></a>dat<span class="sc">$</span>long_data<span class="sc">$</span>C <span class="ot">&lt;-</span> dat<span class="sc">$</span>params<span class="sc">$</span>time.end</span>
+<span id="cb20-18"><a href="#cb20-18" tabindex="-1"></a></span>
+<span id="cb20-19"><a href="#cb20-19" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">GIVEHR</span>(<span class="at">data =</span> dat<span class="sc">$</span>long_data)</span>
+<span id="cb20-20"><a href="#cb20-20" tabindex="-1"></a><span class="fu">summary</span>(fit)</span>
+<span id="cb20-21"><a href="#cb20-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb20-22"><a href="#cb20-22" tabindex="-1"></a><span class="co">#&gt; GIVEHR Joint Model -- Summary</span></span>
+<span id="cb20-23"><a href="#cb20-23" tabindex="-1"></a><span class="co">#&gt; ============================================================ </span></span>
+<span id="cb20-24"><a href="#cb20-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb20-25"><a href="#cb20-25" tabindex="-1"></a><span class="co">#&gt; Visiting Process (gamma)</span></span>
+<span id="cb20-26"><a href="#cb20-26" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb20-27"><a href="#cb20-27" tabindex="-1"></a><span class="co">#&gt;   Estimate Std.Error CI.low CI.high</span></span>
+<span id="cb20-28"><a href="#cb20-28" tabindex="-1"></a><span class="co">#&gt; Z   0.8243    0.0494 0.7276  0.9211</span></span>
+<span id="cb20-29"><a href="#cb20-29" tabindex="-1"></a><span class="co">#&gt; X   0.5263    0.0364 0.4549  0.5977</span></span>
+<span id="cb20-30"><a href="#cb20-30" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb20-31"><a href="#cb20-31" tabindex="-1"></a><span class="co">#&gt;   Frailty variance (sigma^2_zeta): 0.6787</span></span>
+<span id="cb20-32"><a href="#cb20-32" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb20-33"><a href="#cb20-33" tabindex="-1"></a><span class="co">#&gt; Observation Process -- Fixed Effects (alpha)</span></span>
+<span id="cb20-34"><a href="#cb20-34" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb20-35"><a href="#cb20-35" tabindex="-1"></a><span class="co">#&gt;             Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb20-36"><a href="#cb20-36" tabindex="-1"></a><span class="co">#&gt; (Intercept)   1.5106    0.0481  1.4164  1.6048</span></span>
+<span id="cb20-37"><a href="#cb20-37" tabindex="-1"></a><span class="co">#&gt; Z            -0.5007    0.0585 -0.6154 -0.3860</span></span>
+<span id="cb20-38"><a href="#cb20-38" tabindex="-1"></a><span class="co">#&gt; X            -0.3197    0.0275 -0.3735 -0.2658</span></span>
+<span id="cb20-39"><a href="#cb20-39" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb20-40"><a href="#cb20-40" tabindex="-1"></a><span class="co">#&gt; Observation Process -- Latent Link (delta)</span></span>
+<span id="cb20-41"><a href="#cb20-41" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb20-42"><a href="#cb20-42" tabindex="-1"></a><span class="co">#&gt;             Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb20-43"><a href="#cb20-43" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -0.2529    0.0462 -0.3434 -0.1625</span></span>
+<span id="cb20-44"><a href="#cb20-44" tabindex="-1"></a><span class="co">#&gt; Z            -0.6367    0.0616 -0.7574 -0.5160</span></span>
+<span id="cb20-45"><a href="#cb20-45" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb20-46"><a href="#cb20-46" tabindex="-1"></a><span class="co">#&gt;   Random-effect SD (Sigma_q):</span></span>
+<span id="cb20-47"><a href="#cb20-47" tabindex="-1"></a><span class="co">#&gt; (Intercept)           Z </span></span>
+<span id="cb20-48"><a href="#cb20-48" tabindex="-1"></a><span class="co">#&gt;      0.1531      0.0000 </span></span>
+<span id="cb20-49"><a href="#cb20-49" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb20-50"><a href="#cb20-50" tabindex="-1"></a><span class="co">#&gt; Longitudinal Outcome -- Fixed Effects (beta)</span></span>
+<span id="cb20-51"><a href="#cb20-51" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb20-52"><a href="#cb20-52" tabindex="-1"></a><span class="co">#&gt;   Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb20-53"><a href="#cb20-53" tabindex="-1"></a><span class="co">#&gt; Z  -0.9248    0.1426 -1.2043 -0.6453</span></span>
+<span id="cb20-54"><a href="#cb20-54" tabindex="-1"></a><span class="co">#&gt; X   0.3078    0.0714  0.1679  0.4478</span></span>
+<span id="cb20-55"><a href="#cb20-55" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb20-56"><a href="#cb20-56" tabindex="-1"></a><span class="co">#&gt; Longitudinal Outcome -- Latent Link (theta)</span></span>
+<span id="cb20-57"><a href="#cb20-57" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------</span></span>
+<span id="cb20-58"><a href="#cb20-58" tabindex="-1"></a><span class="co">#&gt;           Estimate Std.Error  CI.low CI.high</span></span>
+<span id="cb20-59"><a href="#cb20-59" tabindex="-1"></a><span class="co">#&gt; Intercept   0.5772    0.1423  0.2982  0.8561</span></span>
+<span id="cb20-60"><a href="#cb20-60" tabindex="-1"></a><span class="co">#&gt; Z           0.2474    0.1905 -0.1259  0.6207</span></span></code></pre></div>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Aalen, O. O. and Gunnes, N. (2010). “A dynamic approach for
+reconstructing missing longitudinal data using the linear increments
+model.” <em>Biostatistics</em>, 11(3), 453–472.</p>
+<p>Buzkova, P. and Lumley, T. (2007). “Longitudinal data analysis for
+generalized linear models with follow-up dependent on outcome-related
+variables.” <em>The Canadian Journal of Statistics</em>, 35(4),
+485–500.</p>
+<p>Chen, Y., Ning, J., and Cai, C. (2015). “Regression analysis of
+longitudinal data with irregular and informative observation times.”
+<em>Biostatistics</em>, 16(4), 727–739.</p>
+<p>Du, J., Shi, X., and Mukherjee, B. (2025). “A new statistical
+approach for joint modeling of longitudinal outcomes measured in
+electronic health records with clinically informative presence and
+observation processes.” <em>arXiv:2410.13113</em>.</p>
+<p>Goldstein, B. A., Bhavsar, N. A., Phelan, M., and Pencina, M. J.
+(2016). “Controlling for informed presence bias due to the number of
+health encounters in an electronic health record.” <em>American Journal
+of Epidemiology</em>, 184(11), 847–855.</p>
+<p>Liang, Y., Lu, W., and Ying, Z. (2009). “Joint modeling and analysis
+of longitudinal data with informative observation times.”
+<em>Biometrics</em>, 65(2), 377–384.</p>
+<p>Rubin, D. B. (1987). <em>Multiple Imputation for Nonresponse in
+Surveys</em>. John Wiley &amp; Sons.</p>
+<p>Yang, C.-H., Shi, X., and Mukherjee, B. (2026). “Joint Modeling of
+Longitudinal EHR Data with Shared Random Effects for Informative
+Visiting and Observation Processes.” <em>arXiv:2602.15374</em>.</p>
+<p>Yiu, S. and Su, L. (2025). “Accommodating informative visit times for
+analysing irregular longitudinal data: a sensitivity analysis approach
+with balancing weights estimators.” <em>Journal of the Royal Statistical
+Society Series C: Applied Statistics</em>, 74(3), 824–843.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
