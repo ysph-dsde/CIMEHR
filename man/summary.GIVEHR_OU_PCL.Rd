@@ -25,11 +25,9 @@ including the OU decay parameter. Robust standard errors are shown
 where available.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- GIVEHR_OU_PCL(data = sim_ehr_data)
+dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+fit <- GIVEHR_OU_PCL(data = dat, pair_type = "adjacent")
 summary(fit)
-}
 
 }
 \seealso{

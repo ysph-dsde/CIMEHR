@@ -2,7 +2,7 @@
 % Please edit documentation in R/GIVEHR_GH.R
 \name{GIVEHR_GH}
 \alias{GIVEHR_GH}
-\title{Generalized Informative Visiting and observation processes in Electronic Health Records (GIVEHR)
+\title{Generalized Informative Visiting and Observation Processes in Electronic Health Records (GIVEHR)
 with Gauss--Hermite (GH) Quadrature}
 \usage{
 GIVEHR_GH(
@@ -196,12 +196,9 @@ and the number of subjects. For very large datasets, consider using
 \code{\link{GIVEHR}} (which avoids quadrature) as a faster alternative.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- GIVEHR_GH(data = sim_ehr_data, gh_points_U = 7, gh_points_q = 5)
+dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+fit <- GIVEHR_GH(data = dat, gh_points_U = 3, gh_points_q = 3)
 print(fit)
-summary(fit)
-}
 
 }
 \references{

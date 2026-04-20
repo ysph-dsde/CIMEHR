@@ -20,11 +20,9 @@
 Displays the regression coefficient table.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- SummaryStat(sim_ehr_data, formula = ~ Z + X)
+dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+fit <- SummaryStat(dat, formula = ~ Z + X)
 summary(fit)
-}
 
 }
 \seealso{

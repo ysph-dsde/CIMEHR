@@ -23,12 +23,11 @@ Displays model dimensions, convergence status, and the coefficient
 table with standard errors when available.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-obs_data <- sim_ehr_data[sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
-fit <- PairwiseLikelihood(obs_data, formula = Y ~ Z + X + time, pair_sample = 5000)
+dat <- sim_ehr_data[sim_ehr_data$id <= 100 &
+                    sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
+fit <- PairwiseLikelihood(dat, formula = Y ~ Z + X + time,
+                          pair_sample = 200)
 summary(fit)
-}
 
 }
 \seealso{

@@ -21,11 +21,9 @@
 Prints coefficients from the summary-statistic regression.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- SummaryStat(sim_ehr_data, formula = ~ Z + X)
-fit
-}
+dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+fit <- SummaryStat(dat, formula = ~ Z + X)
+print(fit)
 
 }
 \seealso{

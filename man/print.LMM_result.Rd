@@ -4,12 +4,14 @@
 \alias{print.LMM_result}
 \title{Print an LMM Result}
 \usage{
-\method{print}{LMM_result}(x, digits = 4, ...)
+\method{print}{LMM_result}(x, digits = 4, level = 0.95, ...)
 }
 \arguments{
 \item{x}{An \code{LMM_result} object returned by \code{\link{LMM}}.}
 
 \item{digits}{Number of significant digits. Default is 4.}
+
+\item{level}{Confidence level for Wald intervals. Default is 0.95.}
 
 \item{\dots}{Ignored.}
 }
@@ -20,12 +22,10 @@
 Prints the fixed-effects table from a linear mixed model fit.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- LMM(sim_ehr_data, fixed = Y ~ Z + X + time,
+dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+fit <- LMM(dat, fixed = Y ~ Z + X + time,
            random = ~ 1 | id, obs_indicator = "R")
-fit
-}
+print(fit)
 
 }
 \seealso{

@@ -165,15 +165,11 @@
 #' John Wiley & Sons. \doi{10.1002/9780470316696}.
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' # Subset to required columns to avoid issues with extra simulation columns
-#' dat <- sim_ehr_data[, c("id", "Z", "X", "time", "R", "Y", "C")]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80,
+#'                     c("id", "Z", "X", "time", "R", "Y", "C")]
 #' fit <- MI_IP(dat, ip_method = "LMM",
-#'              visit_covs = c("Z", "X"), m = 3)
+#'              visit_covs = c("Z", "X"), m = 2, maxit = 5)
 #' print(fit)
-#' summary(fit)
-#' }
 #'
 #' @importFrom stats as.formula sd var
 #' @export

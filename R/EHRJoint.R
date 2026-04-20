@@ -28,12 +28,9 @@
 #' \doi{10.48550/arXiv.2410.13113}. \url{https://arxiv.org/abs/2410.13113}.
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- EHRJoint(sim_ehr_data)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' fit <- EHRJoint(dat)
 #' print(fit)
-#' summary(fit)
-#' }
 #'
 #' @importFrom stats as.formula binomial coef glm plogis
 #' @export

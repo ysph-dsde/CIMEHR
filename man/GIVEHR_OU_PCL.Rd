@@ -2,7 +2,7 @@
 % Please edit documentation in R/GIVEHR_OU_PCL.R
 \name{GIVEHR_OU_PCL}
 \alias{GIVEHR_OU_PCL}
-\title{Generalized Informative Visiting and observation processes in Electronic Health Records (GIVEHR)
+\title{Generalized Informative Visiting and Observation Processes in Electronic Health Records (GIVEHR)
 with Ornstein--Uhlenbeck (OU) Pairwise Composite Likelihood (PCL) Extension}
 \usage{
 GIVEHR_OU_PCL(
@@ -213,13 +213,9 @@ S3 methods \code{print}, \code{summary}, \code{coef}, \code{vcov}, and
 \code{"GIVEHR_OU_PCL"}.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- GIVEHR_OU_PCL(data = sim_ehr_data, pair_type = "adjacent")
+dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+fit <- GIVEHR_OU_PCL(data = dat, pair_type = "adjacent")
 print(fit)
-summary(fit)
-confint(fit)
-}
 
 }
 \references{

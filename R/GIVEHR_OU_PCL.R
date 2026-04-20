@@ -1,4 +1,4 @@
-#' Generalized Informative Visiting and observation processes in Electronic Health Records (GIVEHR)
+#' Generalized Informative Visiting and Observation Processes in Electronic Health Records (GIVEHR)
 #' with Ornstein--Uhlenbeck (OU) Pairwise Composite Likelihood (PCL) Extension
 #'
 #' @description
@@ -188,13 +188,9 @@
 #' model;
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- GIVEHR_OU_PCL(data = sim_ehr_data, pair_type = "adjacent")
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' fit <- GIVEHR_OU_PCL(data = dat, pair_type = "adjacent")
 #' print(fit)
-#' summary(fit)
-#' confint(fit)
-#' }
 #'
 #' @importFrom stats as.formula binomial coef dnorm glm model.matrix
 #'   optim pnorm qnorm reformulate setNames median

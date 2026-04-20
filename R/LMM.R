@@ -83,13 +83,10 @@
 #' \emph{Biometrics}, 38(4), 963--974.
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- LMM(sim_ehr_data, fixed = Y ~ Z + X + time,
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' fit <- LMM(dat, fixed = Y ~ Z + X + time,
 #'            random = ~ 1 | id, obs_indicator = "R")
 #' print(fit)
-#' summary(fit)
-#' }
 #'
 #' @importFrom stats ave na.omit update
 #' @export

@@ -49,12 +49,9 @@
 #' methods such as \code{\link{GIVEHR}}.
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- SummaryStat(sim_ehr_data, formula = ~ Z + X)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' fit <- SummaryStat(dat, formula = ~ Z + X)
 #' print(fit)
-#' summary(fit)
-#' }
 #'
 #' @importFrom stats aggregate as.formula lm median
 #' @export

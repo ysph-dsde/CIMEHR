@@ -72,12 +72,9 @@
 #' @seealso \code{\link{summary.GIVEHR}}, \code{\link{GIVEHR}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- GIVEHR(data = sim_ehr_data)
-#' fit            # outcome beta with SE and 95% CI
-#' summary(fit)   # all three processes
-#' }
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' fit <- GIVEHR(data = dat)
+#' print(fit)
 #'
 #' @export
 print.GIVEHR <- function(x, digits = 4, level = 0.95, ...) {
@@ -109,12 +106,9 @@ print.GIVEHR <- function(x, digits = 4, level = 0.95, ...) {
 #' @seealso \code{\link{print.GIVEHR}}, \code{\link{GIVEHR}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- GIVEHR(data = sim_ehr_data)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' fit <- GIVEHR(data = dat)
 #' summary(fit)
-#' summary(fit, level = 0.90)
-#' }
 #'
 #' @export
 summary.GIVEHR <- function(object, level = 0.95, digits = 4, ...) {
@@ -201,11 +195,9 @@ summary.GIVEHR <- function(object, level = 0.95, digits = 4, ...) {
 #' @seealso \code{\link{summary.GIVEHR_GH}}, \code{\link{GIVEHR_GH}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- GIVEHR_GH(data = sim_ehr_data)
-#' fit
-#' }
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+#' fit <- GIVEHR_GH(data = dat, gh_points_U = 3, gh_points_q = 3)
+#' print(fit)
 #'
 #' @export
 print.GIVEHR_GH <- function(x, digits = 4, level = 0.95, ...) {
@@ -237,11 +229,9 @@ print.GIVEHR_GH <- function(x, digits = 4, level = 0.95, ...) {
 #' @seealso \code{\link{print.GIVEHR_GH}}, \code{\link{GIVEHR_GH}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- GIVEHR_GH(data = sim_ehr_data)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+#' fit <- GIVEHR_GH(data = dat, gh_points_U = 3, gh_points_q = 3)
 #' summary(fit)
-#' }
 #'
 #' @export
 summary.GIVEHR_GH <- function(object, level = 0.95, digits = 4, ...) {
@@ -317,11 +307,9 @@ summary.GIVEHR_GH <- function(object, level = 0.95, digits = 4, ...) {
 #'   \code{\link{GIVEHR_OU_PCL}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- GIVEHR_OU_PCL(data = sim_ehr_data)
-#' fit
-#' }
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' fit <- GIVEHR_OU_PCL(data = dat, pair_type = "adjacent")
+#' print(fit)
 #'
 #' @export
 print.GIVEHR_OU_PCL <- function(x, digits = 4, level = 0.95, ...) {
@@ -355,11 +343,9 @@ print.GIVEHR_OU_PCL <- function(x, digits = 4, level = 0.95, ...) {
 #'   \code{\link{GIVEHR_OU_PCL}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- GIVEHR_OU_PCL(data = sim_ehr_data)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' fit <- GIVEHR_OU_PCL(data = dat, pair_type = "adjacent")
 #' summary(fit)
-#' }
 #'
 #' @export
 summary.GIVEHR_OU_PCL <- function(object, level = 0.95, digits = 4, ...) {
@@ -448,12 +434,10 @@ summary.GIVEHR_OU_PCL <- function(object, level = 0.95, digits = 4, ...) {
 #' @return Named numeric vector.
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- GIVEHR(data = sim_ehr_data)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' fit <- GIVEHR(data = dat)
 #' coef(fit)
 #' coef(fit, type = "visiting")
-#' }
 #'
 #' @export
 coef.GIVEHR <- function(object, type = c("outcome", "visiting", "observation"), ...) {
@@ -503,11 +487,9 @@ coef.GIVEHR_OU_PCL <- function(object, type = c("outcome", "visiting", "observat
 #' @return Numeric matrix.
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- GIVEHR(data = sim_ehr_data)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' fit <- GIVEHR(data = dat)
 #' vcov(fit)
-#' }
 #'
 #' @export
 vcov.GIVEHR <- function(object, ...) {
@@ -538,12 +520,10 @@ vcov.GIVEHR_OU_PCL <- function(object, ...) {
 #'   standard errors are unavailable.
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- GIVEHR(data = sim_ehr_data)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' fit <- GIVEHR(data = dat)
 #' confint(fit)
 #' confint(fit, parm = "Z", level = 0.90)
-#' }
 #'
 #' @export
 confint.GIVEHR <- function(object, parm = NULL, level = 0.95, ...) {

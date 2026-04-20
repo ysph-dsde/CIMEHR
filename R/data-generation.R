@@ -102,11 +102,9 @@
 #' \code{\link{GIVEHR_OU_PCL}} for fitting models to the simulated data.
 #'
 #' @examples
-#' \donttest{
-#' dat <- sim_data_gen(n = 1500, seed = 42)
+#' dat <- sim_data_gen(n = 30, seed = 42)
 #' head(dat$long_data)
 #' dat$params$beta
-#' }
 #'
 #' @importFrom stats rbinom rnorm rexp median
 #' @export

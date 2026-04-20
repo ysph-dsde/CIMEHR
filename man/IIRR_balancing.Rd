@@ -142,12 +142,9 @@ of class \code{"IIRR_balancing"}.
 This function requires the \pkg{nleqslv} package.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- IIRR_balancing(sim_ehr_data, visit_covs = c("Z", "X"))
+dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+fit <- IIRR_balancing(dat, visit_covs = c("Z", "X"))
 print(fit)
-summary(fit)
-}
 
 }
 \references{

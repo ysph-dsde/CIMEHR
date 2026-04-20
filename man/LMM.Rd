@@ -99,13 +99,10 @@ total number of visits. Neither fully accounts for the visiting
 process but can reduce bias compared to a naive LMM.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- LMM(sim_ehr_data, fixed = Y ~ Z + X + time,
+dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+fit <- LMM(dat, fixed = Y ~ Z + X + time,
            random = ~ 1 | id, obs_indicator = "R")
 print(fit)
-summary(fit)
-}
 
 }
 \references{

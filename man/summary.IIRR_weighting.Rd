@@ -22,11 +22,9 @@
 Displays visiting-process and outcome estimates.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- IIRR_weighting(sim_ehr_data, visit_covs = c("Z", "X"))
+dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+fit <- IIRR_weighting(dat, visit_covs = c("Z", "X"))
 summary(fit)
-}
 
 }
 \seealso{

@@ -144,11 +144,9 @@ where \eqn{b_i \mid U_i \sim N(\theta U_i, \Sigma_b)} and
 }
 
 \examples{
-\donttest{
-dat <- sim_data_gen(n = 1500, seed = 42)
+dat <- sim_data_gen(n = 30, seed = 42)
 head(dat$long_data)
 dat$params$beta
-}
 
 }
 \seealso{

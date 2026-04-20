@@ -23,13 +23,11 @@ Prints outcome coefficients from the linear increment imputation with
 informative presence adjustment.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-dat <- sim_ehr_data[, c("id", "Z", "X", "time", "R", "Y", "C")]
+dat <- sim_ehr_data[sim_ehr_data$id <= 80,
+                    c("id", "Z", "X", "time", "R", "Y", "C")]
 fit <- LI_IP(data = dat, ip_method = "LMM",
              visit_covs = c("Z", "X"))
-fit
-}
+print(fit)
 
 }
 \seealso{

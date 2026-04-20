@@ -4,10 +4,12 @@
 \alias{summary.LMM_result}
 \title{Summarise an LMM Result}
 \usage{
-\method{summary}{LMM_result}(object, digits = 4, ...)
+\method{summary}{LMM_result}(object, level = 0.95, digits = 4, ...)
 }
 \arguments{
 \item{object}{An \code{LMM_result} object.}
+
+\item{level}{Confidence level for Wald intervals. Default is 0.95.}
 
 \item{digits}{Number of significant digits. Default is 4.}
 
@@ -20,12 +22,10 @@
 Displays the fixed-effects coefficient table.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- LMM(sim_ehr_data, fixed = Y ~ Z + X + time,
+dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+fit <- LMM(dat, fixed = Y ~ Z + X + time,
            random = ~ 1 | id, obs_indicator = "R")
 summary(fit)
-}
 
 }
 \seealso{

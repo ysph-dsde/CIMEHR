@@ -204,15 +204,11 @@ S3 methods \code{print} are available for objects of class
 \code{"MI_IP_result"}.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-# Subset to required columns to avoid issues with extra simulation columns
-dat <- sim_ehr_data[, c("id", "Z", "X", "time", "R", "Y", "C")]
+dat <- sim_ehr_data[sim_ehr_data$id <= 80,
+                    c("id", "Z", "X", "time", "R", "Y", "C")]
 fit <- MI_IP(dat, ip_method = "LMM",
-             visit_covs = c("Z", "X"), m = 3)
+             visit_covs = c("Z", "X"), m = 2, maxit = 5)
 print(fit)
-summary(fit)
-}
 
 }
 \references{

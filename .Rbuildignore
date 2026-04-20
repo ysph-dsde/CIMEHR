@@ -8,3 +8,5 @@
 ^README_files$
 ^\.git$
 ^\.gitignore$
+^inst/examples$
+^simulations$

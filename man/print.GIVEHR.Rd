@@ -23,12 +23,9 @@ Prints outcome fixed-effect estimates with sandwich standard errors and
 Wald confidence intervals.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- GIVEHR(data = sim_ehr_data)
-fit            # outcome beta with SE and 95\% CI
-summary(fit)   # all three processes
-}
+dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+fit <- GIVEHR(data = dat)
+print(fit)
 
 }
 \seealso{

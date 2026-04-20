@@ -47,12 +47,9 @@ Fit a joint workflow for visiting, observation, and outcome processes for
 irregularly observed longitudinal data.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- EHRJoint(sim_ehr_data)
+dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+fit <- EHRJoint(dat)
 print(fit)
-summary(fit)
-}
 
 }
 \references{

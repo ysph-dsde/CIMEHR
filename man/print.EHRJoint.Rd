@@ -23,11 +23,9 @@ Prints outcome fixed-effect estimates from the joint model without a
 separate observation process.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- EHRJoint(sim_ehr_data)
-fit
-}
+dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+fit <- EHRJoint(dat)
+print(fit)
 
 }
 \seealso{

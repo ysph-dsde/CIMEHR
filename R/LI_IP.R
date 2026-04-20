@@ -134,13 +134,10 @@
 #' 11(3), 453--472. \doi{10.1093/biostatistics/kxq014}.
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' dat <- sim_ehr_data[, c("id", "Z", "X", "time", "R", "Y", "C")]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80,
+#'                     c("id", "Z", "X", "time", "R", "Y", "C")]
 #' fit <- LI_IP(dat, ip_method = "LMM", visit_covs = c("Z", "X"))
 #' print(fit)
-#' summary(fit)
-#' }
 #'
 #' @importFrom stats as.formula model.frame model.matrix predict
 #' @export

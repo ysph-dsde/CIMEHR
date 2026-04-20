@@ -4,6 +4,37 @@
 
 
 # ============================================================================
+# Internal helpers
+# ============================================================================
+
+#' Build a Coefficient Table from an nlme Fixed-Effects Data Frame
+#'
+#' Appends Wald CI columns to the data frame returned by
+#' \code{nlme::intervals()} or \code{nlme::summary.lme()$tTable}.
+#'
+#' @param coef_df Data frame or numeric matrix with columns \code{Value} and \code{Std.Error}.
+#' @param level Confidence level.
+#'
+#' @return The input data frame with additional columns \code{CI.low} and
+#'   \code{CI.high}.
+#'
+#' @keywords internal
+#' @noRd
+.lmm_coef_table <- function(coef_df, level = 0.95) {
+  coef_df <- as.data.frame(coef_df, check.names = FALSE)
+
+  if (!all(c("Value", "Std.Error") %in% colnames(coef_df))) {
+    stop("coef_df must contain columns 'Value' and 'Std.Error'.", call. = FALSE)
+  }
+
+  z <- stats::qnorm(1 - (1 - level) / 2)
+  coef_df$CI.low  <- coef_df[["Value"]] - z * coef_df[["Std.Error"]]
+  coef_df$CI.high <- coef_df[["Value"]] + z * coef_df[["Std.Error"]]
+  coef_df
+}
+
+
+# ============================================================================
 # EHRJoint
 # ============================================================================
 
@@ -22,11 +53,9 @@
 #' @seealso \code{\link{summary.EHRJoint}}, \code{\link{EHRJoint}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- EHRJoint(sim_ehr_data)
-#' fit
-#' }
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' fit <- EHRJoint(dat)
+#' print(fit)
 #'
 #' @export
 print.EHRJoint <- function(x, digits = 4, level = 0.95, ...) {
@@ -56,11 +85,9 @@ print.EHRJoint <- function(x, digits = 4, level = 0.95, ...) {
 #' @seealso \code{\link{print.EHRJoint}}, \code{\link{EHRJoint}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- EHRJoint(sim_ehr_data)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' fit <- EHRJoint(dat)
 #' summary(fit)
-#' }
 #'
 #' @export
 summary.EHRJoint <- function(object, level = 0.95, digits = 4, ...) {
@@ -112,11 +139,9 @@ summary.EHRJoint <- function(object, level = 0.95, digits = 4, ...) {
 #'   \code{\link{IIRR_weighting}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- IIRR_weighting(sim_ehr_data, visit_covs = c("Z", "X"))
-#' fit
-#' }
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' fit <- IIRR_weighting(dat, visit_covs = c("Z", "X"))
+#' print(fit)
 #'
 #' @export
 print.IIRR_weighting <- function(x, digits = 4, level = 0.95, ...) {
@@ -147,11 +172,9 @@ print.IIRR_weighting <- function(x, digits = 4, level = 0.95, ...) {
 #'   \code{\link{IIRR_weighting}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- IIRR_weighting(sim_ehr_data, visit_covs = c("Z", "X"))
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' fit <- IIRR_weighting(dat, visit_covs = c("Z", "X"))
 #' summary(fit)
-#' }
 #'
 #' @export
 summary.IIRR_weighting <- function(object, level = 0.95, digits = 4, ...) {
@@ -191,11 +214,9 @@ summary.IIRR_weighting <- function(object, level = 0.95, digits = 4, ...) {
 #'   \code{\link{IIRR_balancing}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- IIRR_balancing(sim_ehr_data, visit_covs = c("Z", "X"))
-#' fit
-#' }
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' fit <- IIRR_balancing(dat, visit_covs = c("Z", "X"))
+#' print(fit)
 #'
 #' @export
 print.IIRR_balancing <- function(x, digits = 4, level = 0.95, ...) {
@@ -230,11 +251,9 @@ print.IIRR_balancing <- function(x, digits = 4, level = 0.95, ...) {
 #'   \code{\link{IIRR_balancing}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- IIRR_balancing(sim_ehr_data, visit_covs = c("Z", "X"))
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' fit <- IIRR_balancing(dat, visit_covs = c("Z", "X"))
 #' summary(fit)
-#' }
 #'
 #' @export
 summary.IIRR_balancing <- function(object, level = 0.95, digits = 4, ...) {
@@ -280,11 +299,9 @@ summary.IIRR_balancing <- function(object, level = 0.95, digits = 4, ...) {
 #' @seealso \code{\link{summary.JMVL_Liang}}, \code{\link{JMVL_Liang}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- JMVL_Liang(sim_ehr_data)
-#' fit
-#' }
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' fit <- JMVL_Liang(dat)
+#' print(fit)
 #'
 #' @export
 print.JMVL_Liang <- function(x, digits = 4, level = 0.95, ...) {
@@ -314,11 +331,9 @@ print.JMVL_Liang <- function(x, digits = 4, level = 0.95, ...) {
 #' @seealso \code{\link{print.JMVL_Liang}}, \code{\link{JMVL_Liang}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- JMVL_Liang(sim_ehr_data)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' fit <- JMVL_Liang(dat)
 #' summary(fit)
-#' }
 #'
 #' @export
 summary.JMVL_Liang <- function(object, level = 0.95, digits = 4, ...) {
@@ -352,6 +367,7 @@ summary.JMVL_Liang <- function(object, level = 0.95, digits = 4, ...) {
 #'
 #' @param x An \code{LMM_result} object returned by \code{\link{LMM}}.
 #' @param digits Number of significant digits. Default is 4.
+#' @param level Confidence level for Wald intervals. Default is 0.95.
 #' @param \dots Ignored.
 #'
 #' @return \code{x}, invisibly.
@@ -359,19 +375,18 @@ summary.JMVL_Liang <- function(object, level = 0.95, digits = 4, ...) {
 #' @seealso \code{\link{summary.LMM_result}}, \code{\link{LMM}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- LMM(sim_ehr_data, fixed = Y ~ Z + X + time,
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' fit <- LMM(dat, fixed = Y ~ Z + X + time,
 #'            random = ~ 1 | id, obs_indicator = "R")
-#' fit
-#' }
+#' print(fit)
 #'
 #' @export
-print.LMM_result <- function(x, digits = 4, ...) {
+print.LMM_result <- function(x, digits = 4, level = 0.95, ...) {
   cat("\nLinear Mixed Model -- Fixed Effects\n")
   cat(strrep("=", 50), "\n")
 
-  print(round(x$coefficients, digits))
+  tbl <- .lmm_coef_table(x$coefficients, level)
+  print(round(tbl, digits))
   invisible(x)
 }
 
@@ -380,6 +395,7 @@ print.LMM_result <- function(x, digits = 4, ...) {
 #' Displays the fixed-effects coefficient table.
 #'
 #' @param object An \code{LMM_result} object.
+#' @param level Confidence level for Wald intervals. Default is 0.95.
 #' @param digits Number of significant digits. Default is 4.
 #' @param \dots Ignored.
 #'
@@ -388,22 +404,19 @@ print.LMM_result <- function(x, digits = 4, ...) {
 #' @seealso \code{\link{print.LMM_result}}, \code{\link{LMM}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- LMM(sim_ehr_data, fixed = Y ~ Z + X + time,
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' fit <- LMM(dat, fixed = Y ~ Z + X + time,
 #'            random = ~ 1 | id, obs_indicator = "R")
 #' summary(fit)
-#' }
 #'
 #' @export
-summary.LMM_result <- function(object, digits = 4, ...) {
+summary.LMM_result <- function(object, level = 0.95, digits = 4, ...) {
   width <- 60
   cat("\nLinear Mixed Model -- Summary\n")
   cat(strrep("=", width), "\n")
 
-  cat("\nFixed Effects:\n")
-  cat(strrep("-", width), "\n")
-  print(round(object$coefficients, digits))
+  .print_section("Fixed Effects",
+                 .lmm_coef_table(object$coefficients, level), digits, width)
 
   cat("\n")
   invisible(object)
@@ -429,11 +442,9 @@ summary.LMM_result <- function(object, digits = 4, ...) {
 #'   \code{\link{SummaryStat}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- SummaryStat(sim_ehr_data, formula = ~ Z + X)
-#' fit
-#' }
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' fit <- SummaryStat(dat, formula = ~ Z + X)
+#' print(fit)
 #'
 #' @export
 print.SummaryStat_result <- function(x, digits = 4, ...) {
@@ -458,11 +469,9 @@ print.SummaryStat_result <- function(x, digits = 4, ...) {
 #'   \code{\link{SummaryStat}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- SummaryStat(sim_ehr_data, formula = ~ Z + X)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' fit <- SummaryStat(dat, formula = ~ Z + X)
 #' summary(fit)
-#' }
 #'
 #' @export
 summary.SummaryStat_result <- function(object, digits = 4, ...) {
@@ -500,12 +509,11 @@ summary.SummaryStat_result <- function(object, digits = 4, ...) {
 #'   \code{\link{PairwiseLikelihood}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' obs_data <- sim_ehr_data[sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
-#' fit <- PairwiseLikelihood(obs_data, formula = Y ~ Z + X + time, pair_sample = 5000)
-#' fit
-#' }
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 100 &
+#'                     sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
+#' fit <- PairwiseLikelihood(dat, formula = Y ~ Z + X + time,
+#'                           pair_sample = 200)
+#' print(fit)
 #'
 #' @export
 print.PairwiseLikelihood <- function(x, digits = 4, level = 0.95, ...) {
@@ -540,12 +548,11 @@ print.PairwiseLikelihood <- function(x, digits = 4, level = 0.95, ...) {
 #'   \code{\link{PairwiseLikelihood}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' obs_data <- sim_ehr_data[sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
-#' fit <- PairwiseLikelihood(obs_data, formula = Y ~ Z + X + time, pair_sample = 5000)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 100 &
+#'                     sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
+#' fit <- PairwiseLikelihood(dat, formula = Y ~ Z + X + time,
+#'                           pair_sample = 200)
 #' summary(fit)
-#' }
 #'
 #' @export
 summary.PairwiseLikelihood <- function(object, level = 0.95, digits = 4, ...) {
@@ -589,13 +596,11 @@ summary.PairwiseLikelihood <- function(object, level = 0.95, digits = 4, ...) {
 #' @seealso \code{\link{summary.LI_IP_result}}, \code{\link{LI_IP}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' dat <- sim_ehr_data[, c("id", "Z", "X", "time", "R", "Y", "C")]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80,
+#'                     c("id", "Z", "X", "time", "R", "Y", "C")]
 #' fit <- LI_IP(data = dat, ip_method = "LMM",
 #'              visit_covs = c("Z", "X"))
-#' fit
-#' }
+#' print(fit)
 #'
 #' @export
 print.LI_IP_result <- function(x, digits = 4, level = 0.95, ...) {
@@ -606,13 +611,16 @@ print.LI_IP_result <- function(x, digits = 4, level = 0.95, ...) {
   print(round(tbl, digits))
 
   if (is.null(x$se)) {
-    cat("\nNote: Standard errors are not available (the downstream IP method",
-        x$ip_method, "does not provide SE).\n")
-    cat("Imputation uncertainty is also not captured with single imputation;",
-        "consider MI_IP() instead.\n")
+    cat("\nNote: Standard errors are not available (", x$ip_method,
+        " does not provide SE).\n", sep = "")
   } else {
-    cat("\nNote: Standard errors do not account for imputation uncertainty.\n")
+    cat("\nNote: Standard errors are from the IP model only and do not\n")
+    cat("account for uncertainty in the linear increment imputation step.\n")
   }
+  cat("For valid inference, bootstrap the full two-stage procedure\n")
+  cat("(LI imputation + IP analysis) over resampled subjects.\n")
+  cat("Alternatively, consider MI_IP() to partially account for\n")
+  cat("imputation uncertainty via multiple imputation.\n")
 
   cat(sprintf("\nIP method: %s | Values imputed: %d\n",
               x$ip_method, x$n_imputed))
@@ -634,13 +642,11 @@ print.LI_IP_result <- function(x, digits = 4, level = 0.95, ...) {
 #' @seealso \code{\link{print.LI_IP_result}}, \code{\link{LI_IP}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' dat <- sim_ehr_data[, c("id", "Z", "X", "time", "R", "Y", "C")]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80,
+#'                     c("id", "Z", "X", "time", "R", "Y", "C")]
 #' fit <- LI_IP(data = dat, ip_method = "LMM",
 #'              visit_covs = c("Z", "X"))
 #' summary(fit)
-#' }
 #'
 #' @export
 summary.LI_IP_result <- function(object, level = 0.95, digits = 4, ...) {
@@ -654,14 +660,16 @@ summary.LI_IP_result <- function(object, level = 0.95, digits = 4, ...) {
   cat(sprintf("  IP method: %s\n", object$ip_method))
 
   if (is.null(object$se)) {
-    cat("\n  Note: Standard errors are not available (the downstream IP method\n")
-    cat(sprintf("  %s does not provide SE). Consider bootstrap for inference.\n",
-                object$ip_method))
-    cat("  Imputation uncertainty is also not captured with single imputation;\n")
-    cat("  consider MI_IP() instead.\n")
+    cat("\n  Note: Standard errors are not available (", object$ip_method,
+        " does not provide SE).\n", sep = "")
   } else {
-    cat("\n  Note: Standard errors do not account for imputation uncertainty.\n")
+    cat("\n  Note: Standard errors are from the IP model only and do not\n")
+    cat("  account for uncertainty in the linear increment imputation step.\n")
   }
+  cat("  For valid inference, bootstrap the full two-stage procedure\n")
+  cat("  (LI imputation + IP analysis) over resampled subjects.\n")
+  cat("  Alternatively, consider MI_IP() to partially account for\n")
+  cat("  imputation uncertainty via multiple imputation.\n")
 
   .print_section("Outcome Coefficients",
                  .givehr_coef_table(object$coefficients, object$se, level), digits, width)
@@ -690,13 +698,11 @@ summary.LI_IP_result <- function(object, level = 0.95, digits = 4, ...) {
 #' @seealso \code{\link{summary.MI_IP_result}}, \code{\link{MI_IP}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' dat <- sim_ehr_data[, c("id", "Z", "X", "time", "R", "Y", "C")]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80,
+#'                     c("id", "Z", "X", "time", "R", "Y", "C")]
 #' fit <- MI_IP(data = dat, ip_method = "LMM",
-#'              visit_covs = c("Z", "X"), m = 3)
-#' fit
-#' }
+#'              visit_covs = c("Z", "X"), m = 2, maxit = 5)
+#' print(fit)
 #'
 #' @export
 print.MI_IP_result <- function(x, digits = 4, level = 0.95, ...) {
@@ -707,8 +713,11 @@ print.MI_IP_result <- function(x, digits = 4, level = 0.95, ...) {
   print(round(tbl, digits))
 
   if (is.null(x$se) || all(is.na(x$se))) {
-    cat("\nNote: Standard errors are not available (the downstream IP method",
-        x$ip_method, "does not provide SE).\n")
+    cat("\nNote: Standard errors are not available (", x$ip_method,
+        " does not provide SE).\n", sep = "")
+    cat("The reported SE reflects only between-imputation (Monte Carlo)\n")
+    cat("variance, not full inferential uncertainty. For valid inference,\n")
+    cat("bootstrap the full procedure over resampled subjects.\n")
   }
 
   cat(sprintf("\nIP method: %s | Imputations: %d/%d\n",
@@ -731,13 +740,11 @@ print.MI_IP_result <- function(x, digits = 4, level = 0.95, ...) {
 #' @seealso \code{\link{print.MI_IP_result}}, \code{\link{MI_IP}}
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' dat <- sim_ehr_data[, c("id", "Z", "X", "time", "R", "Y", "C")]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 80,
+#'                     c("id", "Z", "X", "time", "R", "Y", "C")]
 #' fit <- MI_IP(data = dat, ip_method = "LMM",
-#'              visit_covs = c("Z", "X"), m = 3)
+#'              visit_covs = c("Z", "X"), m = 2, maxit = 5)
 #' summary(fit)
-#' }
 #'
 #' @export
 summary.MI_IP_result <- function(object, level = 0.95, digits = 4, ...) {
@@ -751,9 +758,11 @@ summary.MI_IP_result <- function(object, level = 0.95, digits = 4, ...) {
   cat(sprintf("  IP method: %s\n", object$ip_method))
 
   if (is.null(object$se) || all(is.na(object$se))) {
-    cat("\n  Note: Standard errors are not available (the downstream IP method\n")
-    cat(sprintf("  %s does not provide SE). Consider bootstrap for inference.\n",
-                object$ip_method))
+    cat("\n  Note: Standard errors are not available (", object$ip_method,
+        " does not provide SE).\n", sep = "")
+    cat("  The reported SE reflects only between-imputation (Monte Carlo)\n")
+    cat("  variance, not full inferential uncertainty. For valid inference,\n")
+    cat("  bootstrap the full procedure over resampled subjects.\n")
   }
 
   .print_section("Pooled Outcome Coefficients",

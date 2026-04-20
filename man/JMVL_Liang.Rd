@@ -114,12 +114,9 @@ No standard errors are returned. For inference, consider bootstrapping
 the entire procedure.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- JMVL_Liang(sim_ehr_data)
+dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+fit <- JMVL_Liang(dat)
 print(fit)
-summary(fit)
-}
 
 }
 \references{

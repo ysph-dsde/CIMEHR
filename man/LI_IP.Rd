@@ -165,13 +165,10 @@ S3 methods \code{print} and \code{summary} are available for objects
 of class \code{"LI_IP_result"}.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-dat <- sim_ehr_data[, c("id", "Z", "X", "time", "R", "Y", "C")]
+dat <- sim_ehr_data[sim_ehr_data$id <= 80,
+                    c("id", "Z", "X", "time", "R", "Y", "C")]
 fit <- LI_IP(dat, ip_method = "LMM", visit_covs = c("Z", "X"))
 print(fit)
-summary(fit)
-}
 
 }
 \references{

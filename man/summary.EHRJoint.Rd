@@ -22,11 +22,9 @@
 Displays estimates for the visiting, observation, and outcome processes.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- EHRJoint(sim_ehr_data)
+dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+fit <- EHRJoint(dat)
 summary(fit)
-}
 
 }
 \seealso{

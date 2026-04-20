@@ -24,11 +24,9 @@ Prints outcome fixed-effect estimates with robust standard errors from
 the OU pairwise composite likelihood variant.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- GIVEHR_OU_PCL(data = sim_ehr_data)
-fit
-}
+dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+fit <- GIVEHR_OU_PCL(data = dat, pair_type = "adjacent")
+print(fit)
 
 }
 \seealso{

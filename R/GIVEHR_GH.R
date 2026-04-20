@@ -1,4 +1,4 @@
-#' Generalized Informative Visiting and observation processes in Electronic Health Records (GIVEHR)
+#' Generalized Informative Visiting and Observation Processes in Electronic Health Records (GIVEHR)
 #' with Gauss--Hermite (GH) Quadrature
 #'
 #' @description
@@ -165,12 +165,9 @@
 #' \code{\link{sim_data_gen}} for simulating compatible data.
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- GIVEHR_GH(data = sim_ehr_data, gh_points_U = 7, gh_points_q = 5)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+#' fit <- GIVEHR_GH(data = dat, gh_points_U = 3, gh_points_q = 3)
 #' print(fit)
-#' summary(fit)
-#' }
 #'
 #' @importFrom stats as.formula binomial coef dnorm glm.fit model.matrix
 #'   nlminb pnorm setNames

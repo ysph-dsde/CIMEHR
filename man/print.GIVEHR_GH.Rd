@@ -23,11 +23,9 @@ Prints outcome fixed-effect estimates from the Gauss--Hermite
 quadrature variant.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- GIVEHR_GH(data = sim_ehr_data)
-fit
-}
+dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+fit <- GIVEHR_GH(data = dat, gh_points_U = 3, gh_points_q = 3)
+print(fit)
 
 }
 \seealso{

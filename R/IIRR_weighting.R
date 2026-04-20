@@ -75,17 +75,9 @@
 #' \emph{The Canadian Journal of Statistics}, 35(4), 485--500. \doi{10.1002/cjs.5550350402}.
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#'
-#' # Formula is built automatically from visit_covs and time
-#' fit <- IIRR_weighting(sim_ehr_data, visit_covs = c("Z", "X"))
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' fit <- IIRR_weighting(dat, visit_covs = c("Z", "X"))
 #' print(fit)
-#' summary(fit)
-#'
-#' # Equivalent explicit formula
-#' fit2 <- IIRR_weighting(sim_ehr_data, formula = ~ Z + X + time)
-#' }
 #'
 #' @importFrom stats as.formula model.frame model.matrix na.pass
 #' @export

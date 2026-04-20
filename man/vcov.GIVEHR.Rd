@@ -21,10 +21,8 @@ Numeric matrix.
 Returns the sandwich variance--covariance matrix for the outcome model.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- GIVEHR(data = sim_ehr_data)
+dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+fit <- GIVEHR(data = dat)
 vcov(fit)
-}
 
 }

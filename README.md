@@ -2,35 +2,25 @@ CIMEHR
 ================
 
 <!-- badges: start -->
-
 [![R-CMD-check](https://github.com/ysph-dsde/CIMEHR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ysph-dsde/CIMEHR/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-> A unified semiparametric joint modeling framework that simultaneously
-> characterizes the visiting, biomarker observation, and longitudinal
-> outcome processes.
+> A unified semiparametric joint modeling framework that
+> simultaneously characterizes the visiting, biomarker observation,
+> and longitudinal outcome processes.
+
 
 # Overview
 
-**CIMEHR**, which stands for **C**linical **I**nformative **M**issingness for **E**lectronic 
-**H**ealth **R**ecord (EHR) data, fits semiparametric joint models for longitudinal EHR 
-data that simultaneously correct for two sources of informative presence bias: 
-an **informative visiting process** (when patients visit) and an 
-**informative observation process** (whether outcomes are recorded at visits).
+**CIMEHR**, which stands for **C**linical **I**nformative **M**issingness for **E**lectronic **H**ealth **R**ecord (EHR) data, fits semiparametric joint models for longitudinal EHR data that simultaneously correct for two sources of informative presence bias: an **informative visiting process** (when patients visit) and an **informative observation process** (whether outcomes are recorded at visits).
 
-The primary method is **`GIVEHR()`** (Generalized Informative Visiting and 
-observation processes in Electronic Health Records), a three-stage estimator that:
+The primary method is **`GIVEHR()`** (Generalized Informative Visiting and Observation Processes in Electronic Health Records), a three-stage estimator that:
 
-1.  models *when* patients visit via partial likelihood with a
-    log-normal frailty (visiting process),
-2.  models *whether* the outcome is recorded at a visit via probit
-    regression with shared-latent-factor-linked random effects
-    (observation process),
-3.  estimates the longitudinal outcome coefficients via weighted least
-    squares with risk-set centering (outcome process).
+1. models *when* patients visit via partial likelihood with a log-normal frailty (visiting process),
+2. models *whether* the outcome is recorded at a visit via probit regression with shared-latent-factor-linked random effects (observation process),
+3. estimates the longitudinal outcome coefficients via weighted least squares with risk-set centering (outcome process).
 
-All three stages are connected through a shared latent factor. Sandwich
-variance estimators provide robust inference throughout.
+All three stages are connected through a shared latent factor. Sandwich variance estimators provide robust inference throughout.
 
 ## Installation
 
@@ -41,14 +31,10 @@ devtools::install_github("ysph-dsde/CIMEHR")
 
 ## Quick example
 
-The package ships with a pre-simulated dataset `sim_ehr_data` (2000
-subjects) so you can get started immediately:
+The package ships with a pre-simulated dataset `sim_ehr_data` (2000 subjects) so you can get started immediately:
 
 ``` r
 library(CIMEHR)
-
-# Use the bundled dataset (already includes censoring time C)
-data(sim_ehr_data)
 
 # Fit the three-stage joint model
 fit <- GIVEHR(data = sim_ehr_data)
@@ -94,11 +80,8 @@ fit$observation_process$alpha_fixed
 
 Two extensions handle temporal dependence in the observation process:
 
-- **`GIVEHR_GH()`**: Gauss-Hermite quadrature with online Laplace
-  filtering. Supports time-varying observation dependence via a lagged
-  indicator.
-- **`GIVEHR_OU_PCL()`**: Ornstein-Uhlenbeck pairwise composite
-  likelihood. Captures serial correlation in the observation process.
+- **`GIVEHR_GH()`**: Gauss-Hermite quadrature with online Laplace filtering. Supports time-varying observation dependence via a lagged indicator.
+- **`GIVEHR_OU_PCL()`**: Ornstein-Uhlenbeck pairwise composite likelihood. Captures serial correlation in the observation process.
 
 ``` r
 # Gauss-Hermite variant
@@ -108,31 +91,53 @@ fit_gh <- GIVEHR_GH(data = sim_ehr_data, gh_points_U = 7, gh_points_q = 5)
 fit_ou <- GIVEHR_OU_PCL(data = sim_ehr_data, pair_type = "adjacent")
 ```
 
+## Bootstrap inference
+
+Several methods (GIVEHR_GH, EHRJoint, JMVL_Liang, IIRR_weighting, IIRR_balancing) do not provide closed-form standard errors. The `bootstrap()` function provides a unified interface for cluster-bootstrap inference, resampling subjects with replacement:
+
+``` r
+fit_iirr <- IIRR_weighting(sim_ehr_data, visit_covs = c("Z", "X"))
+bs <- bootstrap(fit_iirr, data = sim_ehr_data, B = 1000, seed = 1)
+
+# Bootstrap SE and percentile CI
+print(bs)
+summary(bs)
+```
+
+Model-specific arguments are forwarded via the `covars` argument:
+
+``` r
+fit_ej <- EHRJoint(sim_ehr_data, visit_covs = c("Z", "X"),
+                   long_covs = c("Z", "X"), random_covs = "Z")
+bs_ej <- bootstrap(fit_ej, data = sim_ehr_data, B = 1000, seed = 1,
+                   covars = list(visit_covs  = c("Z", "X"),
+                                 long_covs   = c("Z", "X"),
+                                 random_covs = "Z"))
+```
+
+For two-stage methods (`LI_IP()`, `MI_IP()`), the bootstrap must cover the full imputation-then-analysis pipeline. Use those functions directly inside a manual bootstrap loop.
+
 ## Benchmark methods
 
-The package includes several comparison methods for simulation and
-benchmark studies:
+The package includes several comparison methods for simulation and benchmark studies:
 
 | Function | Approach |
-|----|----|
+|---|---|
 | `EHRJoint()` | Joint model without separate observation process |
-| `JMVL_Liang()` | Liang–Lu–Ying joint estimating equations |
+| `JMVL_Liang()` | Liang--Lu--Ying joint estimating equations |
 | `IIRR_weighting()` | Inverse intensity rate ratio (IIRR) weighting |
 | `IIRR_balancing()` | Inverse intensity rate ratio (IIRR) with balancing weights |
 | `LMM()` | Linear mixed model (standard, observed-adjusted, visit-adjusted variants) |
-| `LI_IP()` | Linear increment imputation + informative visit (IP) adjustment |
-| `MI_IP()` | Multiple imputation + informative visit (IP) adjustment |
-| `PairwiseLikelihood()` | Pairwise composite likelihood ranking |
+| `LI_IP()` | Linear increment imputation + informative presence (IP) adjustment |
+| `MI_IP()` | Multiple imputation + informative presence (IP) adjustment |
+| `PairwiseLikelihood()` | Pairwise composite likelihood |
 | `SummaryStat()` | Summary-statistic regression (naive baseline) |
 
 ## Getting help
 
-- Run `vignette("getting-started", package = "CIMEHR")` for a complete
-  tutorial.
+- Run `vignette("getting-started", package = "CIMEHR")` for a complete tutorial.
 - Open an issue on GitHub for bugs or feature requests.
 
 ## References
 
-Yang, C.-H., Shi, X., and Mukherjee, B. (2026). “Joint Modeling of
-Longitudinal EHR Data with Shared Random Effects for Informative
-Visiting and Observation Processes.” *arXiv:2602.15374*.
+Yang, C.-H., Shi, X., and Mukherjee, B. (2026). "Joint Modeling of Longitudinal EHR Data with Shared Random Effects for Informative Visiting and Observation Processes." *arXiv:2602.15374*.

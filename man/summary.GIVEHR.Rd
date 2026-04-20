@@ -24,12 +24,9 @@ intervals for all three stages: visiting process, observation process,
 and longitudinal outcome.
 }
 \examples{
-\donttest{
-data(sim_ehr_data)
-fit <- GIVEHR(data = sim_ehr_data)
+dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+fit <- GIVEHR(data = dat)
 summary(fit)
-summary(fit, level = 0.90)
-}
 
 }
 \seealso{

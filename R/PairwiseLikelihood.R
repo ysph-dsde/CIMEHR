@@ -114,19 +114,11 @@
 #' 16(4), 727--739. \doi{10.1093/biostatistics/kxv008}.
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' obs_data <- sim_ehr_data[sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
-#'
-#' # Gaussian PCL -- formula must be supplied explicitly
-#' fit <- PairwiseLikelihood(
-#'   data        = obs_data,
-#'   formula     = Y ~ Z + X + time,
-#'   pair_sample = 5000
-#' )
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 100 &
+#'                     sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
+#' fit <- PairwiseLikelihood(dat, formula = Y ~ Z + X + time,
+#'                           pair_sample = 200)
 #' print(fit)
-#' summary(fit)
-#' }
 #'
 #' @importFrom stats coef complete.cases glm.fit lm.fit model.frame
 #'   model.matrix optim terms update
