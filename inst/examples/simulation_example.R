@@ -231,9 +231,9 @@ sim_df$true_value <- TRUE_BETA[sim_df$param]
 # ============================================================================
 
 compute_metrics <- function(df) {
+  n_fail <- sum(df$failed, na.rm = TRUE)          # count BEFORE filtering
   df     <- df[!df$failed & !is.na(df$est), ]
   n_ok   <- nrow(df)
-  n_fail <- sum(df$failed, na.rm = TRUE)
 
   if (n_ok == 0) {
     return(data.frame(
