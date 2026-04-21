@@ -33,7 +33,8 @@
 #'   estimator to display in \code{print} and \code{summary}. One of
 #'   \code{"bal"} (default, balancing weights) or \code{"mle"} (maximum likelihood
 #'   estimation (MLE) weights). Both estimators are always stored in
-#'   \code{boot_matrix} with column prefixes \code{"bal."} and \code{"mle."}.
+#'   \code{boot_matrix} with column prefixes \code{"s3.bal."} and
+#'   \code{"s3.mle."}.
 #' @param seed Integer; random seed for reproducibility. Default is
 #'   \code{NULL} (no seed set).
 #' @param verbose Logical; if \code{TRUE}, a progress message is printed
@@ -41,16 +42,23 @@
 #'
 #' @return An object of class \code{"cimehr_bootstrap"}, a named list with:
 #' \describe{
-#'   \item{\code{estimates}}{Named numeric vector of point estimates from
-#'     the original fit (outcome coefficients of the displayed estimator).}
+#'   \item{\code{estimates}}{Named numeric vector of all-stage point
+#'     estimates from the original fit, with the same \code{"s1."} /
+#'     \code{"s2."} / \code{"s3."} prefixes as \code{boot_matrix}.}
 #'   \item{\code{boot_matrix}}{Numeric matrix of dimension
-#'     \code{B_success} by \code{p}; each row is the outcome coefficient
-#'     vector from one bootstrap replicate. For \code{"IIRR_balancing"},
-#'     columns are prefixed \code{"bal."} and \code{"mle."}.}
+#'     \code{B_success} by \code{p}; each row is the full parameter
+#'     vector from one bootstrap replicate, covering \emph{all} estimated
+#'     stages. Columns are prefixed by stage: \code{"s1."} (visiting
+#'     process), \code{"s2."} (observation process, where applicable),
+#'     \code{"s3."} (longitudinal outcome). For \code{"IIRR_balancing"},
+#'     outcome columns are prefixed \code{"s3.bal."} and \code{"s3.mle."}.}
 #'   \item{\code{se}}{Named numeric vector of bootstrap standard errors
-#'     for the displayed estimator.}
+#'     for the Stage-3 outcome coefficients of the displayed estimator
+#'     (prefixes stripped). Standard errors for all stages are recoverable
+#'     from \code{boot_matrix} directly.}
 #'   \item{\code{ci}}{Numeric matrix with columns \code{CI.low} and
-#'     \code{CI.high}; percentile intervals for the displayed estimator.}
+#'     \code{CI.high}; percentile intervals for the Stage-3 outcome
+#'     coefficients of the displayed estimator (prefixes stripped).}
 #'   \item{\code{level}}{The confidence level used.}
 #'   \item{\code{B}}{Number of replicates requested.}
 #'   \item{\code{B_success}}{Number of replicates that converged.}
@@ -118,6 +126,23 @@
 #' \code{\link{IIRR_balancing}}, per-subject score contributions are not
 #' exposed by the fitting routines, so bootstrap is the recommended
 #' approach for uncertainty quantification.
+#'
+#' @section Accessing standard errors for all stages:
+#' \code{print} and \code{summary} display bootstrap standard errors (SEs) and confidence
+#' intervals for the Stage-3 outcome coefficients only (\code{"s3.*"}
+#' columns of \code{boot_matrix}).  Bootstrap SEs for all other stages are
+#' stored in \code{boot_matrix} and can be extracted manually, for example:
+#' \preformatted{
+#' bs <- bootstrap(fit, data = dat, B = 500)
+#'
+#' # Stage-1 SE (visiting process)
+#' apply(bs$boot_matrix[, grepl("^s1\\.", colnames(bs$boot_matrix)), drop = FALSE],
+#'       2, sd)
+#'
+#' # Stage-2 SE (observation process, GIVEHR family)
+#' apply(bs$boot_matrix[, grepl("^s2\\.", colnames(bs$boot_matrix)), drop = FALSE],
+#'       2, sd)
+#' }
 #'
 #' @seealso \code{\link{print.cimehr_bootstrap}},
 #'   \code{\link{summary.cimehr_bootstrap}}
@@ -293,35 +318,119 @@ bootstrap <- function(fit,
   )
 }
 
-#' Extract outcome coefficients from original fit for the displayed estimator
+#' Extract all-stage coefficients from original fit
+#'
+#' Returns a named vector covering every estimated parameter across all stages.
+#' Parameters are prefixed by stage: \code{"s1."} (visiting process),
+#' \code{"s2."} (observation process), \code{"s3."} (longitudinal outcome).
+#' For \code{"IIRR_balancing"} the outcome block is further prefixed
+#' \code{"s3.bal."} and \code{"s3.mle."}.
+#'
 #' @keywords internal
 #' @noRd
 .bootstrap_extract_coef <- function(fit, fit_class, which_estimate) {
   switch(fit_class,
-         GIVEHR         = fit$longitudinal_outcome$beta_Y,
-         GIVEHR_GH      = fit$longitudinal_outcome$beta_Y,
-         GIVEHR_OU_PCL  = fit$longitudinal_outcome$beta_Y,
-         EHRJoint       = fit$beta_hat,
-         JMVL_Liang     = fit$beta_hat,
-         IIRR_weighting = fit$beta_hat,
-         IIRR_balancing = if (which_estimate == "bal") fit$beta_bal else fit$beta_mle,
+
+         # ------------------------------------------------------------------
+         # GIVEHR family: three stages with named sub-lists
+         # ------------------------------------------------------------------
+         GIVEHR = ,
+         GIVEHR_GH = ,
+         GIVEHR_OU_PCL = {
+           s1 <- setNames(fit$visiting_process$gamma_V,
+                          paste0("s1.", names(fit$visiting_process$gamma_V)))
+           obs <- fit$observation_process
+           s2_alpha <- setNames(obs$alpha_fixed,
+                                paste0("s2.", names(obs$alpha_fixed)))
+           s2_delta <- if (!is.null(obs$delta_latent_link))
+             setNames(obs$delta_latent_link,
+                      paste0("s2.delta.", names(obs$delta_latent_link)))
+           else
+             NULL
+           # GIVEHR_OU_PCL additionally carries phi_OU (scalar)
+           s2_phi <- if (!is.null(obs$phi_OU))
+             c(s2.phi_OU = obs$phi_OU)
+           else
+             NULL
+           s3 <- setNames(fit$longitudinal_outcome$beta_Y,
+                          paste0("s3.", names(fit$longitudinal_outcome$beta_Y)))
+           c(s1, s2_alpha, s2_delta, s2_phi, s3)
+         },
+
+         # ------------------------------------------------------------------
+         # EHRJoint: gamma (s1), alpha (s2), beta (s3)
+         # ------------------------------------------------------------------
+         EHRJoint = {
+           s1 <- setNames(fit$gamma_hat,  paste0("s1.", names(fit$gamma_hat)))
+           s2 <- setNames(fit$alpha_hat,  paste0("s2.", names(fit$alpha_hat)))
+           s3 <- setNames(fit$beta_hat,   paste0("s3.", names(fit$beta_hat)))
+           c(s1, s2, s3)
+         },
+
+         # ------------------------------------------------------------------
+         # JMVL_Liang: gamma (s1), beta (s3 — no separate obs process)
+         # ------------------------------------------------------------------
+         JMVL_Liang = {
+           s1 <- setNames(fit$gamma_hat, paste0("s1.", names(fit$gamma_hat)))
+           s3 <- setNames(fit$beta_hat,  paste0("s3.", names(fit$beta_hat)))
+           c(s1, s3)
+         },
+
+         # ------------------------------------------------------------------
+         # IIRR_weighting: gamma (s1), beta (s3)
+         # ------------------------------------------------------------------
+         IIRR_weighting = {
+           s1 <- setNames(fit$gamma_hat, paste0("s1.", names(fit$gamma_hat)))
+           s3 <- setNames(fit$beta_hat,  paste0("s3.", names(fit$beta_hat)))
+           c(s1, s3)
+         },
+
+         # ------------------------------------------------------------------
+         # IIRR_balancing: gamma (s1), beta_bal and beta_mle (s3)
+         # ------------------------------------------------------------------
+         IIRR_balancing = {
+           s1      <- setNames(fit$gamma_hat,
+                               paste0("s1.", names(fit$gamma_hat)))
+           s3_bal  <- setNames(fit$beta_bal,
+                               paste0("s3.bal.", names(fit$beta_bal)))
+           s3_mle  <- setNames(fit$beta_mle,
+                               paste0("s3.mle.", names(fit$beta_mle)))
+           c(s1, s3_bal, s3_mle)
+         },
+
          stop("Unknown class: ", fit_class)
   )
 }
 
 #' Select boot_matrix columns for the displayed estimator
+#'
+#' For \code{print} and \code{summary}, only the Stage-3 outcome columns
+#' (\code{"s3.*"}) are shown.  For \code{"IIRR_balancing"} the display is
+#' further restricted to \code{"s3.bal.*"} or \code{"s3.mle.*"} according
+#' to \code{which_estimate}.  All columns remain in \code{boot_matrix}.
+#'
 #' @keywords internal
 #' @noRd
 .bootstrap_display_cols <- function(fit_class, which_estimate, all_cols) {
-  if (fit_class != "IIRR_balancing") return(all_cols)
-  prefix <- if (which_estimate == "bal") "^bal\\." else "^mle\\."
-  grep(prefix, all_cols, value = TRUE)
+  if (fit_class == "IIRR_balancing") {
+    prefix <- if (which_estimate == "bal") "^s3\\.bal\\." else "^s3\\.mle\\."
+    return(grep(prefix, all_cols, value = TRUE))
+  }
+  grep("^s3\\.", all_cols, value = TRUE)
 }
 
-#' Strip "bal." / "mle." prefix from coefficient names
+#' Strip stage and estimator prefixes for display
+#'
+#' Removes leading \code{"s3.bal."}, \code{"s3.mle."}, or \code{"s[123]."}
+#' prefixes so that printed tables show clean coefficient names.
+#'
 #' @keywords internal
 #' @noRd
-.strip_estimator_prefix <- function(x) sub("^(bal|mle)\\.", "", x)
+.strip_estimator_prefix <- function(x) {
+  x <- sub("^s3\\.(bal|mle)\\.", "", x)   # s3.bal.foo / s3.mle.foo -> foo
+  x <- sub("^s[123]\\.", "", x)            # s1.foo / s2.foo / s3.foo -> foo
+  x
+}
 
 #' Resample data by subject with replacement
 #'
@@ -367,7 +476,7 @@ bootstrap <- function(fit,
              covars_obs_fixed_XO     = cv("covars_obs_fixed_XO",     c("Z", "X")),
              covars_obs_random_ZO    = cv("covars_obs_random_ZO",    "Z")
            )
-           f$longitudinal_outcome$beta_Y
+           .bootstrap_extract_coef(f, "GIVEHR", NULL)
          },
 
          GIVEHR_GH = {
@@ -380,7 +489,7 @@ bootstrap <- function(fit,
              covars_obs_fixed_XO     = cv("covars_obs_fixed_XO",     c("Z", "X")),
              covars_obs_random_ZO    = cv("covars_obs_random_ZO",    "Z")
            )
-           f$longitudinal_outcome$beta_Y
+           .bootstrap_extract_coef(f, "GIVEHR_GH", NULL)
          },
 
          GIVEHR_OU_PCL = {
@@ -393,7 +502,7 @@ bootstrap <- function(fit,
              covars_obs_fixed_XO     = cv("covars_obs_fixed_XO",     c("Z", "X")),
              covars_obs_random_ZO    = cv("covars_obs_random_ZO",    "Z")
            )
-           f$longitudinal_outcome$beta_Y
+           .bootstrap_extract_coef(f, "GIVEHR_OU_PCL", NULL)
          },
 
          # ------------------------------------------------------------------
@@ -407,7 +516,7 @@ bootstrap <- function(fit,
              long_covs   = cv("long_covs",   c("Z", "X")),
              random_covs = cv("random_covs", "Z")
            )
-           f$beta_hat
+           .bootstrap_extract_coef(f, "EHRJoint", NULL)
          },
 
          JMVL_Liang = {
@@ -418,7 +527,7 @@ bootstrap <- function(fit,
              long_covs   = cv("long_covs",   c("Z", "X")),
              random_covs = cv("random_covs", "Z")
            )
-           f$beta_hat
+           .bootstrap_extract_coef(f, "JMVL_Liang", NULL)
          },
 
          # ------------------------------------------------------------------
@@ -431,7 +540,7 @@ bootstrap <- function(fit,
              visit_covs = cv("visit_covs", c("Z", "X")),
              formula    = cv("formula",    NULL)
            )
-           f$beta_hat
+           .bootstrap_extract_coef(f, "IIRR_weighting", NULL)
          },
 
          IIRR_balancing = {
@@ -443,9 +552,7 @@ bootstrap <- function(fit,
              formula      = cv("formula",      NULL),
              phi          = cv("phi",          0)
            )
-           # Store both estimators; columns distinguished by prefix
-           c(setNames(f$beta_bal, paste0("bal.", names(f$beta_bal))),
-             setNames(f$beta_mle, paste0("mle.", names(f$beta_mle))))
+           .bootstrap_extract_coef(f, "IIRR_balancing", NULL)
          },
 
          stop("Unknown class in .bootstrap_refit: ", fit_class)
@@ -490,8 +597,15 @@ print.cimehr_bootstrap <- function(x, digits = 4, ...) {
   cat("\n", header, "\n", sep = "")
   cat(strrep("=", 50), "\n")
 
+  # Subset point estimates to the same s3 display columns as se/ci
+  display_cols  <- .bootstrap_display_cols(x$method,
+                                           x$which_estimate %||% "bal",
+                                           names(x$estimates))
+  est_display   <- x$estimates[display_cols]
+  names(est_display) <- .strip_estimator_prefix(names(est_display))
+
   tbl <- data.frame(
-    Estimate = x$estimates,
+    Estimate = est_display,
     Boot.SE  = x$se,
     CI.low   = x$ci[, "CI.low"],
     CI.high  = x$ci[, "CI.high"],
@@ -501,6 +615,7 @@ print.cimehr_bootstrap <- function(x, digits = 4, ...) {
 
   cat(sprintf("\nPercentile CI (%.0f%%) | Replicates: %d / %d succeeded\n",
               100 * x$level, x$B_success, x$B))
+  cat("Full bootstrap matrix (all stages) available in $boot_matrix.\n")
 
   if (!is.null(x$which_estimate)) {
     other <- if (x$which_estimate == "bal") "mle" else "bal"
@@ -546,10 +661,19 @@ summary.cimehr_bootstrap <- function(object, digits = 4, ...) {
   cat(sprintf("  Confidence level: %.0f%% (percentile method)\n",
               100 * object$level))
   if (!is.null(object$which_estimate))
-    cat("  Note: boot_matrix contains both 'bal.*' and 'mle.*' columns.\n")
+    cat("  Note: boot_matrix contains all stages; outcome columns prefixed 's3.bal.*' and 's3.mle.*'.\n")
+
+  # Subset point estimates to the same s3 display columns as se/ci
+  display_cols <- .bootstrap_display_cols(
+    object$method,
+    object$which_estimate %||% "bal",
+    names(object$estimates)
+  )
+  est_display          <- object$estimates[display_cols]
+  names(est_display)   <- .strip_estimator_prefix(names(est_display))
 
   tbl <- data.frame(
-    Estimate = object$estimates,
+    Estimate = est_display,
     Boot.SE  = object$se,
     CI.low   = object$ci[, "CI.low"],
     CI.high  = object$ci[, "CI.high"],
@@ -559,12 +683,7 @@ summary.cimehr_bootstrap <- function(object, digits = 4, ...) {
   cat(strrep("-", width), "\n")
   print(round(tbl, digits))
 
-  # Replicate distribution for displayed columns only
-  display_cols <- .bootstrap_display_cols(
-    object$method,
-    object$which_estimate %||% "bal",
-    colnames(object$boot_matrix)
-  )
+  # Replicate distribution for displayed (s3) columns only
   disp_mat            <- object$boot_matrix[, display_cols, drop = FALSE]
   colnames(disp_mat)  <- .strip_estimator_prefix(colnames(disp_mat))
 

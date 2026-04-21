@@ -432,6 +432,41 @@ bs_mle <- bootstrap(fit_bal, data = sim_ehr_data, B = 1000, seed = 1,
 print(bs_mle)
 ```
 
+### Accessing bootstrap SEs for all stages
+
+`bootstrap()` stores the full parameter vector from every replicate — covering all estimated stages, not just the outcome — in `$boot_matrix`. Columns are prefixed by stage: `s1.` (visiting process), `s2.` (observation process, GIVEHR family only), and `s3.` (longitudinal outcome). `print()` and `summary()` display only the `s3.` outcome coefficients, but SEs for the other stages are straightforward to extract:
+
+```{r bootstrap-all-stages, eval = FALSE}
+bs_gh <- bootstrap(fit_gh, data = sim_ehr_data, B = 1000, seed = 1)
+
+# Stage-1 bootstrap SE: visiting-process coefficients (gamma)
+s1_cols <- grepl("^s1\\.", colnames(bs_gh$boot_matrix))
+apply(bs_gh$boot_matrix[, s1_cols, drop = FALSE], 2, sd)
+
+# Stage-2 bootstrap SE: observation-process coefficients (alpha, delta)
+s2_cols <- grepl("^s2\\.", colnames(bs_gh$boot_matrix))
+apply(bs_gh$boot_matrix[, s2_cols, drop = FALSE], 2, sd)
+
+# Stage-3 bootstrap SE: outcome coefficients (beta) -- same as bs_gh$se
+s3_cols <- grepl("^s3\\.", colnames(bs_gh$boot_matrix))
+apply(bs_gh$boot_matrix[, s3_cols, drop = FALSE], 2, sd)
+```
+
+This is particularly useful for `GIVEHR_GH`, which does not expose analytic sandwich standard errors for any stage.
+
+For `GIVEHR` and `GIVEHR_OU_PCL`, Stage-1 and Stage-3 sandwich SEs are already available in the fit object (`fit$visiting_process$se_gamma`, `fit$longitudinal_outcome$se_beta_naive`). The bootstrap provides an independent check:
+
+```{r bootstrap-givehr-check, eval = FALSE}
+bs_givehr <- bootstrap(fit_givehr, data = sim_ehr_data, B = 1000, seed = 1)
+
+# Compare sandwich vs. bootstrap SE for visiting-process gamma
+s1_cols <- grepl("^s1\\.", colnames(bs_givehr$boot_matrix))
+data.frame(
+  sandwich = fit_givehr$visiting_process$se_gamma,
+  bootstrap = apply(bs_givehr$boot_matrix[, s1_cols, drop = FALSE], 2, sd)
+)
+```
+
 For two-stage methods (`LI_IP()`, `MI_IP()`), the bootstrap must cover the full imputation-then-analysis pipeline. We recommend users implement a manual subject-level bootstrap loop.
 
 ## 6. Comparing Results Across Methods

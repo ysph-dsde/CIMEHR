@@ -44,7 +44,8 @@ trigger a warning.}
 estimator to display in \code{print} and \code{summary}. One of
 \code{"bal"} (default, balancing weights) or \code{"mle"} (maximum likelihood
 estimation (MLE) weights). Both estimators are always stored in
-\code{boot_matrix} with column prefixes \code{"bal."} and \code{"mle."}.}
+\code{boot_matrix} with column prefixes \code{"s3.bal."} and
+\code{"s3.mle."}.}
 
 \item{seed}{Integer; random seed for reproducibility. Default is
 \code{NULL} (no seed set).}
@@ -55,16 +56,23 @@ every 100 replicates. Default is \code{FALSE}.}
 \value{
 An object of class \code{"cimehr_bootstrap"}, a named list with:
 \describe{
-\item{\code{estimates}}{Named numeric vector of point estimates from
-the original fit (outcome coefficients of the displayed estimator).}
+\item{\code{estimates}}{Named numeric vector of all-stage point
+estimates from the original fit, with the same \code{"s1."} /
+\code{"s2."} / \code{"s3."} prefixes as \code{boot_matrix}.}
 \item{\code{boot_matrix}}{Numeric matrix of dimension
-\code{B_success} by \code{p}; each row is the outcome coefficient
-vector from one bootstrap replicate. For \code{"IIRR_balancing"},
-columns are prefixed \code{"bal."} and \code{"mle."}.}
+\code{B_success} by \code{p}; each row is the full parameter
+vector from one bootstrap replicate, covering \emph{all} estimated
+stages. Columns are prefixed by stage: \code{"s1."} (visiting
+process), \code{"s2."} (observation process, where applicable),
+\code{"s3."} (longitudinal outcome). For \code{"IIRR_balancing"},
+outcome columns are prefixed \code{"s3.bal."} and \code{"s3.mle."}.}
 \item{\code{se}}{Named numeric vector of bootstrap standard errors
-for the displayed estimator.}
+for the Stage-3 outcome coefficients of the displayed estimator
+(prefixes stripped). Standard errors for all stages are recoverable
+from \code{boot_matrix} directly.}
 \item{\code{ci}}{Numeric matrix with columns \code{CI.low} and
-\code{CI.high}; percentile intervals for the displayed estimator.}
+\code{CI.high}; percentile intervals for the Stage-3 outcome
+coefficients of the displayed estimator (prefixes stripped).}
 \item{\code{level}}{The confidence level used.}
 \item{\code{B}}{Number of replicates requested.}
 \item{\code{B_success}}{Number of replicates that converged.}
@@ -148,6 +156,25 @@ For \code{\link{GIVEHR_GH}}, \code{\link{EHRJoint}},
 \code{\link{IIRR_balancing}}, per-subject score contributions are not
 exposed by the fitting routines, so bootstrap is the recommended
 approach for uncertainty quantification.
+}
+
+\section{Accessing standard errors for all stages}{
+
+\code{print} and \code{summary} display bootstrap standard errors (SEs) and confidence
+intervals for the Stage-3 outcome coefficients only (\code{"s3.*"}
+columns of \code{boot_matrix}).  Bootstrap SEs for all other stages are
+stored in \code{boot_matrix} and can be extracted manually, for example:
+\preformatted{
+bs <- bootstrap(fit, data = dat, B = 500)
+
+# Stage-1 SE (visiting process)
+apply(bs$boot_matrix[, grepl("^s1\\.", colnames(bs$boot_matrix)), drop = FALSE],
+      2, sd)
+
+# Stage-2 SE (observation process, GIVEHR family)
+apply(bs$boot_matrix[, grepl("^s2\\.", colnames(bs$boot_matrix)), drop = FALSE],
+      2, sd)
+}
 }
 
 \examples{
