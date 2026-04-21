@@ -2,7 +2,9 @@
 % Please edit documentation in R/print-summary-GIVEHR.R
 \name{print.GIVEHR_OU_PCL}
 \alias{print.GIVEHR_OU_PCL}
-\title{Print a GIVEHR_OU_PCL Fit}
+\title{Print a Generalized Informative Visiting and Observation Processes in
+Electronic Health Records (GIVEHR) with Ornstein--Uhlenbeck (OU)
+Pairwise Composite Likelihood (PCL) Extension (GIVEHR_OU_PCL) Fit}
 \usage{
 \method{print}{GIVEHR_OU_PCL}(x, digits = 4, level = 0.95, ...)
 }
@@ -21,7 +23,7 @@
 }
 \description{
 Prints outcome fixed-effect estimates with robust standard errors from
-the OU pairwise composite likelihood variant.
+the Ornstein--Uhlenbeck (OU) pairwise composite likelihood variant.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]

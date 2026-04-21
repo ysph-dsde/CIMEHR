@@ -69,7 +69,8 @@ applied to the completed dataset. One of:
 \item{\code{"Liang"}}{Joint model of Liang et al. (2009) via
 \code{\link{JMVL_Liang}}.}
 \item{\code{"IIRR_weighting"}}{Inverse intensity rate ratio
-weighting via \code{\link{IIRR_balancing}} (using MLE weights).}
+weighting via \code{\link{IIRR_balancing}} (using maximum likelihood
+estimation (MLE) weights).}
 \item{\code{"IIRR_balancing"}}{Balancing-weights estimator of
 Yiu and Su (2024) via \code{\link{IIRR_balancing}}.}
 \item{\code{"PairLik"}}{Pairwise composite likelihood via
@@ -89,7 +90,8 @@ random effects in the Liang method. Default is \code{NULL} (uses the
 first element of \code{visit_covs}).}
 
 \item{outcome_formula}{A \code{\link[stats]{formula}} for the
-longitudinal outcome model, used by LMM, IIRR, and PairLik methods.
+longitudinal outcome model, used by linear mixed model (LMM),
+inverse intensity rate ratio (IIRR), and pairwise likelihood (PairLik) methods.
 Default is \code{NULL}, which constructs
 \code{Y ~ <outcome_covs> + <time>}.}
 
@@ -157,9 +159,7 @@ but visit time is known.
 
 \strong{Stage 2 --- IP Adjustment.}
 The completed dataset is passed to the selected IP method for
-coefficient estimation. Because a single imputed dataset is used
-(rather than multiple imputations), the reported standard errors
-(when available) do not account for imputation uncertainty.
+coefficient estimation.
 
 S3 methods \code{print} and \code{summary} are available for objects
 of class \code{"LI_IP_result"}.

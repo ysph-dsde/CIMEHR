@@ -2,7 +2,8 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.EHRJoint}
 \alias{print.EHRJoint}
-\title{Print an EHRJoint Fit}
+\title{Print an Joint Estimation for Electronic Health Record (EHR) Longitudinal
+Processes (EHRJoint) Fit}
 \usage{
 \method{print}{EHRJoint}(x, digits = 4, level = 0.95, ...)
 }

@@ -2,16 +2,14 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.LI_IP_result}
 \alias{print.LI_IP_result}
-\title{Print an LI_IP Fit}
+\title{Print a Linear Increment (LI) Imputation with Informative Presence (IP) Adjustment Fit}
 \usage{
-\method{print}{LI_IP_result}(x, digits = 4, level = 0.95, ...)
+\method{print}{LI_IP_result}(x, digits = 4, ...)
 }
 \arguments{
 \item{x}{An \code{LI_IP} object returned by \code{\link{LI_IP}}.}
 
 \item{digits}{Number of significant digits. Default is 4.}
-
-\item{level}{Confidence level for Wald intervals. Default is 0.95.}
 
 \item{\dots}{Ignored.}
 }
@@ -20,7 +18,8 @@
 }
 \description{
 Prints outcome coefficients from the linear increment imputation with
-informative presence adjustment.
+informative presence adjustment. Standard errors and confidence
+intervals are not reported; see the bootstrap note in the output.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 80,

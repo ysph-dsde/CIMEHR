@@ -4,7 +4,8 @@
 \alias{coef.GIVEHR}
 \alias{coef.GIVEHR_GH}
 \alias{coef.GIVEHR_OU_PCL}
-\title{Extract Coefficients from a GIVEHR Fit}
+\title{Extract Coefficients from a Generalized Informative Visiting and observation
+processes in Electronic Health Records (GIVEHR) Fit}
 \usage{
 \method{coef}{GIVEHR}(object, type = c("outcome", "visiting", "observation"), ...)
 
@@ -25,7 +26,8 @@
 Named numeric vector.
 }
 \description{
-Extract Coefficients from a GIVEHR Fit
+Extract Coefficients from a Generalized Informative Visiting and observation
+processes in Electronic Health Records (GIVEHR) Fit.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]

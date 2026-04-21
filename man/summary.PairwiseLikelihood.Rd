@@ -2,7 +2,8 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{summary.PairwiseLikelihood}
 \alias{summary.PairwiseLikelihood}
-\title{Summarise a PairwiseLikelihood Fit}
+\title{Summarise a Pairwise Composite Likelihood (PCL) Generalized Linear Model (GLM)
+Estimation (PairwiseLikelihood) Fit}
 \usage{
 \method{summary}{PairwiseLikelihood}(object, level = 0.95, digits = 4, ...)
 }

@@ -2,7 +2,9 @@
 % Please edit documentation in R/print-summary-GIVEHR.R
 \name{summary.GIVEHR_GH}
 \alias{summary.GIVEHR_GH}
-\title{Summarise a GIVEHR_GH Fit}
+\title{Summarise a Generalized Informative Visiting and Observation Processes in
+Electronic Health Records (GIVEHR) with Gauss--Hermite (GH) Quadrature
+(GIVEHR_GH) Fit}
 \usage{
 \method{summary}{GIVEHR_GH}(object, level = 0.95, digits = 4, ...)
 }

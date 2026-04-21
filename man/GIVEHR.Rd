@@ -2,7 +2,7 @@
 % Please edit documentation in R/GIVEHR.R
 \name{GIVEHR}
 \alias{GIVEHR}
-\title{Generalized Informative Visiting and observation processes in Electronic Health Records (GIVEHR)}
+\title{Generalized Informative Visiting and Observation Processes in Electronic Health Records (GIVEHR)}
 \usage{
 GIVEHR(
   data,
@@ -167,7 +167,7 @@ At each visit the probability that the outcome is recorded is modelled as
   \delta^\top Z_{ij}^O \cdot U_i +
   q_i^\top Z_{ij}^O\bigr),}
 where \eqn{q_i \sim N(0, \Sigma_q)} are independent random effects and
-\eqn{\Phi} is the standard-normal CDF. The marginal log-likelihood
+\eqn{\Phi} is the standard-normal cumulative distribution function (CDF). The marginal log-likelihood
 (integrated over \eqn{q_i} using the empirical Bayes posterior of
 \eqn{U_i}) is maximised by \code{\link[stats]{nlminb}} with analytic
 gradients. When the estimated frailty variance is negligible or no random

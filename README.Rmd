@@ -117,7 +117,7 @@ bs_ej <- bootstrap(fit_ej, data = sim_ehr_data, B = 1000, seed = 1,
                                  random_covs = "Z"))
 ```
 
-For two-stage methods (`LI_IP()`, `MI_IP()`), the bootstrap must cover the full imputation-then-analysis pipeline. Use those functions directly inside a manual bootstrap loop.
+For two-stage methods (`LI_IP()`, `MI_IP()`), the bootstrap must cover the full imputation-then-analysis pipeline. We suggest users write their own bootstrap method.
 
 ## Benchmark methods
 

@@ -2,7 +2,8 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{summary.EHRJoint}
 \alias{summary.EHRJoint}
-\title{Summarise an EHRJoint Fit}
+\title{Summarise an Joint Estimation for Electronic Health Record (EHR) Longitudinal
+Processes (EHRJoint) Fit}
 \usage{
 \method{summary}{EHRJoint}(object, level = 0.95, digits = 4, ...)
 }

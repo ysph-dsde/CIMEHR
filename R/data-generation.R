@@ -8,7 +8,7 @@
 #' effects and an Ornstein--Uhlenbeck (OU) serial correlation component), and a
 #' linear longitudinal outcome model with latent-factor-linked random effects.
 #' The data-generating mechanism matches the model specification in
-#' Yang, Shi, and Mukherjee (2025, Web Appendix S9) and is suitable for
+#' Yang, Shi, and Mukherjee (2025) and is suitable for
 #' evaluating \code{\link{GIVEHR}}, \code{\link{GIVEHR_GH}}, and
 #' \code{\link{GIVEHR_OU_PCL}}.
 #'

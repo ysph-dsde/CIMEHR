@@ -2,7 +2,8 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{summary.JMVL_Liang}
 \alias{summary.JMVL_Liang}
-\title{Summarise a JMVL_Liang Fit}
+\title{Summarise a Joint Model for Visiting and Longitudinal (JMVL) Processes with
+Informative Presence (IP) Adjustment (JMVL_Liang) Fit}
 \usage{
 \method{summary}{JMVL_Liang}(object, level = 0.95, digits = 4, ...)
 }

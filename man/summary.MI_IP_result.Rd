@@ -2,14 +2,12 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{summary.MI_IP_result}
 \alias{summary.MI_IP_result}
-\title{Summarise an MI_IP Fit}
+\title{Summarise a Multiple Imputation (MI) with Informative Presence (IP) Adjustment Fit}
 \usage{
-\method{summary}{MI_IP_result}(object, level = 0.95, digits = 4, ...)
+\method{summary}{MI_IP_result}(object, digits = 4, ...)
 }
 \arguments{
 \item{object}{An \code{MI_IP} object.}
-
-\item{level}{Confidence level for Wald intervals. Default is 0.95.}
 
 \item{digits}{Number of significant digits. Default is 4.}
 
@@ -19,8 +17,9 @@
 \code{object}, invisibly.
 }
 \description{
-Displays imputation settings and pooled outcome coefficients with
-standard errors when available.
+Displays imputation settings and pooled outcome coefficients.
+Standard errors and confidence intervals are not reported;
+see the bootstrap note in the output.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 80,

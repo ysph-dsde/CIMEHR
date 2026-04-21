@@ -2,7 +2,9 @@
 % Please edit documentation in R/print-summary-GIVEHR.R
 \name{print.GIVEHR_GH}
 \alias{print.GIVEHR_GH}
-\title{Print a GIVEHR_GH Fit}
+\title{Print a Generalized Informative Visiting and Observation Processes in
+Electronic Health Records (GIVEHR) with Gauss--Hermite (GH) Quadrature
+(GIVEHR_GH) Fit}
 \usage{
 \method{print}{GIVEHR_GH}(x, digits = 4, level = 0.95, ...)
 }

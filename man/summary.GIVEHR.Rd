@@ -2,7 +2,8 @@
 % Please edit documentation in R/print-summary-GIVEHR.R
 \name{summary.GIVEHR}
 \alias{summary.GIVEHR}
-\title{Summarise a GIVEHR Fit}
+\title{Summarise a Generalized Informative Visiting and Observation
+Processes in Electronic Health Records (GIVEHR) Fit}
 \usage{
 \method{summary}{GIVEHR}(object, level = 0.95, digits = 4, ...)
 }

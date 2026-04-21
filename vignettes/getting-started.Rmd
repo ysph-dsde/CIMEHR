@@ -261,13 +261,6 @@ fit_bal <- IIRR_balancing(
 )
 print(fit_bal)
 summary(fit_bal)
-
-# Sensitivity analysis with phi = 0.3
-fit_bal_sa <- IIRR_balancing(
-  sim_ehr_data,
-  visit_covs = c("Z", "X"),
-  phi        = 0.3
-)
 ```
 
 ### 4.5 Linear Mixed Model (LMM)
@@ -346,12 +339,11 @@ A two-stage procedure: (1) impute missing outcomes using the Linear
 Increment (LI) model (Aalen and Gunnes, 2010), then (2) apply an
 Informative Presence (IP) adjustment method to the completed dataset.
 
-Standard error availability depends on the downstream IP method chosen.
-When standard errors are provided by the IP method, they do not account
-for uncertainty in the imputation step. For valid inference, bootstrap
-the full two-stage procedure over resampled subjects, or consider
-`MI_IP()` to partially account for imputation uncertainty via multiple
-imputation.
+Standard errors and confidence intervals are not reported for `LI_IP()`.
+Valid SE must propagate uncertainty from both the LI imputation step and
+the IP estimation step, which cannot be done analytically here. For
+inference, bootstrap the full two-stage procedure over resampled subjects
+using a manual loop.
 
 ```{r li-ip}
 fit_li <- LI_IP(
@@ -367,12 +359,14 @@ summary(fit_li)
 
 A three-stage procedure: (1) multiply impute missing outcomes via
 `mice`, (2) apply an IP method to each completed dataset, and (3) pool
-results. When the downstream IP method provides standard errors,
-Rubin's rules combine within- and between-imputation variance for valid
-inference. When the IP method does not provide standard errors, the
-reported standard errors reflect only between-imputation (Monte Carlo)
-variance and are not suitable for inference --- bootstrap the full
-procedure over resampled subjects instead.
+results via simple averaging.
+
+Standard errors and confidence intervals are not reported for `MI_IP()`.
+Even where Rubin's rules could combine within- and between-imputation
+variance, the uncertainty in the imputation model itself is not
+propagated, so any reported SE would understate the true uncertainty.
+For valid inference, bootstrap the full procedure over resampled subjects
+using a manual loop.
 
 ```{r mi-ip}
 fit_mi <- MI_IP(
@@ -438,10 +432,7 @@ bs_mle <- bootstrap(fit_bal, data = sim_ehr_data, B = 1000, seed = 1,
 print(bs_mle)
 ```
 
-For two-stage methods (`LI_IP()`, `MI_IP()`), the bootstrap must
-cover the full imputation-then-analysis pipeline. Use those functions
-directly inside a manual bootstrap loop rather than `bootstrap()`.
-
+For two-stage methods (`LI_IP()`, `MI_IP()`), the bootstrap must cover the full imputation-then-analysis pipeline. We recommend users implement a manual subject-level bootstrap loop.
 
 ## 6. Comparing Results Across Methods
 
@@ -504,8 +495,8 @@ what is available and the recommended approach for inference:
 | LMM | Yes | Model-based (nlme) | Use directly |
 | SummaryStat | Yes | Model-based (lm) | Use directly |
 | PairwiseLikelihood | Yes (naive) | Inverse Hessian | Use directly |
-| LI_IP | Depends on IP method | IP model only; no imputation uncertainty | Bootstrap full two-stage procedure |
-| MI_IP | Depends on IP method | Rubin's rules when SE available | Bootstrap full procedure when SE unavailable |
+| LI_IP | **No** | Not provided | Bootstrap full two-stage procedure |
+| MI_IP | **No** | Not provided | Bootstrap full two-stage procedure |
 
 
 ## 8. Generating Custom Datasets

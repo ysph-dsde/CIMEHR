@@ -2,7 +2,8 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.JMVL_Liang}
 \alias{print.JMVL_Liang}
-\title{Print a JMVL_Liang Fit}
+\title{Print a Joint Model for Visiting and Longitudinal (JMVL) Processes with
+Informative Presence (IP) Adjustment (JMVL_Liang) Fit}
 \usage{
 \method{print}{JMVL_Liang}(x, digits = 4, level = 0.95, ...)
 }

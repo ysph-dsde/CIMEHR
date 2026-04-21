@@ -2,7 +2,7 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.LMM_result}
 \alias{print.LMM_result}
-\title{Print an LMM Result}
+\title{Print a Linear Mixed Model (LMM) for Longitudinal Data Result}
 \usage{
 \method{print}{LMM_result}(x, digits = 4, level = 0.95, ...)
 }

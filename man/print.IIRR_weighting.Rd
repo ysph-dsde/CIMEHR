@@ -2,7 +2,7 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.IIRR_weighting}
 \alias{print.IIRR_weighting}
-\title{Print an IIRR_weighting Fit}
+\title{Print an Inverse Intensity Rate Ratio (IIRR) Weighting Estimator (IIRR_weighting) Fit}
 \usage{
 \method{print}{IIRR_weighting}(x, digits = 4, level = 0.95, ...)
 }

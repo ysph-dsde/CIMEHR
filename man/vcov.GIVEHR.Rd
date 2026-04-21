@@ -3,7 +3,8 @@
 \name{vcov.GIVEHR}
 \alias{vcov.GIVEHR}
 \alias{vcov.GIVEHR_OU_PCL}
-\title{Variance--Covariance Matrix for GIVEHR Outcome Coefficients}
+\title{Variance--Covariance Matrix for Generalized Informative Visiting and
+observation processes in Electronic Health Records (GIVEHR) Outcome Coefficients}
 \usage{
 \method{vcov}{GIVEHR}(object, ...)
 

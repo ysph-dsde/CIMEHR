@@ -2,7 +2,7 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{summary.LMM_result}
 \alias{summary.LMM_result}
-\title{Summarise an LMM Result}
+\title{Summarise a Linear Mixed Model (LMM) for Longitudinal Data Result}
 \usage{
 \method{summary}{LMM_result}(object, level = 0.95, digits = 4, ...)
 }

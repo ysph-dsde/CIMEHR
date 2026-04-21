@@ -2,16 +2,14 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.MI_IP_result}
 \alias{print.MI_IP_result}
-\title{Print an MI_IP Fit}
+\title{Print a Multiple Imputation (MI) with Informative Presence (IP) Adjustment Fit}
 \usage{
-\method{print}{MI_IP_result}(x, digits = 4, level = 0.95, ...)
+\method{print}{MI_IP_result}(x, digits = 4, ...)
 }
 \arguments{
 \item{x}{An \code{MI_IP} object returned by \code{\link{MI_IP}}.}
 
 \item{digits}{Number of significant digits. Default is 4.}
-
-\item{level}{Confidence level for Wald intervals. Default is 0.95.}
 
 \item{\dots}{Ignored.}
 }
@@ -20,7 +18,8 @@
 }
 \description{
 Prints pooled outcome coefficients from the multiple imputation with
-informative presence adjustment.
+informative presence adjustment. Standard errors and confidence
+intervals are not reported; see the bootstrap note in the output.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 80,

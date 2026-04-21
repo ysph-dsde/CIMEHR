@@ -1,18 +1,18 @@
-#' Bootstrap Confidence Intervals for CIMEHR Model Fits
+#' Bootstrap Confidence Intervals for Selected Model Fits
 #'
 #' Computes bootstrap standard errors and percentile confidence intervals
 #' by resampling subjects with replacement and re-fitting the original model.
-#' Suitable for all CIMEHR methods that do not provide closed-form standard
+#' Suitable for all selected methods that do not provide closed-form standard
 #' errors: \code{\link{GIVEHR_GH}}, \code{\link{EHRJoint}},
 #' \code{\link{JMVL_Liang}}, \code{\link{IIRR_weighting}}, and
 #' \code{\link{IIRR_balancing}}. Can also supplement the sandwich standard
 #' errors from \code{\link{GIVEHR}} and \code{\link{GIVEHR_OU_PCL}}.
 #'
 #' For two-stage methods (\code{\link{LI_IP}}, \code{\link{MI_IP}}), the
-#' bootstrap must cover the full two-stage procedure. Use those functions
-#' directly inside a bootstrap loop rather than this wrapper.
+#' bootstrap must cover the full two-stage procedure. We recommend users
+#' implement a manual subject-level bootstrap loop.
 #'
-#' @param fit A fitted model object from one of the CIMEHR method functions.
+#' @param fit A fitted model object from one of the selected method functions.
 #'   Supported classes: \code{"GIVEHR"}, \code{"GIVEHR_GH"},
 #'   \code{"GIVEHR_OU_PCL"}, \code{"EHRJoint"}, \code{"JMVL_Liang"},
 #'   \code{"IIRR_weighting"}, \code{"IIRR_balancing"}.
@@ -31,9 +31,9 @@
 #'   trigger a warning.
 #' @param which_estimate For \code{"IIRR_balancing"} fits only: which
 #'   estimator to display in \code{print} and \code{summary}. One of
-#'   \code{"bal"} (default, balancing weights) or \code{"mle"} (MLE
-#'   weights). Both estimators are always stored in \code{boot_matrix}
-#'   with column prefixes \code{"bal."} and \code{"mle."}.
+#'   \code{"bal"} (default, balancing weights) or \code{"mle"} (maximum likelihood
+#'   estimation (MLE) weights). Both estimators are always stored in
+#'   \code{boot_matrix} with column prefixes \code{"bal."} and \code{"mle."}.
 #' @param seed Integer; random seed for reproducibility. Default is
 #'   \code{NULL} (no seed set).
 #' @param verbose Logical; if \code{TRUE}, a progress message is printed
@@ -64,12 +64,12 @@
 #' @details
 #' Subjects are resampled with replacement. For each replicate, all rows
 #' belonging to a sampled subject are included; subjects drawn multiple
-#' times receive distinct integer IDs to avoid duplicate identifiers in
-#' the resampled dataset.
+#' times receive distinct integer identifiers (IDs) to avoid duplicate
+#' identifiers in the resampled dataset.
 #'
 #' Replicates that throw an error or a convergence-related warning are
-#' silently discarded. A warning is issued if more than 10\% of replicates
-#' fail.
+#' silently discarded. A warning is issued if more than 10 percent of
+#' replicates fail.
 #'
 #' @section Covariate arguments by method:
 #' Supply only entries in \code{covars} that differ from the defaults

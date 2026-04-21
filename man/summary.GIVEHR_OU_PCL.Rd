@@ -2,7 +2,9 @@
 % Please edit documentation in R/print-summary-GIVEHR.R
 \name{summary.GIVEHR_OU_PCL}
 \alias{summary.GIVEHR_OU_PCL}
-\title{Summarise a GIVEHR_OU_PCL Fit}
+\title{Summarise a Generalized Informative Visiting and Observation Processes in
+Electronic Health Records (GIVEHR) with Ornstein--Uhlenbeck (OU)
+Pairwise Composite Likelihood (PCL) Extension (GIVEHR_OU_PCL) Fit}
 \usage{
 \method{summary}{GIVEHR_OU_PCL}(object, level = 0.95, digits = 4, ...)
 }
@@ -20,9 +22,9 @@
 \code{object}, invisibly.
 }
 \description{
-Displays estimates for all three stages of the OU + PCL variant,
-including the OU decay parameter. Robust standard errors are shown
-where available.
+Displays estimates for all three stages of the Ornstein--Uhlenbeck (OU) +
+Pairwise Composite Likelihood (PCL) variant, including the OU decay parameter.
+Robust standard errors are shown where available.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]

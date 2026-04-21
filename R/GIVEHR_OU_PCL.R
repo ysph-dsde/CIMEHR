@@ -49,7 +49,7 @@
 #'   receiving independent random effects in the observation process. An
 #'   intercept is prepended automatically. Set to \code{NULL} for a
 #'   fixed-effects-only probit (in which case PCL is skipped and a
-#'   standard probit GLM is fitted). Default is \code{"Z"}.
+#'   standard probit generalized linear model (GLM) is fitted). Default is \code{"Z"}.
 #' @param pair_type Character string specifying which within-subject visit
 #'   pairs to use for the pairwise composite likelihood. One of:
 #'   \describe{
@@ -140,7 +140,7 @@
 #'
 #' @details
 #' The model extends \code{\link{GIVEHR}} by introducing an
-#' Ornstein--Uhlenbeck process \eqn{\xi_i(t)} in the observation model:
+#' Ornstein--Uhlenbeck (OU) process \eqn{\xi_i(t)} in the observation model:
 #' \deqn{\tilde R_{ij} = \alpha^\top X_{ij}^O + \delta^\top Z_{ij}^O
 #'   \cdot U_i + q_i^\top Z_{ij}^O + \xi_i(t_{ij}),}
 #' where \eqn{R_{ij} = I(\tilde R_{ij} > 0)}, \eqn{q_i \sim N(0,
@@ -181,7 +181,7 @@
 #'
 #'
 #' @seealso
-#' \code{\link{GIVEHR}} for the base version without OU serial
+#' \code{\link{GIVEHR}} for the base version without Ornstein--Uhlenbeck (OU) serial
 #' correlation;
 #' \code{\link{GIVEHR_GH}} for the Gauss--Hermite quadrature variant;
 #' \code{\link{sim_data_gen}} for simulating data compatible with this

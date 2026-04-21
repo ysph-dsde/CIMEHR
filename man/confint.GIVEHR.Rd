@@ -3,7 +3,8 @@
 \name{confint.GIVEHR}
 \alias{confint.GIVEHR}
 \alias{confint.GIVEHR_OU_PCL}
-\title{Confidence Intervals for GIVEHR Outcome Coefficients}
+\title{Confidence Intervals for Generalized Informative Visiting and observation
+processes in Electronic Health Records (GIVEHR) Outcome Coefficients}
 \usage{
 \method{confint}{GIVEHR}(object, parm = NULL, level = 0.95, ...)
 

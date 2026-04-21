@@ -79,7 +79,7 @@ a random slope for \eqn{Z}: \eqn{b_{0i} + b_{1i} Z_{ij}}.}
 \item{impute_include_R}{Logical; whether to include the observation
 indicator \code{R} as a predictor in the imputation model. Default is
 \code{TRUE}. Recommended because \code{R} may be informative about
-missing \eqn{Y} values under MAR.}
+missing \eqn{Y} values under missing at random (MAR).}
 
 \item{ip_method}{Character string specifying the IP adjustment method
 applied to each completed dataset. One of:
@@ -97,8 +97,8 @@ Yiu and Su (2024) via \code{\link{IIRR_balancing}}.}
 }}
 
 \item{visit_covs}{Character vector of covariate column names for the
-visiting-process model (used by Liang and IIRR methods). Default is
-\code{c("Z", "X")}.}
+visiting-process model (used by Liang and inverse intensity rate ratio
+methods). Default is \code{c("Z", "X")}.}
 
 \item{outcome_covs}{Character vector of covariate column names for the
 outcome model in the Liang method. Default is \code{NULL} (uses
@@ -109,8 +109,9 @@ random effects in the Liang method. Default is \code{NULL} (uses the
 first element of \code{visit_covs}).}
 
 \item{outcome_formula}{A \code{\link[stats]{formula}} for the
-longitudinal outcome model, used by LMM, IIRR, and PairLik methods.
-Default is \code{NULL}, which constructs
+longitudinal outcome model, used by linear mixed model (LMM),
+inverse intensity rate ratio (IIRR), and pairwise likelihood (PairLik)
+methods. Default is \code{NULL}, which constructs
 \code{Y ~ <outcome_covs> + <time>}.}
 
 \item{random_formula}{A one-sided \code{\link[stats]{formula}} for the
@@ -137,8 +138,7 @@ estimates across imputations. One of:
 \item{\code{"mean"}}{(Default.) Simple averaging of point estimates
 with Monte Carlo standard errors.}
 \item{\code{"rubin"}}{Rubin's rules: combines within-imputation
-and between-imputation variance for valid inference. Requires
-that the IP method returns standard errors.}
+and between-imputation variance for valid inference.}
 }}
 }
 \value{
@@ -172,10 +172,6 @@ informative-presence (IP) adjustment method to each imputed dataset and
 pools results. The imputation model accounts for the clustered structure
 of longitudinal data using a two-level specification (random intercept
 and optional random slopes).
-
-Unlike \code{\link{LI_IP}}, this approach generates \code{m} completed
-datasets and pools estimates, allowing imputation uncertainty to be
-reflected in the standard errors (when Rubin's rules are used).
 }
 \details{
 The procedure has three stages:

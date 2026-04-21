@@ -2,7 +2,8 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.IIRR_balancing}
 \alias{print.IIRR_balancing}
-\title{Print an IIRR_balancing Fit}
+\title{Print an Inverse Intensity Rate Ratio (IIRR) Estimator with Balancing Weights
+(IIRR_balancing) Fit}
 \usage{
 \method{print}{IIRR_balancing}(x, digits = 4, level = 0.95, ...)
 }
@@ -19,7 +20,7 @@
 \code{x}, invisibly.
 }
 \description{
-Prints outcome estimates from both balancing and MLE weights.
+Prints outcome estimates from both balancing and maximum likelihood estimation (MLE) weights.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]

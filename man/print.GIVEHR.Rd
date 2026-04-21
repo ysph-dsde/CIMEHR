@@ -2,7 +2,8 @@
 % Please edit documentation in R/print-summary-GIVEHR.R
 \name{print.GIVEHR}
 \alias{print.GIVEHR}
-\title{Print a GIVEHR Fit}
+\title{Print a Generalized Informative Visiting and Observation Processes in
+Electronic Health Records (GIVEHR) Fit}
 \usage{
 \method{print}{GIVEHR}(x, digits = 4, level = 0.95, ...)
 }

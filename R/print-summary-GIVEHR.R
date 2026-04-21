@@ -57,7 +57,8 @@
 # GIVEHR
 # ============================================================================
 
-#' Print a GIVEHR Fit
+#' Print a Generalized Informative Visiting and Observation Processes in
+#' Electronic Health Records (GIVEHR) Fit
 #'
 #' Prints outcome fixed-effect estimates with sandwich standard errors and
 #' Wald confidence intervals.
@@ -90,7 +91,8 @@ print.GIVEHR <- function(x, digits = 4, level = 0.95, ...) {
   invisible(x)
 }
 
-#' Summarise a GIVEHR Fit
+#' Summarise a Generalized Informative Visiting and Observation
+#' Processes in Electronic Health Records (GIVEHR) Fit
 #'
 #' Displays estimates, sandwich standard errors, and Wald confidence
 #' intervals for all three stages: visiting process, observation process,
@@ -180,7 +182,9 @@ summary.GIVEHR <- function(object, level = 0.95, digits = 4, ...) {
 # GIVEHR_GH
 # ============================================================================
 
-#' Print a GIVEHR_GH Fit
+#' Print a Generalized Informative Visiting and Observation Processes in
+#' Electronic Health Records (GIVEHR) with Gauss--Hermite (GH) Quadrature
+#' (GIVEHR_GH) Fit
 #'
 #' Prints outcome fixed-effect estimates from the Gauss--Hermite
 #' quadrature variant.
@@ -213,7 +217,9 @@ print.GIVEHR_GH <- function(x, digits = 4, level = 0.95, ...) {
   invisible(x)
 }
 
-#' Summarise a GIVEHR_GH Fit
+#' Summarise a Generalized Informative Visiting and Observation Processes in
+#' Electronic Health Records (GIVEHR) with Gauss--Hermite (GH) Quadrature
+#' (GIVEHR_GH) Fit
 #'
 #' Displays estimates for all three stages of the Gauss--Hermite variant.
 #' Standard errors are shown where available.
@@ -290,10 +296,12 @@ summary.GIVEHR_GH <- function(object, level = 0.95, digits = 4, ...) {
 # GIVEHR_OU_PCL
 # ============================================================================
 
-#' Print a GIVEHR_OU_PCL Fit
+#' Print a Generalized Informative Visiting and Observation Processes in
+#' Electronic Health Records (GIVEHR) with Ornstein--Uhlenbeck (OU)
+#' Pairwise Composite Likelihood (PCL) Extension (GIVEHR_OU_PCL) Fit
 #'
 #' Prints outcome fixed-effect estimates with robust standard errors from
-#' the OU pairwise composite likelihood variant.
+#' the Ornstein--Uhlenbeck (OU) pairwise composite likelihood variant.
 #'
 #' @param x A \code{GIVEHR_OU_PCL} object returned by
 #'   \code{\link{GIVEHR_OU_PCL}}.
@@ -325,11 +333,13 @@ print.GIVEHR_OU_PCL <- function(x, digits = 4, level = 0.95, ...) {
   invisible(x)
 }
 
-#' Summarise a GIVEHR_OU_PCL Fit
+#' Summarise a Generalized Informative Visiting and Observation Processes in
+#' Electronic Health Records (GIVEHR) with Ornstein--Uhlenbeck (OU)
+#' Pairwise Composite Likelihood (PCL) Extension (GIVEHR_OU_PCL) Fit
 #'
-#' Displays estimates for all three stages of the OU + PCL variant,
-#' including the OU decay parameter. Robust standard errors are shown
-#' where available.
+#' Displays estimates for all three stages of the Ornstein--Uhlenbeck (OU) +
+#' Pairwise Composite Likelihood (PCL) variant, including the OU decay parameter.
+#' Robust standard errors are shown where available.
 #'
 #' @param object A \code{GIVEHR_OU_PCL} object returned by
 #'   \code{\link{GIVEHR_OU_PCL}}.
@@ -423,7 +433,11 @@ summary.GIVEHR_OU_PCL <- function(object, level = 0.95, digits = 4, ...) {
 # coef methods
 # ============================================================================
 
-#' Extract Coefficients from a GIVEHR Fit
+#' Extract Coefficients from a Generalized Informative Visiting and observation
+#' processes in Electronic Health Records (GIVEHR) Fit
+#'
+#' Extract Coefficients from a Generalized Informative Visiting and observation
+#' processes in Electronic Health Records (GIVEHR) Fit.
 #'
 #' @param object A \code{GIVEHR}, \code{GIVEHR_GH}, or
 #'   \code{GIVEHR_OU_PCL} object.
@@ -477,7 +491,8 @@ coef.GIVEHR_OU_PCL <- function(object, type = c("outcome", "visiting", "observat
 # vcov methods
 # ============================================================================
 
-#' Variance--Covariance Matrix for GIVEHR Outcome Coefficients
+#' Variance--Covariance Matrix for Generalized Informative Visiting and
+#' observation processes in Electronic Health Records (GIVEHR) Outcome Coefficients
 #'
 #' Returns the sandwich variance--covariance matrix for the outcome model.
 #'
@@ -507,7 +522,8 @@ vcov.GIVEHR_OU_PCL <- function(object, ...) {
 # confint methods
 # ============================================================================
 
-#' Confidence Intervals for GIVEHR Outcome Coefficients
+#' Confidence Intervals for Generalized Informative Visiting and observation
+#' processes in Electronic Health Records (GIVEHR) Outcome Coefficients
 #'
 #' Computes Wald confidence intervals using sandwich standard errors.
 #'

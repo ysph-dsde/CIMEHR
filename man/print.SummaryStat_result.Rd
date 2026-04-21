@@ -2,7 +2,7 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.SummaryStat_result}
 \alias{print.SummaryStat_result}
-\title{Print a SummaryStat Result}
+\title{Print a Summary-Statistic Regression for Longitudinal Data (SummaryStat) Result}
 \usage{
 \method{print}{SummaryStat_result}(x, digits = 4, ...)
 }

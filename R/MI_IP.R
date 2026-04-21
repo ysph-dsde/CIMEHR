@@ -8,10 +8,6 @@
 #' of longitudinal data using a two-level specification (random intercept
 #' and optional random slopes).
 #'
-#' Unlike \code{\link{LI_IP}}, this approach generates \code{m} completed
-#' datasets and pools estimates, allowing imputation uncertainty to be
-#' reflected in the standard errors (when Rubin's rules are used).
-#'
 #' @param data A \code{data.frame} in long (panel) format with one row per
 #'   subject-time combination. Must contain columns for subject identifier,
 #'   visit time, outcome, observation indicator, and all specified
@@ -55,7 +51,7 @@
 #' @param impute_include_R Logical; whether to include the observation
 #'   indicator \code{R} as a predictor in the imputation model. Default is
 #'   \code{TRUE}. Recommended because \code{R} may be informative about
-#'   missing \eqn{Y} values under MAR.
+#'   missing \eqn{Y} values under missing at random (MAR).
 #'
 #' @param ip_method Character string specifying the IP adjustment method
 #'   applied to each completed dataset. One of:
@@ -72,8 +68,8 @@
 #'       \code{\link{PairwiseLikelihood}}.}
 #'   }
 #' @param visit_covs Character vector of covariate column names for the
-#'   visiting-process model (used by Liang and IIRR methods). Default is
-#'   \code{c("Z", "X")}.
+#'   visiting-process model (used by Liang and inverse intensity rate ratio
+#'   methods). Default is \code{c("Z", "X")}.
 #' @param outcome_covs Character vector of covariate column names for the
 #'   outcome model in the Liang method. Default is \code{NULL} (uses
 #'   \code{visit_covs}).
@@ -81,8 +77,9 @@
 #'   random effects in the Liang method. Default is \code{NULL} (uses the
 #'   first element of \code{visit_covs}).
 #' @param outcome_formula A \code{\link[stats]{formula}} for the
-#'   longitudinal outcome model, used by LMM, IIRR, and PairLik methods.
-#'   Default is \code{NULL}, which constructs
+#'   longitudinal outcome model, used by linear mixed model (LMM),
+#'   inverse intensity rate ratio (IIRR), and pairwise likelihood (PairLik)
+#'   methods. Default is \code{NULL}, which constructs
 #'   \code{Y ~ <outcome_covs> + <time>}.
 #' @param random_formula A one-sided \code{\link[stats]{formula}} for the
 #'   LMM random effects. Default is \code{NULL}, which constructs
@@ -107,8 +104,7 @@
 #'     \item{\code{"mean"}}{(Default.) Simple averaging of point estimates
 #'       with Monte Carlo standard errors.}
 #'     \item{\code{"rubin"}}{Rubin's rules: combines within-imputation
-#'       and between-imputation variance for valid inference. Requires
-#'       that the IP method returns standard errors.}
+#'       and between-imputation variance for valid inference.}
 #'   }
 #'
 #' @return An object of class \code{"MI_IP_result"}, which is a named list

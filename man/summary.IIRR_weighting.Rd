@@ -2,7 +2,7 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{summary.IIRR_weighting}
 \alias{summary.IIRR_weighting}
-\title{Summarise an IIRR_weighting Fit}
+\title{Summarise an Inverse Intensity Rate Ratio (IIRR) Weighting Estimator (IIRR_weighting) Fit}
 \usage{
 \method{summary}{IIRR_weighting}(object, level = 0.95, digits = 4, ...)
 }

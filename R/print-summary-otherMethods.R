@@ -38,7 +38,8 @@
 # EHRJoint
 # ============================================================================
 
-#' Print an EHRJoint Fit
+#' Print an Joint Estimation for Electronic Health Record (EHR) Longitudinal
+#' Processes (EHRJoint) Fit
 #'
 #' Prints outcome fixed-effect estimates from the joint model without a
 #' separate observation process.
@@ -71,7 +72,8 @@ print.EHRJoint <- function(x, digits = 4, level = 0.95, ...) {
   invisible(x)
 }
 
-#' Summarise an EHRJoint Fit
+#' Summarise an Joint Estimation for Electronic Health Record (EHR) Longitudinal
+#' Processes (EHRJoint) Fit
 #'
 #' Displays estimates for the visiting, observation, and outcome processes.
 #'
@@ -123,7 +125,7 @@ summary.EHRJoint <- function(object, level = 0.95, digits = 4, ...) {
 # IIRR_weighting
 # ============================================================================
 
-#' Print an IIRR_weighting Fit
+#' Print an Inverse Intensity Rate Ratio (IIRR) Weighting Estimator (IIRR_weighting) Fit
 #'
 #' Prints outcome fixed-effect estimates from the inverse intensity rate
 #' ratio weighting estimator.
@@ -157,7 +159,7 @@ print.IIRR_weighting <- function(x, digits = 4, level = 0.95, ...) {
   invisible(x)
 }
 
-#' Summarise an IIRR_weighting Fit
+#' Summarise an Inverse Intensity Rate Ratio (IIRR) Weighting Estimator (IIRR_weighting) Fit
 #'
 #' Displays visiting-process and outcome estimates.
 #'
@@ -199,9 +201,10 @@ summary.IIRR_weighting <- function(object, level = 0.95, digits = 4, ...) {
 # IIRR_balancing
 # ============================================================================
 
-#' Print an IIRR_balancing Fit
+#' Print an Inverse Intensity Rate Ratio (IIRR) Estimator with Balancing Weights
+#' (IIRR_balancing) Fit
 #'
-#' Prints outcome estimates from both balancing and MLE weights.
+#' Prints outcome estimates from both balancing and maximum likelihood estimation (MLE) weights.
 #'
 #' @param x An \code{IIRR_balancing} object.
 #' @param digits Number of significant digits. Default is 4.
@@ -235,7 +238,8 @@ print.IIRR_balancing <- function(x, digits = 4, level = 0.95, ...) {
   invisible(x)
 }
 
-#' Summarise an IIRR_balancing Fit
+#' Summarise an Inverse Intensity Rate Ratio (IIRR) Estimator with Balancing Weights
+#' (IIRR_balancing) Fit
 #'
 #' Displays visiting-process and outcome estimates under both balancing
 #' and MLE weights, including the sensitivity parameter.
@@ -284,7 +288,8 @@ summary.IIRR_balancing <- function(object, level = 0.95, digits = 4, ...) {
 # JMVL_Liang
 # ============================================================================
 
-#' Print a JMVL_Liang Fit
+#' Print a Joint Model for Visiting and Longitudinal (JMVL) Processes with
+#' Informative Presence (IP) Adjustment (JMVL_Liang) Fit
 #'
 #' Prints outcome fixed-effect estimates from the Liang--Lu--Ying joint
 #' estimating equations approach.
@@ -317,7 +322,8 @@ print.JMVL_Liang <- function(x, digits = 4, level = 0.95, ...) {
   invisible(x)
 }
 
-#' Summarise a JMVL_Liang Fit
+#' Summarise a Joint Model for Visiting and Longitudinal (JMVL) Processes with
+#' Informative Presence (IP) Adjustment (JMVL_Liang) Fit
 #'
 #' Displays visiting-process and outcome estimates.
 #'
@@ -361,7 +367,7 @@ summary.JMVL_Liang <- function(object, level = 0.95, digits = 4, ...) {
 # LMM_result
 # ============================================================================
 
-#' Print an LMM Result
+#' Print a Linear Mixed Model (LMM) for Longitudinal Data Result
 #'
 #' Prints the fixed-effects table from a linear mixed model fit.
 #'
@@ -390,7 +396,7 @@ print.LMM_result <- function(x, digits = 4, level = 0.95, ...) {
   invisible(x)
 }
 
-#' Summarise an LMM Result
+#' Summarise a Linear Mixed Model (LMM) for Longitudinal Data Result
 #'
 #' Displays the fixed-effects coefficient table.
 #'
@@ -427,7 +433,7 @@ summary.LMM_result <- function(object, level = 0.95, digits = 4, ...) {
 # SummaryStat_result
 # ============================================================================
 
-#' Print a SummaryStat Result
+#' Print a Summary-Statistic Regression for Longitudinal Data (SummaryStat) Result
 #'
 #' Prints coefficients from the summary-statistic regression.
 #'
@@ -455,7 +461,7 @@ print.SummaryStat_result <- function(x, digits = 4, ...) {
   invisible(x)
 }
 
-#' Summarise a SummaryStat Result
+#' Summarise a Summary-Statistic Regression for Longitudinal Data (SummaryStat) Result
 #'
 #' Displays the regression coefficient table.
 #'
@@ -492,7 +498,8 @@ summary.SummaryStat_result <- function(object, digits = 4, ...) {
 # PairwiseLikelihood
 # ============================================================================
 
-#' Print a PairwiseLikelihood Fit
+#' Print a Pairwise Composite Likelihood (PCL) Generalized Linear Model (GLM)
+#' Estimation (PairwiseLikelihood) Fit
 #'
 #' Prints coefficients with naive standard errors (from the inverse
 #' Hessian) when available.
@@ -532,7 +539,8 @@ print.PairwiseLikelihood <- function(x, digits = 4, level = 0.95, ...) {
   invisible(x)
 }
 
-#' Summarise a PairwiseLikelihood Fit
+#' Summarise a Pairwise Composite Likelihood (PCL) Generalized Linear Model (GLM)
+#' Estimation (PairwiseLikelihood) Fit
 #'
 #' Displays model dimensions, convergence status, and the coefficient
 #' table with standard errors when available.
@@ -581,14 +589,14 @@ summary.PairwiseLikelihood <- function(object, level = 0.95, digits = 4, ...) {
 # LI_IP
 # ============================================================================
 
-#' Print an LI_IP Fit
+#' Print a Linear Increment (LI) Imputation with Informative Presence (IP) Adjustment Fit
 #'
 #' Prints outcome coefficients from the linear increment imputation with
-#' informative presence adjustment.
+#' informative presence adjustment. Standard errors and confidence
+#' intervals are not reported; see the bootstrap note in the output.
 #'
 #' @param x An \code{LI_IP} object returned by \code{\link{LI_IP}}.
 #' @param digits Number of significant digits. Default is 4.
-#' @param level Confidence level for Wald intervals. Default is 0.95.
 #' @param \dots Ignored.
 #'
 #' @return \code{x}, invisibly.
@@ -603,37 +611,31 @@ summary.PairwiseLikelihood <- function(object, level = 0.95, digits = 4, ...) {
 #' print(fit)
 #'
 #' @export
-print.LI_IP_result <- function(x, digits = 4, level = 0.95, ...) {
+print.LI_IP_result <- function(x, digits = 4, ...) {
   cat("\nLinear Increment + IP -- Outcome Coefficients\n")
   cat(strrep("=", 50), "\n")
 
-  tbl <- .givehr_coef_table(x$coefficients, x$se, level = level)
+  tbl <- .givehr_coef_table(x$coefficients, se = NULL)
   print(round(tbl, digits))
 
-  if (is.null(x$se)) {
-    cat("\nNote: Standard errors are not available (", x$ip_method,
-        " does not provide SE).\n", sep = "")
-  } else {
-    cat("\nNote: Standard errors are from the IP model only and do not\n")
-    cat("account for uncertainty in the linear increment imputation step.\n")
-  }
-  cat("For valid inference, bootstrap the full two-stage procedure\n")
-  cat("(LI imputation + IP analysis) over resampled subjects.\n")
-  cat("Alternatively, consider MI_IP() to partially account for\n")
-  cat("imputation uncertainty via multiple imputation.\n")
+  cat("\nNote: Standard errors and confidence intervals are not reported.\n")
+  cat("Valid inference requires bootstrapping the full two-stage procedure\n")
+  cat("(LI imputation + IP analysis) over resampled subjects, as SE from\n")
+  cat("the IP model alone does not account for imputation uncertainty.\n")
+  cat("We suggest users write their own bootstrap method.\n")
 
   cat(sprintf("\nIP method: %s | Values imputed: %d\n",
               x$ip_method, x$n_imputed))
   invisible(x)
 }
 
-#' Summarise an LI_IP Fit
+#' Summarise a Linear Increment (LI) Imputation with Informative Presence (IP) Adjustment Fit
 #'
-#' Displays imputation model details and outcome coefficients with
-#' standard errors when available.
+#' Displays imputation model details and outcome coefficients.
+#' Standard errors and confidence intervals are not reported;
+#' see the bootstrap note in the output.
 #'
 #' @param object An \code{LI_IP} object.
-#' @param level Confidence level for Wald intervals. Default is 0.95.
 #' @param digits Number of significant digits. Default is 4.
 #' @param \dots Ignored.
 #'
@@ -649,7 +651,7 @@ print.LI_IP_result <- function(x, digits = 4, level = 0.95, ...) {
 #' summary(fit)
 #'
 #' @export
-summary.LI_IP_result <- function(object, level = 0.95, digits = 4, ...) {
+summary.LI_IP_result <- function(object, digits = 4, ...) {
   width <- 60
   cat("\nLinear Increment Imputation + IP Adjustment -- Summary\n")
   cat(strrep("=", width), "\n")
@@ -659,20 +661,14 @@ summary.LI_IP_result <- function(object, level = 0.95, digits = 4, ...) {
               object$li_model$covariance, object$n_imputed))
   cat(sprintf("  IP method: %s\n", object$ip_method))
 
-  if (is.null(object$se)) {
-    cat("\n  Note: Standard errors are not available (", object$ip_method,
-        " does not provide SE).\n", sep = "")
-  } else {
-    cat("\n  Note: Standard errors are from the IP model only and do not\n")
-    cat("  account for uncertainty in the linear increment imputation step.\n")
-  }
-  cat("  For valid inference, bootstrap the full two-stage procedure\n")
-  cat("  (LI imputation + IP analysis) over resampled subjects.\n")
-  cat("  Alternatively, consider MI_IP() to partially account for\n")
-  cat("  imputation uncertainty via multiple imputation.\n")
+  cat("\n  Note: Standard errors and confidence intervals are not reported.\n")
+  cat("  Valid inference requires bootstrapping the full two-stage procedure\n")
+  cat("  (LI imputation + IP analysis) over resampled subjects, as SE from\n")
+  cat("  the IP model alone does not account for imputation uncertainty.\n")
+  cat("  We suggest users write their own bootstrap method.\n")
 
   .print_section("Outcome Coefficients",
-                 .givehr_coef_table(object$coefficients, object$se, level), digits, width)
+                 .givehr_coef_table(object$coefficients, se = NULL), digits, width)
 
   cat("\n")
   invisible(object)
@@ -683,14 +679,14 @@ summary.LI_IP_result <- function(object, level = 0.95, digits = 4, ...) {
 # MI_IP
 # ============================================================================
 
-#' Print an MI_IP Fit
+#' Print a Multiple Imputation (MI) with Informative Presence (IP) Adjustment Fit
 #'
 #' Prints pooled outcome coefficients from the multiple imputation with
-#' informative presence adjustment.
+#' informative presence adjustment. Standard errors and confidence
+#' intervals are not reported; see the bootstrap note in the output.
 #'
 #' @param x An \code{MI_IP} object returned by \code{\link{MI_IP}}.
 #' @param digits Number of significant digits. Default is 4.
-#' @param level Confidence level for Wald intervals. Default is 0.95.
 #' @param \dots Ignored.
 #'
 #' @return \code{x}, invisibly.
@@ -705,33 +701,33 @@ summary.LI_IP_result <- function(object, level = 0.95, digits = 4, ...) {
 #' print(fit)
 #'
 #' @export
-print.MI_IP_result <- function(x, digits = 4, level = 0.95, ...) {
+print.MI_IP_result <- function(x, digits = 4, ...) {
   cat("\nMultiple Imputation + IP -- Outcome Coefficients\n")
   cat(strrep("=", 50), "\n")
 
-  tbl <- .givehr_coef_table(x$coefficients, x$se, level = level)
+  tbl <- .givehr_coef_table(x$coefficients, se = NULL)
   print(round(tbl, digits))
 
-  if (is.null(x$se) || all(is.na(x$se))) {
-    cat("\nNote: Standard errors are not available (", x$ip_method,
-        " does not provide SE).\n", sep = "")
-    cat("The reported SE reflects only between-imputation (Monte Carlo)\n")
-    cat("variance, not full inferential uncertainty. For valid inference,\n")
-    cat("bootstrap the full procedure over resampled subjects.\n")
-  }
+  cat("\nNote: Standard errors and confidence intervals are not reported.\n")
+  cat("Rubin's rules require per-imputation SE from the IP method, which\n")
+  cat("is not available for all IP methods; and even where available, the\n")
+  cat("combined SE does not account for uncertainty in the imputation model\n")
+  cat("itself. For valid inference, bootstrap the full procedure\n")
+  cat("(imputation + IP analysis) over resampled subjects.\n")
+  cat("We suggest users write their own bootstrap method.\n")
 
   cat(sprintf("\nIP method: %s | Imputations: %d/%d\n",
               x$ip_method, x$m, x$m_requested))
   invisible(x)
 }
 
-#' Summarise an MI_IP Fit
+#' Summarise a Multiple Imputation (MI) with Informative Presence (IP) Adjustment Fit
 #'
-#' Displays imputation settings and pooled outcome coefficients with
-#' standard errors when available.
+#' Displays imputation settings and pooled outcome coefficients.
+#' Standard errors and confidence intervals are not reported;
+#' see the bootstrap note in the output.
 #'
 #' @param object An \code{MI_IP} object.
-#' @param level Confidence level for Wald intervals. Default is 0.95.
 #' @param digits Number of significant digits. Default is 4.
 #' @param \dots Ignored.
 #'
@@ -747,7 +743,7 @@ print.MI_IP_result <- function(x, digits = 4, level = 0.95, ...) {
 #' summary(fit)
 #'
 #' @export
-summary.MI_IP_result <- function(object, level = 0.95, digits = 4, ...) {
+summary.MI_IP_result <- function(object, digits = 4, ...) {
   width <- 60
   cat("\nMultiple Imputation + IP Adjustment -- Summary\n")
   cat(strrep("=", width), "\n")
@@ -757,16 +753,16 @@ summary.MI_IP_result <- function(object, level = 0.95, digits = 4, ...) {
               object$m, object$m_requested))
   cat(sprintf("  IP method: %s\n", object$ip_method))
 
-  if (is.null(object$se) || all(is.na(object$se))) {
-    cat("\n  Note: Standard errors are not available (", object$ip_method,
-        " does not provide SE).\n", sep = "")
-    cat("  The reported SE reflects only between-imputation (Monte Carlo)\n")
-    cat("  variance, not full inferential uncertainty. For valid inference,\n")
-    cat("  bootstrap the full procedure over resampled subjects.\n")
-  }
+  cat("\n  Note: Standard errors and confidence intervals are not reported.\n")
+  cat("  Rubin's rules require per-imputation SE from the IP method, which\n")
+  cat("  is not available for all IP methods; and even where available, the\n")
+  cat("  combined SE does not account for uncertainty in the imputation model\n")
+  cat("  itself. For valid inference, bootstrap the full procedure\n")
+  cat("  (imputation + IP analysis) over resampled subjects.\n")
+  cat("  We suggest users write their own bootstrap method.\n")
 
   .print_section("Pooled Outcome Coefficients",
-                 .givehr_coef_table(object$coefficients, object$se, level), digits, width)
+                 .givehr_coef_table(object$coefficients, se = NULL), digits, width)
 
   cat("\n")
   invisible(object)

@@ -39,8 +39,7 @@ interact with the latent factor. Default is \code{"Z"}.}
 }
 \value{
 An object of class \code{"EHRJoint"} containing component-wise
-coefficient estimates. If available, standard errors are stored and used by
-\code{summary()} to form 95\\% confidence intervals.
+coefficient estimates.
 }
 \description{
 Fit a joint workflow for visiting, observation, and outcome processes for

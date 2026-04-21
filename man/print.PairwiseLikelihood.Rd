@@ -2,7 +2,8 @@
 % Please edit documentation in R/print-summary-otherMethods.R
 \name{print.PairwiseLikelihood}
 \alias{print.PairwiseLikelihood}
-\title{Print a PairwiseLikelihood Fit}
+\title{Print a Pairwise Composite Likelihood (PCL) Generalized Linear Model (GLM)
+Estimation (PairwiseLikelihood) Fit}
 \usage{
 \method{print}{PairwiseLikelihood}(x, digits = 4, level = 0.95, ...)
 }
