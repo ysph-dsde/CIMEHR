@@ -469,51 +469,7 @@ data.frame(
 
 For two-stage methods (`LI_IP()`, `MI_IP()`), the bootstrap must cover the full imputation-then-analysis pipeline. We recommend users implement a manual subject-level bootstrap loop.
 
-## 6. Comparing Results Across Methods
-
-A typical simulation study compares the outcome beta estimates. Here we
-collect results from the methods fitted above:
-
-```{r compare}
-results <- data.frame(
-  Method = c("GIVEHR", "GIVEHR_GH", "GIVEHR_OU_PCL",
-             "EHRJoint", "JMVL_Liang", "IIRR_weighting",
-             "IIRR_balancing", "LMM", "SummaryStat"),
-  beta_Z = c(
-    coef(fit_givehr)["Z"],
-    fit_gh$longitudinal_outcome$beta_Y["Z"],
-    fit_ou$longitudinal_outcome$beta_Y["Z"],
-    fit_ej$beta_hat["Z"],
-    fit_liang$beta_hat["Z"],
-    fit_iirr$beta_hat["Z"],
-    fit_bal$beta_bal["Z"],
-    fit_lmm$coefficients["Z", "Value"],
-    fit_ss$coefficients["Z", "Estimate"]
-  ),
-  beta_X = c(
-    coef(fit_givehr)["X"],
-    fit_gh$longitudinal_outcome$beta_Y["X"],
-    fit_ou$longitudinal_outcome$beta_Y["X"],
-    fit_ej$beta_hat["X"],
-    fit_liang$beta_hat["X"],
-    fit_iirr$beta_hat["X"],
-    fit_bal$beta_bal["X"],
-    fit_lmm$coefficients["X", "Value"],
-    fit_ss$coefficients["X", "Estimate"]
-  )
-)
-
-# Add true values
-results$true_Z <- true_params$beta["Z"]
-results$true_X <- true_params$beta["X"]
-results$bias_Z <- results$beta_Z - results$true_Z
-results$bias_X <- results$beta_X - results$true_X
-
-print(results, digits = 3)
-```
-
-
-## 7. Uncertainty Quantification Summary
+## 6. Uncertainty Quantification Summary
 
 Not all methods provide standard errors. The table below summarises
 what is available and the recommended approach for inference:
@@ -534,7 +490,7 @@ what is available and the recommended approach for inference:
 | MI_IP | **No** | Not provided | Bootstrap full two-stage procedure |
 
 
-## 8. Generating Custom Datasets
+## 7. Generating Custom Datasets
 
 To generate your own simulated data with different parameters:
 
