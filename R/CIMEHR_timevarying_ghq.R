@@ -1,9 +1,9 @@
-#' Generalized Informative Visiting and Observation Processes in Electronic Health Records (GIVEHR)
-#' with Gauss--Hermite (GH) Quadrature
+#' Clinical Informative Missingness for Electronic Health Records (CIMEHR)
+#' with Gauss--Hermite (GH) Quadrature -- Time-Varying Variant
 #'
 #' @description
 #' Fits a three-stage semiparametric joint model for longitudinal Electronic
-#' Health Record (EHR) data, extending \code{\link{GIVEHR}} by replacing the
+#' Health Record (EHR) data, extending \code{\link{CIMEHR}} by replacing the
 #' closed-form marginal observation-probability approximation with
 #' Gauss--Hermite (GH) quadrature and an online Laplace filter. This enables
 #' exact integration over both the shared latent factor \eqn{U_i} and the
@@ -121,12 +121,12 @@
 #' }
 #'
 #' @details
-#' The model structure is the same as \code{\link{GIVEHR}} but the
+#' The model structure is the same as \code{\link{CIMEHR}} but the
 #' computational strategy differs in two key respects:
 #'
 #' \strong{Stage 2 -- Gauss--Hermite Quadrature.}
 #' Instead of the Laplace-style marginal approximation used in
-#' \code{\link{GIVEHR}}, the marginal observation-process log-likelihood
+#' \code{\link{CIMEHR}}, the marginal observation-process log-likelihood
 #' is evaluated by Gauss--Hermite quadrature over \eqn{U_i} (centred on
 #' the empirical Bayes posterior from Stage 1) and over \eqn{q_i}. The
 #' quadrature grid has \code{gh_points_U} nodes for \eqn{U_i} and a
@@ -146,12 +146,12 @@
 #' subject-level quantities.
 #'
 #' The visiting-process estimation (Stage 1) is identical to
-#' \code{\link{GIVEHR}}.
+#' \code{\link{CIMEHR}}.
 #'
 #' @note
 #' Computation time increases with \code{gh_points_U}, \code{gh_points_q},
 #' and the number of subjects. For very large datasets, consider using
-#' \code{\link{GIVEHR}} (which avoids quadrature) as a faster alternative.
+#' \code{\link{CIMEHR}} (which avoids quadrature) as a faster alternative.
 #'
 #' @references
 #' Yang, C.-H., Shi, X., and Mukherjee, B. (2026).
@@ -159,21 +159,21 @@
 #' arXiv:2602.15374. \doi{10.48550/arXiv.2602.15374}.
 #'
 #' @seealso
-#' \code{\link{GIVEHR}} for the base version without quadrature;
-#' \code{\link{GIVEHR_OU_PCL}} for the Ornstein-Uhlenbeck pairwise
+#' \code{\link{CIMEHR}} for the base version without quadrature;
+#' \code{\link{CIMEHR_timevarying_ou}} for the Ornstein-Uhlenbeck pairwise
 #' composite likelihood extension;
 #' \code{\link{sim_data_gen}} for simulating compatible data.
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
-#' fit <- GIVEHR_GH(data = dat, gh_points_U = 3, gh_points_q = 3)
+#' fit <- CIMEHR_timevarying_ghq(data = dat, gh_points_U = 3, gh_points_q = 3)
 #' print(fit)
 #'
 #' @importFrom stats as.formula binomial coef dnorm glm.fit model.matrix
 #'   nlminb pnorm setNames
 #' @importFrom utils head
 #' @export
-GIVEHR_GH <- function(
+CIMEHR_timevarying_ghq <- function(
     data,
     id_col                  = "id",
     time_col                = "time",
@@ -773,6 +773,6 @@ GIVEHR_GH <- function(
         theta_Y = theta_Y_hat
       )
     ),
-    class = "GIVEHR_GH"
+    class = "CIMEHR_timevarying_ghq"
   )
 }

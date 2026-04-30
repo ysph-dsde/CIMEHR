@@ -8,7 +8,7 @@
 #' handles irregular observation times naturally by modelling increments
 #' rather than levels.
 #'
-#' Unlike \code{\link{MI_IP}}, this approach produces a single completed
+#' Unlike \code{\link{Multiple_imputation_IP}}, this approach produces a single completed
 #' dataset (no pooling required), making it computationally faster but
 #' unable to account for imputation uncertainty in standard errors.
 #'
@@ -47,17 +47,17 @@
 #' @param ip_method Character string specifying the IP adjustment method
 #'   applied to the completed dataset. One of:
 #'   \describe{
-#'     \item{\code{"LMM"}}{Standard linear mixed model via
-#'       \code{\link{LMM}} (no IP adjustment; included for comparison).}
-#'     \item{\code{"Liang"}}{Joint model of Liang et al. (2009) via
-#'       \code{\link{JMVL_Liang}}.}
-#'     \item{\code{"IIRR_weighting"}}{Inverse intensity rate ratio
-#'       weighting via \code{\link{IIRR_balancing}} (using maximum likelihood
+#'     \item{\code{"Linear_mixed_model"}}{Standard linear mixed model via
+#'       \code{\link{Linear_mixed_model}} (no IP adjustment; included for comparison).}
+#'     \item{\code{"Joint_modeling_visiting_and_longitudinal_Liang"}}{Joint model of Liang et al. (2009) via
+#'       \code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}.}
+#'     \item{\code{"Inverse_intensity_rate_ratio_weighting"}}{Inverse intensity rate ratio
+#'       weighting via \code{\link{Inverse_intensity_rate_ratio_balancing}} (using maximum likelihood
 #'       estimation (MLE) weights).}
-#'     \item{\code{"IIRR_balancing"}}{Balancing-weights estimator of
-#'       Yiu and Su (2024) via \code{\link{IIRR_balancing}}.}
-#'     \item{\code{"PairLik"}}{Pairwise composite likelihood via
-#'       \code{\link{PairwiseLikelihood}}.}
+#'     \item{\code{"Inverse_intensity_rate_ratio_balancing"}}{Balancing-weights estimator of
+#'       Yiu and Su (2024) via \code{\link{Inverse_intensity_rate_ratio_balancing}}.}
+#'     \item{\code{"Pairwise_likelihood"}}{Pairwise composite likelihood via
+#'       \code{\link{Pairwise_likelihood}}.}
 #'   }
 #' @param visit_covs Character vector of covariate column names for the
 #'   visiting-process model (used by Liang and IIRR methods). Default is
@@ -69,12 +69,12 @@
 #'   random effects in the Liang method. Default is \code{NULL} (uses the
 #'   first element of \code{visit_covs}).
 #' @param outcome_formula A \code{\link[stats]{formula}} for the
-#'   longitudinal outcome model, used by linear mixed model (LMM),
+#'   longitudinal outcome model, used by linear mixed model (\code{Linear_mixed_model}),
 #'   inverse intensity rate ratio (IIRR), and pairwise likelihood (PairLik) methods.
 #'   Default is \code{NULL}, which constructs
 #'   \code{Y ~ <outcome_covs> + <time>}.
 #' @param random_formula A one-sided \code{\link[stats]{formula}} for the
-#'   LMM random effects (e.g., \code{~ 1 | id}). Default is \code{NULL},
+#'   \code{Linear_mixed_model} random effects (e.g., \code{~ 1 | id}). Default is \code{NULL},
 #'   which constructs \code{~ 1 | <id>}.
 #' @param ip_args A named list of additional arguments passed to the IP
 #'   method. Common options include:
@@ -83,10 +83,10 @@
 #'       parameter, default \code{0}).}
 #'     \item{For PairLik:}{\code{pair_sample} (integer; number of pairs
 #'       to sample).}
-#'     \item{For LMM:}{\code{visit_adjust} (\code{"OA"} or \code{"VA"}).}
+#'     \item{For Linear_mixed_model:}{\code{visit_adjust} (\code{"OA"} or \code{"VA"}).}
 #'   }
 #'
-#' @return An object of class \code{"LI_IP_result"}, which is a named list
+#' @return An object of class \code{"Linear_increment_IP_result"}, which is a named list
 #'   with the following components:
 #'
 #' \describe{
@@ -126,7 +126,7 @@
 #' coefficient estimation.
 #'
 #' S3 methods \code{print} and \code{summary} are available for objects
-#' of class \code{"LI_IP_result"}.
+#' of class \code{"Linear_increment_IP_result"}.
 #'
 #' @references
 #' Odd O. Aalen and Nina Gunnes (2010). A dynamic approach for reconstructing
@@ -136,12 +136,12 @@
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 80,
 #'                     c("id", "Z", "X", "time", "R", "Y", "C")]
-#' fit <- LI_IP(dat, ip_method = "LMM", visit_covs = c("Z", "X"))
+#' fit <- Linear_increment_IP(dat, ip_method = "Linear_mixed_model", visit_covs = c("Z", "X"))
 #' print(fit)
 #'
 #' @importFrom stats as.formula model.frame model.matrix predict
 #' @export
-LI_IP <- function(
+Linear_increment_IP <- function(
     data,
     # Column names
     id = "id",
@@ -155,7 +155,7 @@ LI_IP <- function(
     li_limit = ~ 1,
 
     # IP method settings
-    ip_method = c("LMM", "Liang", "IIRR_weighting", "IIRR_balancing", "PairLik"),
+    ip_method = c("Linear_mixed_model", "Joint_modeling_visiting_and_longitudinal_Liang", "Inverse_intensity_rate_ratio_weighting", "Inverse_intensity_rate_ratio_balancing", "Pairwise_likelihood"),
 
     # Common covariate specifications
     visit_covs = c("Z", "X"),
@@ -271,7 +271,7 @@ LI_IP <- function(
       imputed_data = imputed_data,
       call = call
     ),
-    class = "LI_IP_result"
+    class = "Linear_increment_IP_result"
   )
 }
 
@@ -382,13 +382,13 @@ LI_IP <- function(
                              ip_args = list()) {
 
   result <- switch(ip_method,
-                   "LMM" = {
+                   "Linear_mixed_model" = {
                      # Extract LMM-specific arguments with defaults
                      lmm_method <- ip_args$method %||% "REML"
                      lmm_optimizer <- ip_args$optimizer %||% "nlminb"
                      lmm_visit_adjust <- ip_args$visit_adjust  # NULL is valid default
 
-                     coefs <- LMM(
+                     coefs <- Linear_mixed_model(
                        data = data,
                        id = id,
                        fixed = outcome_formula,
@@ -404,8 +404,8 @@ LI_IP <- function(
                      )
                    },
 
-                   "Liang" = {
-                     fit <- JMVL_Liang(
+                   "Joint_modeling_visiting_and_longitudinal_Liang" = {
+                     fit <- Joint_modeling_visiting_and_longitudinal_Liang(
                        data = data,
                        id = id,
                        time = time,
@@ -422,12 +422,12 @@ LI_IP <- function(
                      )
                    },
 
-                   "IIRR_weighting" = {
+                   "Inverse_intensity_rate_ratio_weighting" = {
                      # Extract IIRR-specific arguments with defaults
                      phi <- ip_args$phi %||% 0
                      balance_covs <- ip_args$balance_covs  # NULL uses visit_covs in function
 
-                     fit <- IIRR_balancing(
+                     fit <- Inverse_intensity_rate_ratio_balancing(
                        data = data,
                        id = id,
                        time = time,
@@ -447,12 +447,12 @@ LI_IP <- function(
                      )
                    },
 
-                   "IIRR_balancing" = {
+                   "Inverse_intensity_rate_ratio_balancing" = {
                      # Extract IIRR-specific arguments with defaults
                      phi <- ip_args$phi %||% 0
                      balance_covs <- ip_args$balance_covs  # NULL uses visit_covs in function
 
-                     fit <- IIRR_balancing(
+                     fit <- Inverse_intensity_rate_ratio_balancing(
                        data = data,
                        id = id,
                        time = time,
@@ -472,12 +472,12 @@ LI_IP <- function(
                      )
                    },
 
-                   "PairLik" = {
+                   "Pairwise_likelihood" = {
                      # Extract PairLik-specific arguments with defaults
                      pair_sample <- ip_args$pair_sample  # NULL uses all pairs
                      pair_family <- ip_args$family %||% "gaussian"
 
-                     fit <- PairwiseLikelihood(
+                     fit <- Pairwise_likelihood(
                        data = data[data[[obs_indicator]] == 1, ],
                        formula = outcome_formula,
                        id_col = id,

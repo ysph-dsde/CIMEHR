@@ -1,4 +1,4 @@
-#' Fit a Linear Mixed Model (LMM) for Longitudinal Data
+#' Fit a Linear Mixed Model for Longitudinal Data
 #'
 #' @description
 #' Fits a linear mixed-effects model (LMM) to longitudinal data using
@@ -84,20 +84,20 @@
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
-#' fit <- LMM(dat, fixed = Y ~ Z + X + time,
+#' fit <- Linear_mixed_model(dat, fixed = Y ~ Z + X + time,
 #'            random = ~ 1 | id, obs_indicator = "R")
 #' print(fit)
 #'
 #' @importFrom stats ave na.omit update
 #' @export
-LMM <- function(data,
-                id = "id",
-                fixed = Y ~ 1,
-                random = ~ 1 | id,
-                obs_indicator = NULL,
-                visit_adjust = NULL,
-                method = "REML",
-                optimizer = "nlminb") {
+Linear_mixed_model <- function(data,
+                               id = "id",
+                               fixed = Y ~ 1,
+                               random = ~ 1 | id,
+                               obs_indicator = NULL,
+                               visit_adjust = NULL,
+                               method = "REML",
+                               optimizer = "nlminb") {
 
   work_data <- data
 
@@ -132,5 +132,5 @@ LMM <- function(data,
   fit <- nlme::lme(fixed, data = work_data, random = random, method = method, control = ctrl)
 
   result <- summary(fit)$tTable
-  return(structure(list(coefficients = result), class = "LMM_result"))
+  return(structure(list(coefficients = result), class = "Linear_mixed_model_result"))
 }

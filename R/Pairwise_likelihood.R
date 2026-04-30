@@ -49,7 +49,7 @@
 #' @param verbose Logical; if \code{TRUE}, progress messages are printed.
 #'   Default is \code{FALSE}.
 #'
-#' @return An object of class \code{"PairwiseLikelihood"}, which is a
+#' @return An object of class \code{"Pairwise_likelihood"}, which is a
 #'   named list with the following components:
 #'
 #' \describe{
@@ -97,7 +97,7 @@
 #' Optimization is performed with \code{\link[stats]{optim}} using BFGS.
 #'
 #' S3 methods \code{print} and \code{summary} are available for objects
-#' of class \code{"PairwiseLikelihood"}.
+#' of class \code{"Pairwise_likelihood"}.
 #'
 #' @note
 #' This function requires the \pkg{Rcpp} and \pkg{numDeriv} packages. The
@@ -116,14 +116,14 @@
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 100 &
 #'                     sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
-#' fit <- PairwiseLikelihood(dat, formula = Y ~ Z + X + time,
+#' fit <- Pairwise_likelihood(dat, formula = Y ~ Z + X + time,
 #'                           pair_sample = 200)
 #' print(fit)
 #'
 #' @importFrom stats coef complete.cases glm.fit lm.fit model.frame
 #'   model.matrix optim terms update
 #' @export
-PairwiseLikelihood <- function(
+Pairwise_likelihood <- function(
     data,
     formula,
     id_col      = "id",
@@ -230,7 +230,7 @@ PairwiseLikelihood <- function(
     }
   }
 
-  if (verbose) message(sprintf("[PairwiseLikelihood] family=%s, G=%d subjects, N=%d rows, pairs=%d",
+  if (verbose) message(sprintf("[Pairwise_likelihood] family=%s, G=%d subjects, N=%d rows, pairs=%d",
                                family, G, nrow(df), ncol(subj_pairs)))
 
   # 7) optimize
@@ -270,5 +270,5 @@ PairwiseLikelihood <- function(
     G           = G,
     k_pairs     = ncol(subj_pairs),
     pair_sample = pair_sample
-  ), class = "PairwiseLikelihood")
+  ), class = "Pairwise_likelihood")
 }

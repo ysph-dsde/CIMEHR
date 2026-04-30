@@ -9,8 +9,8 @@
 #' linear longitudinal outcome model with latent-factor-linked random effects.
 #' The data-generating mechanism matches the model specification in
 #' Yang, Shi, and Mukherjee (2025) and is suitable for
-#' evaluating \code{\link{GIVEHR}}, \code{\link{GIVEHR_GH}}, and
-#' \code{\link{GIVEHR_OU_PCL}}.
+#' evaluating \code{\link{CIMEHR}}, \code{\link{CIMEHR_timevarying_ghq}}, and
+#' \code{\link{CIMEHR_timevarying_ou}}.
 #'
 #' @param n Integer; number of subjects to simulate.
 #' @param time.start Numeric scalar; start of the observation window.
@@ -94,12 +94,12 @@
 #' @param sigma_y Positive numeric scalar; residual standard deviation of
 #'   the outcome measurement error. Default is \code{1}.
 #'
-#' @return An object of class \code{"sim_GIVEHR_OU_PCL"}, which is a named
+#' @return An object of class \code{"sim_CIMEHR_timevarying_ou"}, which is a named
 #'   list with the following components:
 #'
 #' @seealso
-#' \code{\link{GIVEHR}}, \code{\link{GIVEHR_GH}}, and
-#' \code{\link{GIVEHR_OU_PCL}} for fitting models to the simulated data.
+#' \code{\link{CIMEHR}}, \code{\link{CIMEHR_timevarying_ghq}}, and
+#' \code{\link{CIMEHR_timevarying_ou}} for fitting models to the simulated data.
 #'
 #' @examples
 #' dat <- sim_data_gen(n = 30, seed = 42)
@@ -379,6 +379,6 @@ sim_data_gen <- function(
         beta = beta, beta_t = beta_t, theta = theta, Sigma_b = Sigma_b, sigma_y = sigma_y
       )
     ),
-    class = "sim_GIVEHR_OU_PCL"
+    class = "sim_CIMEHR_timevarying_ou"
   )
 }

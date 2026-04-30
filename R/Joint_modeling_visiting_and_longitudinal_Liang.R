@@ -96,18 +96,18 @@
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
-#' fit <- JMVL_Liang(dat)
+#' fit <- Joint_modeling_visiting_and_longitudinal_Liang(dat)
 #' print(fit)
 #'
 #' @export
-JMVL_Liang <- function(data,
-                       id = "id",
-                       time = "time",
-                       outcome = "Y",
-                       obs_indicator = "R",
-                       visit_covs = c("Z", "X"),
-                       long_covs = c("Z", "X"),
-                       random_covs = "Z") {
+Joint_modeling_visiting_and_longitudinal_Liang <- function(data,
+                                                           id = "id",
+                                                           time = "time",
+                                                           outcome = "Y",
+                                                           obs_indicator = "R",
+                                                           visit_covs = c("Z", "X"),
+                                                           long_covs = c("Z", "X"),
+                                                           random_covs = "Z") {
 
   if (!requireNamespace("nleqslv", quietly = TRUE)) {
     stop("Package 'nleqslv' is required. Install it with: install.packages('nleqslv')",
@@ -232,5 +232,5 @@ JMVL_Liang <- function(data,
     Lambda_C_est = Lambda_C_est,
     sigma_sq_hat = sigma_sq_hat,
     beta_hat = beta_hat
-  ), class = "JMVL_Liang"))
+  ), class = "Joint_modeling_visiting_and_longitudinal_Liang"))
 }

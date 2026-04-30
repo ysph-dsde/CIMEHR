@@ -45,7 +45,7 @@
 #'   weights to explore sensitivity to unmeasured confounding of the
 #'   visit process.
 #'
-#' @return An object of class \code{"IIRR_balancing"}, which is a named
+#' @return An object of class \code{"Inverse_intensity_rate_ratio_balancing"}, which is a named
 #'   list with the following components:
 #'
 #' \describe{
@@ -110,7 +110,7 @@
 #' MLE weights (\code{beta_mle}).
 #'
 #' S3 methods \code{print} and \code{summary} are available for objects
-#' of class \code{"IIRR_balancing"}.
+#' of class \code{"Inverse_intensity_rate_ratio_balancing"}.
 #'
 #' @note
 #' This function requires the \pkg{nleqslv} package.
@@ -123,20 +123,20 @@
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
-#' fit <- IIRR_balancing(dat, visit_covs = c("Z", "X"))
+#' fit <- Inverse_intensity_rate_ratio_balancing(dat, visit_covs = c("Z", "X"))
 #' print(fit)
 #'
 #' @importFrom stats as.formula model.frame model.matrix optim na.pass
 #' @export
-IIRR_balancing <- function(data,
-                           id = "id",
-                           time = "time",
-                           outcome = "Y",
-                           obs_indicator = "R",
-                           visit_covs = c("Z", "X"),
-                           balance_covs = NULL,
-                           formula = NULL,
-                           phi = 0) {
+Inverse_intensity_rate_ratio_balancing <- function(data,
+                                                   id = "id",
+                                                   time = "time",
+                                                   outcome = "Y",
+                                                   obs_indicator = "R",
+                                                   visit_covs = c("Z", "X"),
+                                                   balance_covs = NULL,
+                                                   formula = NULL,
+                                                   phi = 0) {
 
   if (!requireNamespace("nleqslv", quietly = TRUE)) {
     stop("Package 'nleqslv' is required. Install it with: install.packages('nleqslv')")
@@ -352,5 +352,5 @@ IIRR_balancing <- function(data,
       gamma = gamma_solve$termcd,
       balancing = bal_convergence
     )
-  ), class = "IIRR_balancing"))
+  ), class = "Inverse_intensity_rate_ratio_balancing"))
 }

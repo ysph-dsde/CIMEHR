@@ -34,7 +34,7 @@
 #'   A user-supplied formula overrides this (e.g.,
 #'   \code{Y ~ Z + X + Z:X + time} for interactions).
 #'
-#' @return An object of class \code{"IIRR_weighting"}, which is a named
+#' @return An object of class \code{"Inverse_intensity_rate_ratio_weighting"}, which is a named
 #'   list with two components:
 #'
 #' \describe{
@@ -66,7 +66,7 @@
 #' This function requires the \pkg{nleqslv} package.
 #'
 #' No standard errors are returned. For inference, consider using
-#' \code{\link{IIRR_balancing}} which provides balancing-weights
+#' \code{\link{Inverse_intensity_rate_ratio_balancing}} which provides balancing-weights
 #' estimates, or bootstrap the entire procedure.
 #'
 #' @references
@@ -76,18 +76,18 @@
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
-#' fit <- IIRR_weighting(dat, visit_covs = c("Z", "X"))
+#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
 #' print(fit)
 #'
 #' @importFrom stats as.formula model.frame model.matrix na.pass
 #' @export
-IIRR_weighting <- function(data,
-                           id = "id",
-                           time = "time",
-                           outcome = "Y",
-                           obs_indicator = "R",
-                           visit_covs = c("Z", "X"),
-                           formula = NULL) {
+Inverse_intensity_rate_ratio_weighting <- function(data,
+                                                   id = "id",
+                                                   time = "time",
+                                                   outcome = "Y",
+                                                   obs_indicator = "R",
+                                                   visit_covs = c("Z", "X"),
+                                                   formula = NULL) {
 
   if (!requireNamespace("nleqslv", quietly = TRUE)) {
     stop("Package 'nleqslv' is required. Install it with: install.packages('nleqslv')",
@@ -163,5 +163,5 @@ IIRR_weighting <- function(data,
   return(structure(list(
     gamma_hat = gamma_hat,
     beta_hat = beta_hat
-  ), class = "IIRR_weighting"))
+  ), class = "Inverse_intensity_rate_ratio_weighting"))
 }

@@ -3,19 +3,19 @@
 #' Computes bootstrap standard errors and percentile confidence intervals
 #' by resampling subjects with replacement and re-fitting the original model.
 #' Suitable for all selected methods that do not provide closed-form standard
-#' errors: \code{\link{GIVEHR_GH}}, \code{\link{EHRJoint}},
-#' \code{\link{JMVL_Liang}}, \code{\link{IIRR_weighting}}, and
-#' \code{\link{IIRR_balancing}}. Can also supplement the sandwich standard
-#' errors from \code{\link{GIVEHR}} and \code{\link{GIVEHR_OU_PCL}}.
+#' errors: \code{\link{CIMEHR_timevarying_ghq}}, \code{\link{EHRJoint}},
+#' \code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}, \code{\link{Inverse_intensity_rate_ratio_weighting}}, and
+#' \code{\link{Inverse_intensity_rate_ratio_balancing}}. Can also supplement the sandwich standard
+#' errors from \code{\link{CIMEHR}} and \code{\link{CIMEHR_timevarying_ou}}.
 #'
-#' For two-stage methods (\code{\link{LI_IP}}, \code{\link{MI_IP}}), the
+#' For two-stage methods (\code{\link{Linear_increment_IP}}, \code{\link{Multiple_imputation_IP}}), the
 #' bootstrap must cover the full two-stage procedure. We recommend users
 #' implement a manual subject-level bootstrap loop.
 #'
 #' @param fit A fitted model object from one of the selected method functions.
-#'   Supported classes: \code{"GIVEHR"}, \code{"GIVEHR_GH"},
-#'   \code{"GIVEHR_OU_PCL"}, \code{"EHRJoint"}, \code{"JMVL_Liang"},
-#'   \code{"IIRR_weighting"}, \code{"IIRR_balancing"}.
+#'   Supported classes: \code{"CIMEHR"}, \code{"CIMEHR_timevarying_ghq"},
+#'   \code{"CIMEHR_timevarying_ou"}, \code{"EHRJoint"}, \code{"Joint_modeling_visiting_and_longitudinal_Liang"},
+#'   \code{"Inverse_intensity_rate_ratio_weighting"}, \code{"Inverse_intensity_rate_ratio_balancing"}.
 #' @param data The \code{data.frame} used to fit \code{fit}, in long
 #'   (panel) format with one row per subject-visit.
 #' @param id Character string giving the name of the subject identifier
@@ -29,7 +29,7 @@
 #'   defaults listed in the Details section. Names must match the argument
 #'   names of the underlying fitting function exactly; unrecognised names
 #'   trigger a warning.
-#' @param which_estimate For \code{"IIRR_balancing"} fits only: which
+#' @param which_estimate For \code{"Inverse_intensity_rate_ratio_balancing"} fits only: which
 #'   estimator to display in \code{print} and \code{summary}. One of
 #'   \code{"bal"} (default, balancing weights) or \code{"mle"} (maximum likelihood
 #'   estimation (MLE) weights). Both estimators are always stored in
@@ -50,7 +50,7 @@
 #'     vector from one bootstrap replicate, covering \emph{all} estimated
 #'     stages. Columns are prefixed by stage: \code{"s1."} (visiting
 #'     process), \code{"s2."} (observation process, where applicable),
-#'     \code{"s3."} (longitudinal outcome). For \code{"IIRR_balancing"},
+#'     \code{"s3."} (longitudinal outcome). For \code{"Inverse_intensity_rate_ratio_balancing"},
 #'     outcome columns are prefixed \code{"s3.bal."} and \code{"s3.mle."}.}
 #'   \item{\code{se}}{Named numeric vector of bootstrap standard errors
 #'     for the Stage-3 outcome coefficients of the displayed estimator
@@ -63,7 +63,7 @@
 #'   \item{\code{B}}{Number of replicates requested.}
 #'   \item{\code{B_success}}{Number of replicates that converged.}
 #'   \item{\code{method}}{Character string; class of the original fit.}
-#'   \item{\code{which_estimate}}{For \code{"IIRR_balancing"}: which
+#'   \item{\code{which_estimate}}{For \code{"Inverse_intensity_rate_ratio_balancing"}: which
 #'     estimator is shown in print/summary (\code{"bal"} or \code{"mle"}).
 #'     \code{NULL} for all other methods.}
 #'   \item{\code{call}}{The matched call.}
@@ -84,7 +84,7 @@
 #' shown below. Names must match the argument names of the underlying
 #' fitting function exactly.
 #'
-#' \strong{GIVEHR, GIVEHR_GH, GIVEHR_OU_PCL:}
+#' \strong{CIMEHR, CIMEHR_timevarying_ghq, CIMEHR_timevarying_ou:}
 #' \describe{
 #'   \item{\code{covars_visit_XV}}{Default \code{c("Z", "X")}.}
 #'   \item{\code{covars_outcome_fixed_XY}}{Default \code{c("Z", "X")}.}
@@ -93,21 +93,21 @@
 #'   \item{\code{covars_obs_random_ZO}}{Default \code{"Z"}.}
 #' }
 #'
-#' \strong{EHRJoint, JMVL_Liang:}
+#' \strong{EHRJoint, Joint_modeling_visiting_and_longitudinal_Liang:}
 #' \describe{
 #'   \item{\code{visit_covs}}{Default \code{c("Z", "X")}.}
 #'   \item{\code{long_covs}}{Default \code{c("Z", "X")}.}
 #'   \item{\code{random_covs}}{Default \code{"Z"}.}
 #' }
 #'
-#' \strong{IIRR_weighting:}
+#' \strong{Inverse_intensity_rate_ratio_weighting:}
 #' \describe{
 #'   \item{\code{visit_covs}}{Default \code{c("Z", "X")}.}
 #'   \item{\code{formula}}{Default \code{NULL} (auto-constructed from
 #'     \code{visit_covs} and \code{time}).}
 #' }
 #'
-#' \strong{IIRR_balancing:}
+#' \strong{Inverse_intensity_rate_ratio_balancing:}
 #' \describe{
 #'   \item{\code{visit_covs}}{Default \code{c("Z", "X")}.}
 #'   \item{\code{balance_covs}}{Default \code{NULL} (uses
@@ -117,13 +117,13 @@
 #' }
 #'
 #' @section Plug-in vs. bootstrap:
-#' \code{\link{GIVEHR}} and \code{\link{GIVEHR_OU_PCL}} already compute
+#' \code{\link{CIMEHR}} and \code{\link{CIMEHR_timevarying_ou}} already compute
 #' sandwich (plug-in) standard errors from per-subject score contributions
 #' evaluated at the fitted parameters --- no re-fitting is needed.
 #' Bootstrap is provided for those methods as an optional check.
-#' For \code{\link{GIVEHR_GH}}, \code{\link{EHRJoint}},
-#' \code{\link{JMVL_Liang}}, \code{\link{IIRR_weighting}}, and
-#' \code{\link{IIRR_balancing}}, per-subject score contributions are not
+#' For \code{\link{CIMEHR_timevarying_ghq}}, \code{\link{EHRJoint}},
+#' \code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}, \code{\link{Inverse_intensity_rate_ratio_weighting}}, and
+#' \code{\link{Inverse_intensity_rate_ratio_balancing}}, per-subject score contributions are not
 #' exposed by the fitting routines, so bootstrap is the recommended
 #' approach for uncertainty quantification.
 #'
@@ -139,7 +139,7 @@
 #' apply(bs$boot_matrix[, grepl("^s1\\.", colnames(bs$boot_matrix)), drop = FALSE],
 #'       2, sd)
 #'
-#' # Stage-2 SE (observation process, GIVEHR family)
+#' # Stage-2 SE (observation process, CIMEHR family)
 #' apply(bs$boot_matrix[, grepl("^s2\\.", colnames(bs$boot_matrix)), drop = FALSE],
 #'       2, sd)
 #' }
@@ -153,7 +153,7 @@
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
-#' fit <- IIRR_weighting(dat, visit_covs = c("Z", "X"))
+#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
 #' bs  <- bootstrap(fit, data = dat, B = 5, seed = 1)
 #' print(bs)
 #'
@@ -175,16 +175,16 @@ bootstrap <- function(fit,
   # -----------------------------------------------------------------------
   # Validate class
   # -----------------------------------------------------------------------
-  supported <- c("GIVEHR", "GIVEHR_GH", "GIVEHR_OU_PCL",
-                 "EHRJoint", "JMVL_Liang",
-                 "IIRR_weighting", "IIRR_balancing")
+  supported <- c("CIMEHR", "CIMEHR_timevarying_ghq", "CIMEHR_timevarying_ou",
+                 "EHRJoint", "Joint_modeling_visiting_and_longitudinal_Liang",
+                 "Inverse_intensity_rate_ratio_weighting", "Inverse_intensity_rate_ratio_balancing")
   fit_class <- class(fit)[1]
 
   if (!fit_class %in% supported) {
     stop(
       "bootstrap() does not support class '", fit_class, "'.\n",
       "Supported classes: ", paste(supported, collapse = ", "), ".\n",
-      "For LI_IP and MI_IP, bootstrap the full two-stage procedure manually.",
+      "For Linear_increment_IP and Multiple_imputation_IP, bootstrap the full two-stage procedure manually.",
       call. = FALSE
     )
   }
@@ -288,7 +288,7 @@ bootstrap <- function(fit,
       B              = B,
       B_success      = B_success,
       method         = fit_class,
-      which_estimate = if (fit_class == "IIRR_balancing") which_estimate else NULL,
+      which_estimate = if (fit_class == "Inverse_intensity_rate_ratio_balancing") which_estimate else NULL,
       call           = call
     ),
     class = "cimehr_bootstrap"
@@ -305,15 +305,15 @@ bootstrap <- function(fit,
 #' @noRd
 .bootstrap_known_covars <- function(fit_class) {
   switch(fit_class,
-         GIVEHR        = ,
-         GIVEHR_GH     = ,
-         GIVEHR_OU_PCL = c("covars_visit_XV", "covars_outcome_fixed_XY",
-                           "covars_outcome_link_ZY", "covars_obs_fixed_XO",
-                           "covars_obs_random_ZO"),
+         CIMEHR        = ,
+         CIMEHR_timevarying_ghq     = ,
+         CIMEHR_timevarying_ou = c("covars_visit_XV", "covars_outcome_fixed_XY",
+                                   "covars_outcome_link_ZY", "covars_obs_fixed_XO",
+                                   "covars_obs_random_ZO"),
          EHRJoint      = ,
-         JMVL_Liang    = c("visit_covs", "long_covs", "random_covs"),
-         IIRR_weighting = c("visit_covs", "formula"),
-         IIRR_balancing = c("visit_covs", "balance_covs", "formula", "phi"),
+         Joint_modeling_visiting_and_longitudinal_Liang    = c("visit_covs", "long_covs", "random_covs"),
+         Inverse_intensity_rate_ratio_weighting = c("visit_covs", "formula"),
+         Inverse_intensity_rate_ratio_balancing = c("visit_covs", "balance_covs", "formula", "phi"),
          character(0)
   )
 }
@@ -323,7 +323,7 @@ bootstrap <- function(fit,
 #' Returns a named vector covering every estimated parameter across all stages.
 #' Parameters are prefixed by stage: \code{"s1."} (visiting process),
 #' \code{"s2."} (observation process), \code{"s3."} (longitudinal outcome).
-#' For \code{"IIRR_balancing"} the outcome block is further prefixed
+#' For \code{"Inverse_intensity_rate_ratio_balancing"} the outcome block is further prefixed
 #' \code{"s3.bal."} and \code{"s3.mle."}.
 #'
 #' @keywords internal
@@ -332,11 +332,11 @@ bootstrap <- function(fit,
   switch(fit_class,
 
          # ------------------------------------------------------------------
-         # GIVEHR family: three stages with named sub-lists
+         # CIMEHR family: three stages with named sub-lists
          # ------------------------------------------------------------------
-         GIVEHR = ,
-         GIVEHR_GH = ,
-         GIVEHR_OU_PCL = {
+         CIMEHR = ,
+         CIMEHR_timevarying_ghq = ,
+         CIMEHR_timevarying_ou = {
            s1 <- setNames(fit$visiting_process$gamma_V,
                           paste0("s1.", names(fit$visiting_process$gamma_V)))
            obs <- fit$observation_process
@@ -347,7 +347,7 @@ bootstrap <- function(fit,
                       paste0("s2.delta.", names(obs$delta_latent_link)))
            else
              NULL
-           # GIVEHR_OU_PCL additionally carries phi_OU (scalar)
+           # CIMEHR_timevarying_ou additionally carries phi_OU (scalar)
            s2_phi <- if (!is.null(obs$phi_OU))
              c(s2.phi_OU = obs$phi_OU)
            else
@@ -368,27 +368,27 @@ bootstrap <- function(fit,
          },
 
          # ------------------------------------------------------------------
-         # JMVL_Liang: gamma (s1), beta (s3 — no separate obs process)
+         # Joint_modeling_visiting_and_longitudinal_Liang: gamma (s1), beta (s3 -- no separate obs process)
          # ------------------------------------------------------------------
-         JMVL_Liang = {
+         Joint_modeling_visiting_and_longitudinal_Liang = {
            s1 <- setNames(fit$gamma_hat, paste0("s1.", names(fit$gamma_hat)))
            s3 <- setNames(fit$beta_hat,  paste0("s3.", names(fit$beta_hat)))
            c(s1, s3)
          },
 
          # ------------------------------------------------------------------
-         # IIRR_weighting: gamma (s1), beta (s3)
+         # Inverse_intensity_rate_ratio_weighting: gamma (s1), beta (s3)
          # ------------------------------------------------------------------
-         IIRR_weighting = {
+         Inverse_intensity_rate_ratio_weighting = {
            s1 <- setNames(fit$gamma_hat, paste0("s1.", names(fit$gamma_hat)))
            s3 <- setNames(fit$beta_hat,  paste0("s3.", names(fit$beta_hat)))
            c(s1, s3)
          },
 
          # ------------------------------------------------------------------
-         # IIRR_balancing: gamma (s1), beta_bal and beta_mle (s3)
+         # Inverse_intensity_rate_ratio_balancing: gamma (s1), beta_bal and beta_mle (s3)
          # ------------------------------------------------------------------
-         IIRR_balancing = {
+         Inverse_intensity_rate_ratio_balancing = {
            s1      <- setNames(fit$gamma_hat,
                                paste0("s1.", names(fit$gamma_hat)))
            s3_bal  <- setNames(fit$beta_bal,
@@ -405,14 +405,14 @@ bootstrap <- function(fit,
 #' Select boot_matrix columns for the displayed estimator
 #'
 #' For \code{print} and \code{summary}, only the Stage-3 outcome columns
-#' (\code{"s3.*"}) are shown.  For \code{"IIRR_balancing"} the display is
+#' (\code{"s3.*"}) are shown.  For \code{"Inverse_intensity_rate_ratio_balancing"} the display is
 #' further restricted to \code{"s3.bal.*"} or \code{"s3.mle.*"} according
 #' to \code{which_estimate}.  All columns remain in \code{boot_matrix}.
 #'
 #' @keywords internal
 #' @noRd
 .bootstrap_display_cols <- function(fit_class, which_estimate, all_cols) {
-  if (fit_class == "IIRR_balancing") {
+  if (fit_class == "Inverse_intensity_rate_ratio_balancing") {
     prefix <- if (which_estimate == "bal") "^s3\\.bal\\." else "^s3\\.mle\\."
     return(grep(prefix, all_cols, value = TRUE))
   }
@@ -464,10 +464,10 @@ bootstrap <- function(fit,
   switch(fit_class,
 
          # ------------------------------------------------------------------
-         # GIVEHR family
+         # CIMEHR family
          # ------------------------------------------------------------------
-         GIVEHR = {
-           f <- GIVEHR(
+         CIMEHR = {
+           f <- CIMEHR(
              boot_data,
              id_col                  = id,
              covars_visit_XV         = cv("covars_visit_XV",         c("Z", "X")),
@@ -476,11 +476,11 @@ bootstrap <- function(fit,
              covars_obs_fixed_XO     = cv("covars_obs_fixed_XO",     c("Z", "X")),
              covars_obs_random_ZO    = cv("covars_obs_random_ZO",    "Z")
            )
-           .bootstrap_extract_coef(f, "GIVEHR", NULL)
+           .bootstrap_extract_coef(f, "CIMEHR", NULL)
          },
 
-         GIVEHR_GH = {
-           f <- GIVEHR_GH(
+         CIMEHR_timevarying_ghq = {
+           f <- CIMEHR_timevarying_ghq(
              boot_data,
              id_col                  = id,
              covars_visit_XV         = cv("covars_visit_XV",         c("Z", "X")),
@@ -489,11 +489,11 @@ bootstrap <- function(fit,
              covars_obs_fixed_XO     = cv("covars_obs_fixed_XO",     c("Z", "X")),
              covars_obs_random_ZO    = cv("covars_obs_random_ZO",    "Z")
            )
-           .bootstrap_extract_coef(f, "GIVEHR_GH", NULL)
+           .bootstrap_extract_coef(f, "CIMEHR_timevarying_ghq", NULL)
          },
 
-         GIVEHR_OU_PCL = {
-           f <- GIVEHR_OU_PCL(
+         CIMEHR_timevarying_ou = {
+           f <- CIMEHR_timevarying_ou(
              boot_data,
              id_col                  = id,
              covars_visit_XV         = cv("covars_visit_XV",         c("Z", "X")),
@@ -502,11 +502,11 @@ bootstrap <- function(fit,
              covars_obs_fixed_XO     = cv("covars_obs_fixed_XO",     c("Z", "X")),
              covars_obs_random_ZO    = cv("covars_obs_random_ZO",    "Z")
            )
-           .bootstrap_extract_coef(f, "GIVEHR_OU_PCL", NULL)
+           .bootstrap_extract_coef(f, "CIMEHR_timevarying_ou", NULL)
          },
 
          # ------------------------------------------------------------------
-         # EHRJoint / JMVL_Liang
+         # EHRJoint / Joint_modeling_visiting_and_longitudinal_Liang
          # ------------------------------------------------------------------
          EHRJoint = {
            f <- EHRJoint(
@@ -519,32 +519,32 @@ bootstrap <- function(fit,
            .bootstrap_extract_coef(f, "EHRJoint", NULL)
          },
 
-         JMVL_Liang = {
-           f <- JMVL_Liang(
+         Joint_modeling_visiting_and_longitudinal_Liang = {
+           f <- Joint_modeling_visiting_and_longitudinal_Liang(
              boot_data,
              id          = id,
              visit_covs  = cv("visit_covs",  c("Z", "X")),
              long_covs   = cv("long_covs",   c("Z", "X")),
              random_covs = cv("random_covs", "Z")
            )
-           .bootstrap_extract_coef(f, "JMVL_Liang", NULL)
+           .bootstrap_extract_coef(f, "Joint_modeling_visiting_and_longitudinal_Liang", NULL)
          },
 
          # ------------------------------------------------------------------
          # IIRR methods
          # ------------------------------------------------------------------
-         IIRR_weighting = {
-           f <- IIRR_weighting(
+         Inverse_intensity_rate_ratio_weighting = {
+           f <- Inverse_intensity_rate_ratio_weighting(
              boot_data,
              id         = id,
              visit_covs = cv("visit_covs", c("Z", "X")),
              formula    = cv("formula",    NULL)
            )
-           .bootstrap_extract_coef(f, "IIRR_weighting", NULL)
+           .bootstrap_extract_coef(f, "Inverse_intensity_rate_ratio_weighting", NULL)
          },
 
-         IIRR_balancing = {
-           f <- IIRR_balancing(
+         Inverse_intensity_rate_ratio_balancing = {
+           f <- Inverse_intensity_rate_ratio_balancing(
              boot_data,
              id           = id,
              visit_covs   = cv("visit_covs",   c("Z", "X")),
@@ -552,7 +552,7 @@ bootstrap <- function(fit,
              formula      = cv("formula",      NULL),
              phi          = cv("phi",          0)
            )
-           .bootstrap_extract_coef(f, "IIRR_balancing", NULL)
+           .bootstrap_extract_coef(f, "Inverse_intensity_rate_ratio_balancing", NULL)
          },
 
          stop("Unknown class in .bootstrap_refit: ", fit_class)
@@ -584,7 +584,7 @@ bootstrap <- function(fit,
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
-#' fit <- IIRR_weighting(dat, visit_covs = c("Z", "X"))
+#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
 #' bs  <- bootstrap(fit, data = dat, B = 5, seed = 1)
 #' print(bs)
 #'
@@ -642,7 +642,7 @@ print.cimehr_bootstrap <- function(x, digits = 4, ...) {
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
-#' fit <- IIRR_weighting(dat, visit_covs = c("Z", "X"))
+#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
 #' bs  <- bootstrap(fit, data = dat, B = 5, seed = 1)
 #' summary(bs)
 #'

@@ -1,16 +1,17 @@
-#' Generalized Informative Visiting and Observation Processes in Electronic Health Records (GIVEHR)
+#' Clinical Informative Missingness for Electronic Health Records (CIMEHR)
 #' with Ornstein--Uhlenbeck (OU) Pairwise Composite Likelihood (PCL) Extension
+#' -- Time-Varying Variant
 #'
 #' @description
 #' Fits a three-stage semiparametric joint model for longitudinal Electronic
-#' Health Record (EHR) data, extending \code{\link{GIVEHR}} by modelling
+#' Health Record (EHR) data, extending \code{\link{CIMEHR}} by modelling
 #' temporal serial correlation in the observation process with a stationary
 #' Ornstein--Uhlenbeck (OU) process and estimating the observation-process
 #' parameters via Pairwise Composite Likelihood (PCL).
 #'
 #' Stage 1 estimates the visiting-process intensity via Andersen--Gill
 #' partial likelihood with a log-normal frailty (identical to
-#' \code{\link{GIVEHR}}). Stage 2 maximises a pairwise composite
+#' \code{\link{CIMEHR}}). Stage 2 maximises a pairwise composite
 #' log-likelihood over adjacent (or all) within-subject visit pairs,
 #' integrating over the bivariate probit structure induced by the OU
 #' process. An analytic gradient is provided for efficiency. Stage 3
@@ -70,7 +71,7 @@
 #' @param verbose Logical; if \code{TRUE}, progress messages are printed
 #'   during estimation. Default is \code{FALSE}.
 #'
-#' @return An object of class \code{"GIVEHR_OU_PCL"}, which is a named list
+#' @return An object of class \code{"CIMEHR_timevarying_ou"}, which is a named list
 #' with the following components:
 #'
 #' \describe{
@@ -139,7 +140,7 @@
 #' }
 #'
 #' @details
-#' The model extends \code{\link{GIVEHR}} by introducing an
+#' The model extends \code{\link{CIMEHR}} by introducing an
 #' Ornstein--Uhlenbeck (OU) process \eqn{\xi_i(t)} in the observation model:
 #' \deqn{\tilde R_{ij} = \alpha^\top X_{ij}^O + \delta^\top Z_{ij}^O
 #'   \cdot U_i + q_i^\top Z_{ij}^O + \xi_i(t_{ij}),}
@@ -166,13 +167,13 @@
 #' log-likelihood is maximised with \code{\link[stats]{optim}} using the
 #' specified \code{optim_method}.
 #'
-#' \strong{Stages 1 and 3} are identical to \code{\link{GIVEHR}}, except
+#' \strong{Stages 1 and 3} are identical to \code{\link{CIMEHR}}, except
 #' that Stage 3 uses a static (non-filtered) version of \eqn{\omega_i(t)}
 #' and \eqn{\kappa_i(t)}.
 #'
 #' S3 methods \code{print}, \code{summary}, \code{coef}, \code{vcov}, and
 #' \code{confint} are available for objects of class
-#' \code{"GIVEHR_OU_PCL"}.
+#' \code{"CIMEHR_timevarying_ou"}.
 #'
 #' @references
 #' Yang, C.-H., Shi, X., and Mukherjee, B. (2026).
@@ -181,22 +182,22 @@
 #'
 #'
 #' @seealso
-#' \code{\link{GIVEHR}} for the base version without Ornstein--Uhlenbeck (OU) serial
+#' \code{\link{CIMEHR}} for the base version without Ornstein--Uhlenbeck (OU) serial
 #' correlation;
-#' \code{\link{GIVEHR_GH}} for the Gauss--Hermite quadrature variant;
+#' \code{\link{CIMEHR_timevarying_ghq}} for the Gauss--Hermite quadrature variant;
 #' \code{\link{sim_data_gen}} for simulating data compatible with this
 #' model;
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
-#' fit <- GIVEHR_OU_PCL(data = dat, pair_type = "adjacent")
+#' fit <- CIMEHR_timevarying_ou(data = dat, pair_type = "adjacent")
 #' print(fit)
 #'
 #' @importFrom stats as.formula binomial coef dnorm glm model.matrix
 #'   optim pnorm qnorm reformulate setNames median
 #' @importFrom utils combn
 #' @export
-GIVEHR_OU_PCL <- function(
+CIMEHR_timevarying_ou <- function(
     data,
     id_col                  = "id",
     time_col                = "time",
@@ -918,6 +919,6 @@ GIVEHR_OU_PCL <- function(
       ),
       call = call
     ),
-    class = "GIVEHR_OU_PCL"
+    class = "CIMEHR_timevarying_ou"
   )
 }

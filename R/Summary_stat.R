@@ -46,17 +46,17 @@
 #' This approach discards all within-subject temporal information and
 #' does not account for informative visiting or observation processes.
 #' It is included primarily as a naive benchmark for comparison with
-#' methods such as \code{\link{GIVEHR}}.
+#' methods such as \code{\link{CIMEHR}}.
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
-#' fit <- SummaryStat(dat, formula = ~ Z + X)
+#' fit <- Summary_stat(dat, formula = ~ Z + X)
 #' print(fit)
 #'
 #' @importFrom stats aggregate as.formula lm median
 #' @export
-SummaryStat <- function(data, id = "id", outcome = "Y", stat = "mean",
-                        formula = ~ 1, cov_stat = "mean") {
+Summary_stat <- function(data, id = "id", outcome = "Y", stat = "mean",
+                         formula = ~ 1, cov_stat = "mean") {
 
   # Helper: get stat function
   get_stat_fun <- function(s) {
@@ -102,5 +102,5 @@ SummaryStat <- function(data, id = "id", outcome = "Y", stat = "mean",
   fit <- lm(full_formula, data = outcome_agg)
 
   result <- summary(fit)$coefficients
-  return(structure(list(coefficients = result), class = "SummaryStat_result"))
+  return(structure(list(coefficients = result), class = "Summary_stat_result"))
 }

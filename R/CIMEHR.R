@@ -1,4 +1,4 @@
-#' Generalized Informative Visiting and Observation Processes in Electronic Health Records (GIVEHR)
+#' Clinical Informative Missingness for Electronic Health Records (CIMEHR) -- Joint Three-Stage Model
 #'
 #' @description
 #' Fits a three-stage semiparametric joint model for longitudinal Electronic
@@ -112,7 +112,7 @@
 #' }
 #'
 #' @details
-#' The GIVEHR estimator proceeds in three stages:
+#' The CIMEHR estimator proceeds in three stages:
 #'
 #' \strong{Stage 1 - Visiting Process.}
 #' The recurrent-event intensity for subject \eqn{i} is modelled as
@@ -160,16 +160,16 @@
 #' arXiv:2602.15374. \doi{10.48550/arXiv.2602.15374}.
 #'
 #' @seealso
-#' \code{\link{GIVEHR_GH}} for a Gauss-Hermite quadrature variant with
+#' \code{\link{CIMEHR_GH}} for a Gauss-Hermite quadrature variant with
 #' online filtering;
-#' \code{\link{GIVEHR_OU_PCL}} for the Ornstein-Uhlenbeck pairwise
+#' \code{\link{CIMEHR_OU_PCL}} for the Ornstein-Uhlenbeck pairwise
 #' composite likelihood extension;
 #' \code{\link{sim_data_gen}} for simulating data compatible with this model.
 #'
 #' @examples
 #' \donttest{
 #' data(sim_ehr_data)
-#' fit <- GIVEHR(data = sim_ehr_data)
+#' fit <- CIMEHR(data = sim_ehr_data)
 #' print(fit)
 #' summary(fit)
 #' coef(fit)
@@ -178,7 +178,7 @@
 #'
 #' @importFrom stats binomial coef dnorm glm nlminb plogis pnorm reformulate setNames
 #' @export
-GIVEHR <- function(
+CIMEHR <- function(
     data,
     id_col                  = "id",
     time_col                = "time",
@@ -677,6 +677,6 @@ GIVEHR <- function(
         vcov_joint    = V3
       )
     ),
-    class = "GIVEHR"
+    class = "CIMEHR"
   )
 }
