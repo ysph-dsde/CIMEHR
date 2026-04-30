@@ -184,16 +184,41 @@ extract_coefficient(fit_base, stage = "observation", parameter = "Z")
 
 ## Comparing fitted methods
 
-`method_comparisons()` can fit one or more methods and return process-specific comparison tables. Method-specific arguments are supplied through `method_args`.
+`method_comparisons()` can fit one or more methods and return process-specific comparison tables. Use `methods = "all"` to fit all methods supported by the comparison helper, or provide any subset of method names. Method-specific arguments are supplied through `method_args`.
 
 ``` r
-cmp <- method_comparisons(
+# See all supported method names
+available_comparison_methods()
+
+# Fit all available comparison methods
+cmp_all <- method_comparisons(
   data = sim_ehr_data,
-  methods = c(
-    "Summary_stat",
-    "Inverse_intensity_rate_ratio_weighting",
-    "CIMEHR"
+  methods = "all",
+  method_args = list(
+    Summary_stat = list(formula = ~ Z + X),
+    Linear_mixed_model = list(fixed = Y ~ Z + X + time,
+                              random = ~ 1 | id,
+                              obs_indicator = "R"),
+    Pairwise_likelihood = list(formula = Y ~ Z + X + time,
+                               pair_sample = 1000),
+    Linear_increment = list(ip_method = "Linear_mixed_model"),
+    Multiple_imputation = list(m = 2, maxit = 5,
+                               ip_method = "Linear_mixed_model")
   ),
+  printSE = TRUE,
+  print95CI = TRUE,
+  true_value_verbose = TRUE
+)
+
+print(cmp_all)
+cmp_all$tables$visiting
+cmp_all$tables$observation
+cmp_all$tables$outcome
+
+# Or fit only a subset
+cmp_subset <- method_comparisons(
+  data = sim_ehr_data,
+  methods = c("Summary_stat", "Inverse_intensity_rate_ratio_weighting", "CIMEHR"),
   method_args = list(
     Summary_stat = list(formula = ~ Z + X),
     Inverse_intensity_rate_ratio_weighting = list(visit_covs = c("Z", "X")),
@@ -204,19 +229,11 @@ cmp <- method_comparisons(
       covars_obs_fixed_XO = c("Z", "X"),
       covars_obs_random_link_ZO = "Z"
     )
-  ),
-  printSE = TRUE,
-  print95CI = TRUE,
-  true_value_verbose = TRUE
+  )
 )
-
-print(cmp)
-cmp$tables$visiting
-cmp$tables$observation
-cmp$tables$outcome
 ```
 
-For real, non-simulated data, the comparison tables omit true-value and bias columns unless you explicitly pass a `true_values` list.
+For real, non-simulated data, the comparison tables omit true-value, bias, and RMSE columns unless you explicitly pass a `true_values` list. If a method fails, `method_comparisons()` keeps going by default, stores the error in `cmp_all$errors`, and prints `NA` rows for that method.
 
 
 ## Bootstrap inference

@@ -309,16 +309,38 @@ confint(fit_ou)
 
 ## 7. Comparing methods with `method_comparisons()`
 
-The helper `method_comparisons()` fits any user-specified combination of methods and returns separate tables for the visiting, observation, and outcome processes. If a method does not estimate a given process, that entry is shown as `NA`.
+The helper `method_comparisons()` fits any user-specified combination of methods and returns separate tables for the visiting, observation, and outcome processes. If a method does not estimate a given process, that entry is shown as `NA`. Use `methods = "all"` to request all supported methods:
 
 ```{r method-comparisons, eval = FALSE}
-cmp <- method_comparisons(
+available_comparison_methods()
+
+cmp_all <- method_comparisons(
   data = sim_ehr_data,
-  methods = c(
-    "Summary_stat",
-    "Inverse_intensity_rate_ratio_weighting",
-    "CIMEHR"
+  methods = "all",
+  method_args = list(
+    Summary_stat = list(formula = ~ Z + X),
+    Linear_mixed_model = list(fixed = Y ~ Z + X + time,
+                              random = ~ 1 | id,
+                              obs_indicator = "R"),
+    Pairwise_likelihood = list(formula = Y ~ Z + X + time,
+                               pair_sample = 1000),
+    Linear_increment = list(ip_method = "Linear_mixed_model"),
+    Multiple_imputation = list(m = 2, maxit = 5,
+                               ip_method = "Linear_mixed_model")
   ),
+  printSE = TRUE,
+  print95CI = TRUE,
+  true_value_verbose = TRUE
+)
+
+print(cmp_all)
+cmp_all$tables$visiting
+cmp_all$tables$observation
+cmp_all$tables$outcome
+
+cmp_subset <- method_comparisons(
+  data = sim_ehr_data,
+  methods = c("Summary_stat", "Inverse_intensity_rate_ratio_weighting", "CIMEHR"),
   method_args = list(
     Summary_stat = list(formula = ~ Z + X),
     Inverse_intensity_rate_ratio_weighting = list(visit_covs = c("Z", "X")),
@@ -329,17 +351,11 @@ cmp <- method_comparisons(
       covars_obs_fixed_XO = c("Z", "X"),
       covars_obs_random_link_ZO = "Z"
     )
-  ),
-  printSE = TRUE,
-  print95CI = TRUE,
-  true_value_verbose = TRUE
+  )
 )
-
-print(cmp)
-cmp$tables$visiting
-cmp$tables$observation
-cmp$tables$outcome
 ```
+
+If a method fails, `method_comparisons()` keeps going by default, stores the error in `cmp_all$errors`, and prints `NA` rows for that method.
 
 ## 8. Bootstrap inference
 

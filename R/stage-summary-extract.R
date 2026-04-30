@@ -240,7 +240,9 @@ coef_stage <- extract_coefficient
 
 .extract_stage_LI_MI <- function(object, stage) {
   if (stage != "outcome") return(NULL)
-  list(estimate = object$coefficients, se = NULL)
+  se <- object$se
+  if (!is.null(se) && is.null(names(se))) names(se) <- names(object$coefficients)
+  list(estimate = object$coefficients, se = se)
 }
 
 .true_values_for_stage <- function(true_params, stage) {
