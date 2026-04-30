@@ -1,7 +1,7 @@
 # ============================================================================
 # Print and summary methods for the CIMEHR family
 #   - CIMEHR
-#   - CIMEHR_timevarying_ghq
+#   - CIMEHR_timevarying_integral
 #   - CIMEHR_timevarying_ou
 # ============================================================================
 
@@ -237,40 +237,40 @@ summary.CIMEHR <- function(object, level = 0.95, digits = 4,
 
 
 # ============================================================================
-# CIMEHR_timevarying_ghq
+# CIMEHR_timevarying_integral
 # ============================================================================
 
 #' Print a Clinical Informative Missingness for Electronic Health Records
-#' with Gauss-Hermite Quadrature (CIMEHR_timevarying_ghq) Fit
+#' with Gauss-Hermite Quadrature (CIMEHR_timevarying_integral) Fit
 #'
 #' Prints outcome fixed-effect estimates from the Gauss-Hermite quadrature
 #' variant. Standard errors are not available for this method.
 #'
-#' @param x A \code{CIMEHR_timevarying_ghq} object returned by
-#'   \code{\link{CIMEHR_timevarying_ghq}}.
+#' @param x A \code{CIMEHR_timevarying_integral} object returned by
+#'   \code{\link{CIMEHR_timevarying_integral}}.
 #' @param digits Number of significant digits. Default is 4.
 #' @param level Confidence level for Wald intervals. Default is 0.95.
 #' @param \dots Ignored.
 #'
 #' @return \code{x}, invisibly.
 #'
-#' @seealso \code{\link{summary.CIMEHR_timevarying_ghq}},
-#'   \code{\link{CIMEHR_timevarying_ghq}}
+#' @seealso \code{\link{summary.CIMEHR_timevarying_integral}},
+#'   \code{\link{CIMEHR_timevarying_integral}}
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
-#' fit <- CIMEHR_timevarying_ghq(data = dat, gh_points_U = 3, gh_points_q = 3)
+#' fit <- CIMEHR_timevarying_integral(data = dat, gh_points_U = 3, gh_points_q = 3)
 #' print(fit)
 #'
 #' @export
-print.CIMEHR_timevarying_ghq <- function(x, digits = 4, level = 0.95, ...) {
+print.CIMEHR_timevarying_integral <- function(x, digits = 4, level = 0.95, ...) {
   cat("\nCIMEHR (Gauss-Hermite) -- Outcome Fixed Effect (beta)\n")
   cat(strrep("=", 50), "\n")
 
   tbl <- .CIMEHR_coef_table(x$longitudinal_outcome$beta_Y, se = NULL, level = level)
   print(round(tbl, digits))
 
-  cat("\nNote: Standard errors are not available for CIMEHR_timevarying_ghq.\n")
+  cat("\nNote: Standard errors are not available for CIMEHR_timevarying_integral.\n")
   cat("Consider using CIMEHR() or bootstrap for inference.\n")
   cat("Use summary() for all process estimates, or\n")
   cat("summary(x, specify = \"visiting\" / \"observation\" / \"outcome\") for one layer.\n")
@@ -278,13 +278,13 @@ print.CIMEHR_timevarying_ghq <- function(x, digits = 4, level = 0.95, ...) {
 }
 
 #' Summarise a Clinical Informative Missingness for Electronic Health
-#' Records with Gauss-Hermite Quadrature (CIMEHR_timevarying_ghq) Fit
+#' Records with Gauss-Hermite Quadrature (CIMEHR_timevarying_integral) Fit
 #'
 #' Displays estimates for the requested layer(s) of the Gauss-Hermite
 #' variant. Standard errors are not available for this method.
 #'
-#' @param object A \code{CIMEHR_timevarying_ghq} object returned by
-#'   \code{\link{CIMEHR_timevarying_ghq}}.
+#' @param object A \code{CIMEHR_timevarying_integral} object returned by
+#'   \code{\link{CIMEHR_timevarying_integral}}.
 #' @param level Confidence level for Wald intervals. Default is 0.95.
 #' @param digits Number of significant digits. Default is 4.
 #' @param specify Character; which process layer to display. One of
@@ -294,19 +294,19 @@ print.CIMEHR_timevarying_ghq <- function(x, digits = 4, level = 0.95, ...) {
 #'
 #' @return \code{object}, invisibly.
 #'
-#' @seealso \code{\link{print.CIMEHR_timevarying_ghq}},
-#'   \code{\link{CIMEHR_timevarying_ghq}}
+#' @seealso \code{\link{print.CIMEHR_timevarying_integral}},
+#'   \code{\link{CIMEHR_timevarying_integral}}
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
-#' fit <- CIMEHR_timevarying_ghq(data = dat, gh_points_U = 3, gh_points_q = 3)
+#' fit <- CIMEHR_timevarying_integral(data = dat, gh_points_U = 3, gh_points_q = 3)
 #' summary(fit)
 #' summary(fit, specify = "outcome")
 #'
 #' @export
-summary.CIMEHR_timevarying_ghq <- function(object, level = 0.95, digits = 4,
-                                           specify = c("all", "visiting", "observation", "outcome"),
-                                           ...) {
+summary.CIMEHR_timevarying_integral <- function(object, level = 0.95, digits = 4,
+                                                specify = c("all", "visiting", "observation", "outcome"),
+                                                ...) {
   specify <- match.arg(specify)
   layers  <- .resolve_specify(specify,
                               c("visiting", "observation", "outcome"))
@@ -535,7 +535,7 @@ summary.CIMEHR_timevarying_ou <- function(object, level = 0.95, digits = 4,
 #' Extract Coefficients from a Clinical Informative Missingness for
 #' Electronic Health Records (CIMEHR) Fit
 #'
-#' @param object A \code{CIMEHR}, \code{CIMEHR_timevarying_ghq}, or
+#' @param object A \code{CIMEHR}, \code{CIMEHR_timevarying_integral}, or
 #'   \code{CIMEHR_timevarying_ou} object.
 #' @param type Which coefficients: \code{"outcome"} (default),
 #'   \code{"visiting"}, or \code{"observation"}.
@@ -561,7 +561,7 @@ coef.CIMEHR <- function(object, type = c("outcome", "visiting", "observation"), 
 
 #' @rdname coef.CIMEHR
 #' @export
-coef.CIMEHR_timevarying_ghq <- function(object, type = c("outcome", "visiting", "observation"), ...) {
+coef.CIMEHR_timevarying_integral <- function(object, type = c("outcome", "visiting", "observation"), ...) {
   type <- match.arg(type)
   switch(type,
          outcome     = object$longitudinal_outcome$beta_Y,

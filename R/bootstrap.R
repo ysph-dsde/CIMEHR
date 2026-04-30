@@ -3,7 +3,7 @@
 #' Computes bootstrap standard errors and percentile confidence intervals
 #' by resampling subjects with replacement and re-fitting the original model.
 #' Suitable for all selected methods that do not provide closed-form standard
-#' errors: \code{\link{CIMEHR_timevarying_ghq}}, \code{\link{EHRJoint}},
+#' errors: \code{\link{CIMEHR_timevarying_integral}}, \code{\link{EHRJoint}},
 #' \code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}, \code{\link{Inverse_intensity_rate_ratio_weighting}}, and
 #' \code{\link{Inverse_intensity_rate_ratio_balancing}}. Can also supplement the sandwich standard
 #' errors from \code{\link{CIMEHR}} and \code{\link{CIMEHR_timevarying_ou}}.
@@ -13,7 +13,7 @@
 #' implement a manual subject-level bootstrap loop.
 #'
 #' @param fit A fitted model object from one of the selected method functions.
-#'   Supported classes: \code{"CIMEHR"}, \code{"CIMEHR_timevarying_ghq"},
+#'   Supported classes: \code{"CIMEHR"}, \code{"CIMEHR_timevarying_integral"},
 #'   \code{"CIMEHR_timevarying_ou"}, \code{"EHRJoint"}, \code{"Joint_modeling_visiting_and_longitudinal_Liang"},
 #'   \code{"Inverse_intensity_rate_ratio_weighting"}, \code{"Inverse_intensity_rate_ratio_balancing"}.
 #' @param data The \code{data.frame} used to fit \code{fit}, in long
@@ -84,7 +84,7 @@
 #' shown below. Names must match the argument names of the underlying
 #' fitting function exactly.
 #'
-#' \strong{CIMEHR, CIMEHR_timevarying_ghq, CIMEHR_timevarying_ou:}
+#' \strong{CIMEHR, CIMEHR_timevarying_integral, CIMEHR_timevarying_ou:}
 #' \describe{
 #'   \item{\code{covars_visit_XV}}{Default \code{c("Z", "X")}.}
 #'   \item{\code{covars_outcome_fixed_XY}}{Default \code{c("Z", "X")}.}
@@ -121,7 +121,7 @@
 #' sandwich (plug-in) standard errors from per-subject score contributions
 #' evaluated at the fitted parameters --- no re-fitting is needed.
 #' Bootstrap is provided for those methods as an optional check.
-#' For \code{\link{CIMEHR_timevarying_ghq}}, \code{\link{EHRJoint}},
+#' For \code{\link{CIMEHR_timevarying_integral}}, \code{\link{EHRJoint}},
 #' \code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}, \code{\link{Inverse_intensity_rate_ratio_weighting}}, and
 #' \code{\link{Inverse_intensity_rate_ratio_balancing}}, per-subject score contributions are not
 #' exposed by the fitting routines, so bootstrap is the recommended
@@ -175,7 +175,7 @@ bootstrap <- function(fit,
   # -----------------------------------------------------------------------
   # Validate class
   # -----------------------------------------------------------------------
-  supported <- c("CIMEHR", "CIMEHR_timevarying_ghq", "CIMEHR_timevarying_ou",
+  supported <- c("CIMEHR", "CIMEHR_timevarying_integral", "CIMEHR_timevarying_ou",
                  "EHRJoint", "Joint_modeling_visiting_and_longitudinal_Liang",
                  "Inverse_intensity_rate_ratio_weighting", "Inverse_intensity_rate_ratio_balancing")
   fit_class <- class(fit)[1]
@@ -306,7 +306,7 @@ bootstrap <- function(fit,
 .bootstrap_known_covars <- function(fit_class) {
   switch(fit_class,
          CIMEHR        = ,
-         CIMEHR_timevarying_ghq     = ,
+         CIMEHR_timevarying_integral     = ,
          CIMEHR_timevarying_ou = c("covars_visit_XV", "covars_outcome_fixed_XY",
                                    "covars_outcome_random_link_ZY", "covars_obs_fixed_XO",
                                    "covars_obs_random_link_ZO"),
@@ -335,7 +335,7 @@ bootstrap <- function(fit,
          # CIMEHR family: three stages with named sub-lists
          # ------------------------------------------------------------------
          CIMEHR = ,
-         CIMEHR_timevarying_ghq = ,
+         CIMEHR_timevarying_integral = ,
          CIMEHR_timevarying_ou = {
            s1 <- setNames(fit$visiting_process$gamma_V,
                           paste0("s1.", names(fit$visiting_process$gamma_V)))
@@ -479,8 +479,8 @@ bootstrap <- function(fit,
            .bootstrap_extract_coef(f, "CIMEHR", NULL)
          },
 
-         CIMEHR_timevarying_ghq = {
-           f <- CIMEHR_timevarying_ghq(
+         CIMEHR_timevarying_integral = {
+           f <- CIMEHR_timevarying_integral(
              boot_data,
              id_col                  = id,
              covars_visit_XV         = cv("covars_visit_XV",         c("Z", "X")),
@@ -489,7 +489,7 @@ bootstrap <- function(fit,
              covars_obs_fixed_XO     = cv("covars_obs_fixed_XO",     c("Z", "X")),
              covars_obs_random_link_ZO    = cv("covars_obs_random_link_ZO",    "Z")
            )
-           .bootstrap_extract_coef(f, "CIMEHR_timevarying_ghq", NULL)
+           .bootstrap_extract_coef(f, "CIMEHR_timevarying_integral", NULL)
          },
 
          CIMEHR_timevarying_ou = {

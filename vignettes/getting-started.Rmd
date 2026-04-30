@@ -140,7 +140,7 @@ true_params$gamma
 | Proposed (this package) | ✓ | ✓ | All three processes | Tripartite model; full shared latent structure links Visiting, Observation, and Outcome. | CIMEHR |
 
 IP = informative visiting / informative presence adjustment; IO = informative observation adjustment.
-The “Proposed” row corresponds to `CIMEHR()`; `CIMEHR_timevarying_ghq()` and `CIMEHR_timevarying_ou()` extend this framework with more flexible observation-process modeling.
+The “Proposed” row corresponds to `CIMEHR()`; `CIMEHR_timevarying_integral()` and `CIMEHR_timevarying_ou()` extend this framework with more flexible observation-process modeling.
 
 ## 4. Simpler benchmark methods first
 
@@ -265,17 +265,31 @@ coef(fit_cimehr)
 confint(fit_cimehr)
 ```
 
+### 6.1.1 Stage-specific summaries and coefficient extraction
+
+You can print one process at a time and extract a particular coefficient programmatically:
+
+```{r stage-summary-extract, eval = FALSE}
+summary_visiting(fit_cimehr)
+summary_observation(fit_cimehr)
+summary_outcome(fit_cimehr)
+
+extract_coefficient(fit_cimehr, stage = "outcome", parameter = "Z")
+extract_coefficient(fit_cimehr, stage = "visiting", parameter = "Z")
+extract_coefficient(fit_cimehr, stage = "observation", parameter = "Z")
+```
+
 ### 6.2 CIMEHR with Gauss--Hermite quadrature
 
-`CIMEHR_timevarying_ghq()` uses Gauss--Hermite quadrature and online filtering for a more flexible observation process. Analytic standard errors are not currently exposed, so bootstrap inference is recommended.
+`CIMEHR_timevarying_integral()` uses numerical integration/Gauss--Hermite quadrature and online filtering for a more flexible observation process. Analytic standard errors are not currently exposed, so bootstrap inference is recommended.
 
-```{r cimehr-ghq, eval = FALSE}
-fit_ghq <- CIMEHR_timevarying_ghq(
+```{r cimehr-integral, eval = FALSE}
+fit_integral <- CIMEHR_timevarying_integral(
   data = sim_ehr_data,
   gh_points_U = 7,
   gh_points_q = 5
 )
-summary(fit_ghq)
+summary(fit_integral)
 ```
 
 ### 6.3 CIMEHR with OU pairwise composite likelihood
@@ -291,7 +305,41 @@ summary(fit_ou)
 confint(fit_ou)
 ```
 
-## 7. Bootstrap inference
+## 7. Comparing methods with `method_comparisons()`
+
+The helper `method_comparisons()` fits any user-specified combination of methods and returns separate tables for the visiting, observation, and outcome processes. If a method does not estimate a given process, that entry is shown as `NA`.
+
+```{r method-comparisons, eval = FALSE}
+cmp <- method_comparisons(
+  data = sim_ehr_data,
+  methods = c(
+    "Summary_stat",
+    "Inverse_intensity_rate_ratio_weighting",
+    "CIMEHR"
+  ),
+  method_args = list(
+    Summary_stat = list(formula = ~ Z + X),
+    Inverse_intensity_rate_ratio_weighting = list(visit_covs = c("Z", "X")),
+    CIMEHR = list(
+      covars_visit_XV = c("Z", "X"),
+      covars_outcome_fixed_XY = c("Z", "X"),
+      covars_outcome_random_link_ZY = "Z",
+      covars_obs_fixed_XO = c("Z", "X"),
+      covars_obs_random_link_ZO = "Z"
+    )
+  ),
+  printSE = TRUE,
+  print95CI = TRUE,
+  true_value_verbose = TRUE
+)
+
+print(cmp)
+cmp$tables$visiting
+cmp$tables$observation
+cmp$tables$outcome
+```
+
+## 8. Bootstrap inference
 
 Several methods do not provide closed-form standard errors. `bootstrap()` resamples subjects with replacement and refits the selected method.
 
@@ -324,7 +372,7 @@ bs_cimehr <- bootstrap(
 )
 ```
 
-## 8. Simulating custom data
+## 9. Simulating custom data
 
 ```{r custom-sim, eval = FALSE}
 dat <- sim_data_gen(

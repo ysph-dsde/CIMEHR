@@ -166,14 +166,14 @@
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
-#' fit <- CIMEHR_timevarying_ghq(data = dat, gh_points_U = 3, gh_points_q = 3)
+#' fit <- CIMEHR_timevarying_integral(data = dat, gh_points_U = 3, gh_points_q = 3)
 #' print(fit)
 #'
 #' @importFrom stats as.formula binomial coef dnorm glm.fit model.matrix
 #'   nlminb pnorm setNames
 #' @importFrom utils head
 #' @export
-CIMEHR_timevarying_ghq <- function(
+CIMEHR_timevarying_integral <- function(
     data,
     id_col                  = "id",
     time_col                = "time",
@@ -773,6 +773,6 @@ CIMEHR_timevarying_ghq <- function(
         theta_Y = theta_Y_hat
       )
     ),
-    class = "CIMEHR_timevarying_ghq"
+    class = "CIMEHR_timevarying_integral"
   )
 }

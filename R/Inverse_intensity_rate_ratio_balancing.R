@@ -290,8 +290,13 @@ Inverse_intensity_rate_ratio_balancing <- function(data,
   bal_result <- tryCatch({
     bal_fit_fun_sa(DesignMat_vis, constrain, offset_vis)
   }, error = function(e) {
-    warning("Balancing weight estimation failed: ", e$message,
-            ". Falling back to MLE weights.")
+    msg <- conditionMessage(e)
+    msg <- sub("\\.*$", "", msg)
+    message(
+      "Note: ", msg,
+      ". Check initial x and/or correctness of function. ",
+      "Falling back to Maximum Likelihood Estimation (MLE) weights."
+    )
     list(
       weights = (1 / hazest[vis_ind]) * offset_vis,
       convergence = -1

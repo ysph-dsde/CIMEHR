@@ -13,7 +13,7 @@
 2. the **observation process**: whether the outcome/biomarker is recorded at a visit;
 3. the **longitudinal outcome process**: the outcome trajectory among the target population.
 
-The main estimator is `CIMEHR()`. Two extensions, `CIMEHR_timevarying_ghq()` and `CIMEHR_timevarying_ou()`, allow more flexible time-varying/serially correlated observation-process structures.
+The main estimator is `CIMEHR()`. Two extensions, `CIMEHR_timevarying_integral()` and `CIMEHR_timevarying_ou()`, allow more flexible time-varying/serially correlated observation-process structures.
 
 ## Installation
 
@@ -122,7 +122,7 @@ fit <- CIMEHR(data = dat$long_data)
 | Proposed (this package) | ✓ | ✓ | All three processes | Tripartite model; full shared latent structure links Visiting, Observation, and Outcome. | CIMEHR |
 
 IP = informative visiting / informative presence adjustment; IO = informative observation adjustment.
-The “Proposed” row corresponds to `CIMEHR()`; `CIMEHR_timevarying_ghq()` and `CIMEHR_timevarying_ou()` extend this framework with more flexible observation-process modeling.
+The “Proposed” row corresponds to `CIMEHR()`; `CIMEHR_timevarying_integral()` and `CIMEHR_timevarying_ou()` extend this framework with more flexible observation-process modeling.
 
 ## Primary CIMEHR methods
 
@@ -136,7 +136,7 @@ fit_base <- CIMEHR(
   covars_obs_random_link_ZO = "Z"
 )
 
-fit_ghq <- CIMEHR_timevarying_ghq(data = sim_ehr_data,
+fit_integral <- CIMEHR_timevarying_integral(data = sim_ehr_data,
                                   gh_points_U = 7,
                                   gh_points_q = 5)
 
@@ -144,21 +144,74 @@ fit_ou <- CIMEHR_timevarying_ou(data = sim_ehr_data,
                                 pair_type = "adjacent")
 ```
 
-The `summary()` output for CIMEHR-family fits reports the frailty model and the observation-process link. For example, `CIMEHR()` and `CIMEHR_timevarying_ghq()` use a probit observation model, while `CIMEHR_timevarying_ou()` uses a probit observation model with OU serial correlation estimated by pairwise composite likelihood.
+The `summary()` output for CIMEHR-family fits reports the frailty model and the observation-process link. For example, `CIMEHR()` and `CIMEHR_timevarying_integral()` use a probit observation model, while `CIMEHR_timevarying_ou()` uses a probit observation model with OU serial correlation estimated by pairwise composite likelihood.
 
-## Extracting results
+
+## Extracting stage summaries and coefficients
+
+The regular `summary()` call prints model output but does not need to be saved before extracting coefficients. You can print one process at a time with the stage-specific summary helpers:
 
 ``` r
-coef(fit_base)
-coef(fit_base, type = "visiting")
-coef(fit_base, type = "observation")
-
-vcov(fit_base)
-confint(fit_base)
-
-fit_base$observation_process$delta_latent_random_link
-fit_base$longitudinal_outcome$theta_Y
+summary_visiting(fit_base)
+summary_observation(fit_base)
+summary_outcome(fit_base)
 ```
+
+If a method does not have the requested stage, the helper prints a note and exits without error. For example, outcome-only methods do not have a visiting or observation stage.
+
+You can extract all coefficients from a stage using `coef()` for CIMEHR-family methods or the more general `extract_coefficient()` helper:
+
+``` r
+# All outcome coefficients
+coef(fit_base, type = "outcome")
+
+# A particular outcome coefficient
+extract_coefficient(fit_base, stage = "outcome", parameter = "Z")
+
+# A particular visiting-process coefficient
+extract_coefficient(fit_base, stage = "visiting", parameter = "Z")
+
+# A particular observation-process coefficient
+extract_coefficient(fit_base, stage = "observation", parameter = "Z")
+```
+
+
+## Comparing fitted methods
+
+`method_comparisons()` can fit one or more methods and return process-specific comparison tables. Method-specific arguments are supplied through `method_args`.
+
+``` r
+cmp <- method_comparisons(
+  data = sim_ehr_data,
+  methods = c(
+    "Summary_stat",
+    "Inverse_intensity_rate_ratio_weighting",
+    "CIMEHR"
+  ),
+  method_args = list(
+    Summary_stat = list(formula = ~ Z + X),
+    Inverse_intensity_rate_ratio_weighting = list(visit_covs = c("Z", "X")),
+    CIMEHR = list(
+      covars_visit_XV = c("Z", "X"),
+      covars_outcome_fixed_XY = c("Z", "X"),
+      covars_outcome_random_link_ZY = "Z",
+      covars_obs_fixed_XO = c("Z", "X"),
+      covars_obs_random_link_ZO = "Z"
+    )
+  ),
+  printSE = TRUE,
+  print95CI = TRUE,
+  true_value_verbose = TRUE
+)
+
+print(cmp)
+cmp$tables$visiting
+cmp$tables$observation
+cmp$tables$outcome
+```
+
+For real, non-simulated data, the comparison tables omit true-value and bias columns unless you explicitly pass a `true_values` list.
+
 
 ## Bootstrap inference
 

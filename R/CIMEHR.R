@@ -160,7 +160,7 @@
 #' arXiv:2602.15374. \doi{10.48550/arXiv.2602.15374}.
 #'
 #' @seealso
-#' \code{\link{CIMEHR_timevarying_ghq}} for a Gauss-Hermite quadrature variant with
+#' \code{\link{CIMEHR_timevarying_integral}} for a Gauss-Hermite quadrature variant with
 #' online filtering;
 #' \code{\link{CIMEHR_timevarying_ou}} for the Ornstein-Uhlenbeck pairwise
 #' composite likelihood extension;

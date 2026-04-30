@@ -9,7 +9,7 @@
 #' linear longitudinal outcome model with latent-factor-linked random effects.
 #' The data-generating mechanism matches the model specification in
 #' Yang, Shi, and Mukherjee (2025) and is suitable for
-#' evaluating \code{\link{CIMEHR}}, \code{\link{CIMEHR_timevarying_ghq}}, and
+#' evaluating \code{\link{CIMEHR}}, \code{\link{CIMEHR_timevarying_integral}}, and
 #' \code{\link{CIMEHR_timevarying_ou}}.
 #'
 #' @param n Integer; number of subjects to simulate.
@@ -98,7 +98,7 @@
 #'   list with the following components:
 #'
 #' @seealso
-#' \code{\link{CIMEHR}}, \code{\link{CIMEHR_timevarying_ghq}}, and
+#' \code{\link{CIMEHR}}, \code{\link{CIMEHR_timevarying_integral}}, and
 #' \code{\link{CIMEHR_timevarying_ou}} for fitting models to the simulated data.
 #'
 #' @examples

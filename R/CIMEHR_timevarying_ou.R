@@ -184,7 +184,7 @@
 #' @seealso
 #' \code{\link{CIMEHR}} for the base version without Ornstein--Uhlenbeck (OU) serial
 #' correlation;
-#' \code{\link{CIMEHR_timevarying_ghq}} for the Gauss--Hermite quadrature variant;
+#' \code{\link{CIMEHR_timevarying_integral}} for the Gauss--Hermite quadrature variant;
 #' \code{\link{sim_data_gen}} for simulating data compatible with this
 #' model;
 #'
