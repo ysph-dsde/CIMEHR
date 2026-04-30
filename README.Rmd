@@ -91,7 +91,7 @@ fit <- CIMEHR(data = dat$long_data)
 
 ## Method comparison
 
-This table shows a comprehensive comparison of statistical methods for longitudinal EHR data. Methods are differentiated by whether they account for informative visiting (IP) and informative observation (IO), the specific scope of the shared latent structure linking these processes to the outcome, and the adjustment mechanism applied. Symbols: ✓ = Explicitly handled/modeled; ✗ = Ignored or not handled. Abbreviations: LMM, linear mixed model; VA/OA, visit/observation-adjusted; JMVL, joint modeling of visiting and longitudinal data; MAR, missing at random; MI, multiple imputation; LI, linear increment. 
+This table shows a comprehensive comparison of statistical methods for longitudinal EHR data. Methods are differentiated by whether they account for informative visiting (IP) and informative observation (IO), the specific scope of the shared latent structure linking these processes to the outcome, and the adjustment mechanism applied. Symbols: ✓ = Explicitly handled/modeled; ✗ = Ignored or not handled. Abbreviations: LMM, linear mixed model; VA/OA, visit/observation-adjusted; JMVL, joint modeling of visiting and longitudinal data; IIRR, inverse intensity rate ratio; MAR, missing at random; MI, multiple imputation; LI, linear increment. 
 
 ### Outcome-only
 
@@ -110,7 +110,7 @@ This table shows a comprehensive comparison of statistical methods for longitudi
 | JMVL-G (Gasparini et al., 2020) | ✓ | ✗ | Visiting & Outcome | Joint likelihood modeling inter-visit times via shared random effects. | merlin |
 | IIRR-Weighting (Burzykova and Lumley, 2007) | ✓ | ✗ | None | Inverse intensity weighting based on visiting intensity. | — |
 | IIRR-Balanced (Yiu and Su, 2025) | ✓ | ✗ | None | Inverse intensity weighting adjusted for covariate balance. | — |
-| Pairwise Likelihood (PairLik) (Chen et al., 2015) | ✓ | ✗ | None | Constructs a likelihood from all within-subject pairs of observations; conditioning on observed visit times eliminates the visit intensity from the likelihood. | — |
+| Pairwise Likelihood (Chen et al., 2015) | ✓ | ✗ | None | Constructs a likelihood from all within-subject pairs of observations; conditioning on observed visit times eliminates the visit intensity from the likelihood. | — |
 
 ### Imputation + IP-only
 
