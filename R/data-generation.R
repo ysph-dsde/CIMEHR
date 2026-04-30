@@ -5,8 +5,10 @@
 #' Generates synthetic longitudinal data from a joint model that includes an
 #' informative visiting process (Poisson with log-normal frailty), an
 #' informative observation process (probit with latent-factor-linked random
-#' effects and an Ornstein--Uhlenbeck (OU) serial correlation component), and a
-#' linear longitudinal outcome model with latent-factor-linked random effects.
+#' effects), and a linear longitudinal outcome model with
+#' latent-factor-linked random effects. By default, no OU serial-correlation
+#' component is added; an optional OU component can be enabled by setting
+#' \code{phi > 0}.
 #' The data-generating mechanism matches the model specification in
 #' Yang, Shi, and Mukherjee (2025) and is suitable for
 #' evaluating \code{\link{CIMEHR}}, \code{\link{CIMEHR_timevarying_integral}}, and
@@ -47,10 +49,12 @@
 #' At each visit, the latent propensity for outcome observation is
 #' \deqn{\tilde R_{ij} = \alpha^\top X_{ij}^O + q_i^\top Z_{ij}^O +
 #'   \xi_i(t_{ij}),}
-#' where \eqn{R_{ij} = I(\tilde R_{ij} > 0)},
-#' \eqn{q_i \mid U_i \sim N(\delta U_i, \Sigma_q)}, and
-#' \eqn{\xi_i(t)} is a stationary Ornstein--Uhlenbeck process with unit
-#' marginal variance and decay parameter \eqn{\phi}.
+#' where \eqn{R_{ij} = I(\tilde R_{ij} > 0)} and
+#' \eqn{q_i \mid U_i \sim N(\delta U_i, \Sigma_q)}. By default,
+#' \eqn{\xi_i(t) = 0}, so the simulated observation process has no OU
+#' serial-correlation component. When \code{phi > 0}, \eqn{\xi_i(t)} is
+#' generated as a stationary Ornstein--Uhlenbeck process with unit marginal
+#' variance and decay parameter \eqn{\phi}.
 #'
 #' @param alpha Named numeric vector with elements \code{intercept},
 #'   \code{Z}, and \code{X} giving the observation-process fixed-effect
@@ -64,10 +68,13 @@
 #'   \code{Z} giving the standard deviations of the residual
 #'   observation-process random effects (square roots of the diagonal of
 #'   \eqn{\Sigma_q}). Default is \code{c(intercept = 0.3, Z = 0.2)}.
-#' @param phi Positive numeric scalar; decay rate of the OU process
-#'   \eqn{\xi_i(t)}. The autocorrelation at lag \eqn{\Delta t} is
-#'   \eqn{\exp(-\phi \Delta t)}. Larger values imply faster decay.
-#'   Default is \code{0.1}.
+#' @param phi Nonnegative numeric scalar controlling the optional OU
+#'   serial-correlation component in the observation process. The default is
+#'   \code{0}, which sets \eqn{\xi_i(t) = 0} and therefore generates data
+#'   without an OU component. If \code{phi > 0}, \eqn{\xi_i(t)} is generated
+#'   from a stationary OU process with autocorrelation
+#'   \eqn{\exp(-\phi \Delta t)} at lag \eqn{\Delta t}; larger values of
+#'   \code{phi} imply faster decay.
 #'
 #' @section Outcome Process:
 #' The outcome for subject \eqn{i} at time \eqn{t} is
@@ -124,15 +131,14 @@ sim_data_gen <- function(
     gamma = c(intercept = -2.2, Z = 1, X = 1),
     sigma_zeta = 1.0,  # frailty SD on log scale
 
-    # ---- Observation process (Probit with OU) ----
+    # ---- Observation process (Probit) ----
     # R_ij = I(R_tilde_ij > 0)
     # R_tilde_ij = alpha' X^O + q_i' Z^O + xi_i(t)
     # q_i | U_i ~ N(delta * U_i, Sigma_q)
-    # xi_i(t) ~ OU process with Var=1, Cov(s,t) = exp(-phi|t-s|)
     alpha = c(intercept = 1.5, Z = -0.5, X = -0.3),  # fixed effects
     delta = c(intercept = -0.3, Z = -0.5),          # latent link (delta' Z^O)
     sigma_q = c(intercept = 0.3, Z = 0.2),          # sqrt of diag(Sigma_q)
-    phi = 0.1,  # OU decay rate
+    phi = 0,  # Simulated data default: no OU component
 
     # ---- Outcome process ----
     # Y_i(t) = beta0(t) + beta' X^Y + b_i' Z^Y + epsilon
@@ -146,12 +152,18 @@ sim_data_gen <- function(
 
   set.seed(seed)
 
+  if (!is.numeric(phi) || length(phi) != 1L || is.na(phi) || phi < 0) {
+    stop("phi must be a single nonnegative numeric value.", call. = FALSE)
+  }
+
   # ============================================================
-  # Helper: Generate OU process at irregular times
+  # Helper: Generate optional OU process at irregular times.
+  # If phi = 0, no OU component is included in the simulated data.
   # ============================================================
   generate_OU <- function(times, phi) {
     n_times <- length(times)
     if (n_times == 0) return(numeric(0))
+    if (phi == 0) return(rep(0, n_times))
     if (n_times == 1) return(rnorm(1, 0, 1))
 
     # Sort times (should already be sorted, but ensure)
@@ -288,7 +300,8 @@ sim_data_gen <- function(
         b_Z = base_df$b_Z[i]
       )
     } else {
-      # Generate OU process for this subject
+      # Generate optional OU process for this subject.
+      # With the default phi = 0, this returns zeros (no OU component).
       xi_i <- generate_OU(times_i, phi)
 
       # Observation process design matrix Z^O
