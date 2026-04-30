@@ -120,7 +120,7 @@ true_params$gamma
 |:--|:--:|:--:|:--|:--|:--|
 | Liang (Liang et al., 2009) | ✓ | ✗ | Visiting & Outcome | Joint likelihood estimation via shared frailty linking visiting and outcome. | IrregLong |
 | JMVL-G (Gasparini et al., 2020) | ✓ | ✗ | Visiting & Outcome | Joint likelihood modeling inter-visit times via shared random effects. | merlin |
-| IIRR-Weighting (Burvzrova and Lumley, 2007) | ✓ | ✗ | None | Inverse intensity weighting based on visiting intensity. | — |
+| IIRR-Weighting (Burzykova and Lumley, 2007) | ✓ | ✗ | None | Inverse intensity weighting based on visiting intensity. | — |
 | IIRR-Balanced (Yiu and Su, 2025) | ✓ | ✗ | None | Inverse intensity weighting adjusted for covariate balance. | — |
 | Pairwise Likelihood (PairLik) (Chen et al., 2015) | ✓ | ✗ | None | Constructs a likelihood from all within-subject pairs of observations; conditioning on observed visit times eliminates the visit intensity from the likelihood. | — |
 
@@ -342,12 +342,27 @@ summary(fit)
 
 ## References
 
-Aalen, O. O. and Gunnes, N. (2010). "A dynamic approach for reconstructing missing longitudinal data using the linear increments model." *Biostatistics*, 11(3), 453--472.
+Aalen, O. O., Borgan, Ø., and Gjessing, H. K. (2008). *Survival and event history analysis: A process point of view*. Springer.
 
-Buzkova, P. and Lumley, T. (2007). "Longitudinal data analysis for generalized linear models with follow-up dependent on outcome-related variables." *The Canadian Journal of Statistics*, 35(4), 485--500.
+Aalen, O. O. and Gunnes, N. (2010). A dynamic approach for reconstructing missing longitudinal data using the linear increments model. *Biostatistics*, 11, 453--472.
 
-Du, J., Shi, X., and Mukherjee, B. (2025). "A new statistical approach for joint modeling of longitudinal outcomes measured in electronic health records with clinically informative presence and observation processes." *arXiv:2410.13113*.
+Burzykova, P. and Lumley, T. (2007). Longitudinal data analysis for generalized linear models with follow-up dependent on outcome-related variables. *Canadian Journal of Statistics*, 35, 485--500.
 
-Liang, Y., Lu, W., and Ying, Z. (2009). "Joint modeling and analysis of longitudinal data with informative observation times." *Biometrics*, 65(2), 377--384.
+Chen, Y., Ning, J., and Cai, C. (2015). Regression analysis of longitudinal data with irregular and informative observation times. *Biostatistics*, 16, 727--739.
 
-Yang, C.-H., Shi, X., and Mukherjee, B. (2026). "Joint Modeling of Longitudinal EHR Data with Shared Random Effects for Informative Visiting and Observation Processes." *arXiv:2602.15374*.
+Du, J., Shi, X., and Mukherjee, B. (2025). A new statistical approach for joint modeling of longitudinal outcomes measured in electronic health records with clinically informative presence and observation processes.
+
+Gasparini, A., Abrams, K. R., Barrett, J. K., Major, R. W., Sweeting, M. J., Brunskill, N. J., and Crowther, M. J. (2020). Mixed-effects models for health care longitudinal data with an informative visiting process: A Monte Carlo simulation study. *Statistica Neerlandica*, 74, 5--23.
+
+Goldstein, B. A., Bhavsar, N. A., Phelan, M., and Pencina, M. J. (2016). Controlling for informed presence bias due to the number of health encounters in an electronic health record. *American Journal of Epidemiology*, 184, 847--855.
+
+Laird, N. M. and Ware, J. H. (1982). Random-effects models for longitudinal data. *Biometrics*, 963--974.
+
+Liang, Y., Lu, W., and Ying, Z. (2009). Joint modeling and analysis of longitudinal data with informative observation times. *Biometrics*, 65, 377--384.
+
+Rubin, D. (1987). *Multiple imputation for nonresponse in surveys*. John Wiley & Sons, New York.
+
+Yiu, S. and Su, L. (2025). Accommodating informative visit times for analysing irregular longitudinal data: A sensitivity analysis approach with balancing weights estimators. *Journal of the Royal Statistical Society Series C: Applied Statistics*, 74, 824--843.
+
+Yang, C.-H., Shi, X., and Mukherjee, B. (2026). Joint modeling of longitudinal EHR data with shared random effects for informative visiting and observation processes. *arXiv:2602.15374*.
+
