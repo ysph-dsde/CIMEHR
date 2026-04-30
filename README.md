@@ -87,6 +87,8 @@ fit <- CIMEHR(data = dat$long_data)
 
 ## Method comparison
 
+This table shows a comprehensive comparison of statistical methods for longitudinal EHR data. Methods are differentiated by whether they account for informative visiting (IP) and informative observation (IO), the specific scope of the shared latent structure linking these processes to the outcome, and the adjustment mechanism applied. Symbols: ✓ = Explicitly handled/modeled; ✗ = Ignored or not handled. Abbreviations: LMM, linear mixed model; VA/OA, visit/observation-adjusted; JMVL, joint modeling of visiting and longitudinal data; MAR, missing at random; MI, multiple imputation; LI, linear increment. 
+
 ### Outcome-only
 
 | Method | IP | IO | Shared Latent | Adjustment Mechanism | Package |
