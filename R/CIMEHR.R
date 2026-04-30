@@ -34,7 +34,7 @@
 #' @param covars_outcome_fixed_XY Character vector of covariate column names
 #'   for the fixed-effect part of the longitudinal outcome model. No intercept
 #'   is added automatically. Default is \code{c("Z", "X")}.
-#' @param covars_outcome_link_ZY Character vector of covariate column names
+#' @param covars_outcome_random_link_ZY Character vector of covariate column names
 #'   that interact with the conditional expectation of the latent factor
 #'   \eqn{U_i} in the outcome model. An intercept column is prepended
 #'   automatically. Including \code{time_col} in this vector adds a
@@ -42,7 +42,7 @@
 #' @param covars_obs_fixed_XO Character vector of covariate column names for
 #'   the fixed-effect part of the observation-process probit model. An
 #'   intercept is prepended automatically. Default is \code{c("Z", "X")}.
-#' @param covars_obs_random_ZO Character vector of covariate column names that
+#' @param covars_obs_random_link_ZO Character vector of covariate column names that
 #'   receive independent random effects in the observation process. An
 #'   intercept is prepended automatically. Set to \code{NULL} or an empty
 #'   vector to fit a fixed-effects-only probit. Default is \code{"Z"}.
@@ -85,12 +85,12 @@
 #'       \item{\code{vcov_obs}}{Numeric matrix; sandwich
 #'         variance-covariance matrix for all observation-process
 #'         parameters.}
-#'       \item{\code{delta_latent_link}}{(Present only when random effects
+#'       \item{\code{delta_latent_random_link}}{(Present only when random effects
 #'         are fitted.) Named numeric vector of latent-link coefficients
 #'         \eqn{\delta}.}
 #'       \item{\code{se_delta}}{(Present only when random effects are
 #'         fitted.) Named numeric vector of sandwich standard errors for
-#'         \code{delta_latent_link}.}
+#'         \code{delta_latent_random_link}.}
 #'       \item{\code{Sigma_q}}{(Present only when random effects are
 #'         fitted.) Named numeric vector of estimated random-effect
 #'         standard deviations.}
@@ -160,9 +160,9 @@
 #' arXiv:2602.15374. \doi{10.48550/arXiv.2602.15374}.
 #'
 #' @seealso
-#' \code{\link{CIMEHR_GH}} for a Gauss-Hermite quadrature variant with
+#' \code{\link{CIMEHR_timevarying_ghq}} for a Gauss-Hermite quadrature variant with
 #' online filtering;
-#' \code{\link{CIMEHR_OU_PCL}} for the Ornstein-Uhlenbeck pairwise
+#' \code{\link{CIMEHR_timevarying_ou}} for the Ornstein-Uhlenbeck pairwise
 #' composite likelihood extension;
 #' \code{\link{sim_data_gen}} for simulating data compatible with this model.
 #'
@@ -187,9 +187,9 @@ CIMEHR <- function(
     censor_col              = "C",
     covars_visit_XV         = c("Z", "X"),
     covars_outcome_fixed_XY = c("Z", "X"),
-    covars_outcome_link_ZY  = c("Z"),
+    covars_outcome_random_link_ZY  = c("Z"),
     covars_obs_fixed_XO     = c("Z", "X"),
-    covars_obs_random_ZO    = "Z",
+    covars_obs_random_link_ZO    = "Z",
     time_precision          = 0.01
 ) {
 
@@ -234,8 +234,8 @@ CIMEHR <- function(
     M
   }
   XO_all <- build_dm(covars_obs_fixed_XO, intercept = TRUE); p_XO <- ncol(XO_all)
-  has_random <- !is.null(covars_obs_random_ZO) && length(covars_obs_random_ZO) > 0
-  if (has_random) { ZO_all <- build_dm(covars_obs_random_ZO, intercept = TRUE); q_dim <- ncol(ZO_all)
+  has_random <- !is.null(covars_obs_random_link_ZO) && length(covars_obs_random_link_ZO) > 0
+  if (has_random) { ZO_all <- build_dm(covars_obs_random_link_ZO, intercept = TRUE); q_dim <- ncol(ZO_all)
   } else { ZO_all <- NULL; q_dim <- 0L }
   XY_all <- build_dm(covars_outcome_fixed_XY, intercept = FALSE); p_XY <- ncol(XY_all)
 
@@ -570,8 +570,8 @@ CIMEHR <- function(
   # ====================================================================
   # Stage 3: WLS with time-varying centering
   # ====================================================================
-  use_time <- time_col %in% covars_outcome_link_ZY
-  zy_vars  <- setdiff(covars_outcome_link_ZY, time_col)
+  use_time <- time_col %in% covars_outcome_random_link_ZY
+  zy_vars  <- setdiff(covars_outcome_random_link_ZY, time_col)
   if (length(zy_vars) > 0) {
     ZY_row <- cbind(1, as.matrix(data[, zy_vars, drop = FALSE]))
     colnames(ZY_row)[1] <- "Intercept"
@@ -649,7 +649,7 @@ CIMEHR <- function(
     vcov_obs    = vcov_obs_all
   )
   if (do_rand) {
-    obs_out$delta_latent_link <- delta_hat
+    obs_out$delta_latent_random_link <- delta_hat
     obs_out$Sigma_q           <- Sq_hat
     se_delta <- sqrt(pmax(diag(vcov_obs_all)[(p_XO + 1):(p_XO + q_dim)], 0))
     names(se_delta) <- names(delta_hat)

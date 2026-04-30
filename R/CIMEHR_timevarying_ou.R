@@ -38,7 +38,7 @@
 #' @param covars_outcome_fixed_XY Character vector of covariate column names
 #'   for the fixed-effect part of the longitudinal outcome model. No
 #'   intercept is added automatically. Default is \code{c("Z", "X")}.
-#' @param covars_outcome_link_ZY Character vector of covariate column names
+#' @param covars_outcome_random_link_ZY Character vector of covariate column names
 #'   that interact with the conditional expectation of the latent factor
 #'   \eqn{U_i} in the outcome model. An intercept is prepended
 #'   automatically. Including \code{time_col} adds a time-varying link.
@@ -46,7 +46,7 @@
 #' @param covars_obs_fixed_XO Character vector of covariate column names for
 #'   the fixed-effect part of the observation-process probit model. An
 #'   intercept is prepended automatically. Default is \code{c("Z", "X")}.
-#' @param covars_obs_random_ZO Character vector of covariate column names
+#' @param covars_obs_random_link_ZO Character vector of covariate column names
 #'   receiving independent random effects in the observation process. An
 #'   intercept is prepended automatically. Set to \code{NULL} for a
 #'   fixed-effects-only probit (in which case PCL is skipped and a
@@ -93,7 +93,7 @@
 #'     \describe{
 #'       \item{\code{alpha_fixed}}{Named numeric vector of fixed-effect
 #'         probit coefficients (including intercept).}
-#'       \item{\code{delta_latent_link}}{(Present only when random effects
+#'       \item{\code{delta_latent_random_link}}{(Present only when random effects
 #'         are fitted.) Named numeric vector of latent-link coefficients
 #'         \eqn{\delta}.}
 #'       \item{\code{Sigma_q}}{(Present only when random effects are
@@ -205,9 +205,9 @@ CIMEHR_timevarying_ou <- function(
     r_col                   = "R",
     covars_visit_XV         = c("Z", "X"),
     covars_outcome_fixed_XY = c("Z", "X"),
-    covars_outcome_link_ZY  = c("Z"),
+    covars_outcome_random_link_ZY  = c("Z"),
     covars_obs_fixed_XO     = c("Z", "X"),
-    covars_obs_random_ZO    = "Z",
+    covars_obs_random_link_ZO    = "Z",
     pair_type               = c("adjacent", "all"),
     phi_init                = 0.1,
     phi_bounds              = c(1e-4, 100),
@@ -234,8 +234,8 @@ CIMEHR_timevarying_ou <- function(
   }
 
   all_covars <- unique(c(
-    covars_visit_XV, covars_outcome_fixed_XY, covars_outcome_link_ZY,
-    covars_obs_fixed_XO, covars_obs_random_ZO
+    covars_visit_XV, covars_outcome_fixed_XY, covars_outcome_random_link_ZY,
+    covars_obs_fixed_XO, covars_obs_random_link_ZO
   ))
   all_covars <- setdiff(all_covars, time_col)
   missing_covars <- setdiff(all_covars, names(data))
@@ -260,8 +260,8 @@ CIMEHR_timevarying_ou <- function(
 
   keep_vars <- unique(c(
     id_col, time_col, y_col, r_col,
-    covars_visit_XV, covars_outcome_fixed_XY, covars_outcome_link_ZY,
-    covars_obs_fixed_XO, if (!is.null(covars_obs_random_ZO)) covars_obs_random_ZO
+    covars_visit_XV, covars_outcome_fixed_XY, covars_outcome_random_link_ZY,
+    covars_obs_fixed_XO, if (!is.null(covars_obs_random_link_ZO)) covars_obs_random_link_ZO
   ))
   df <- data[, keep_vars, drop = FALSE]
 
@@ -382,13 +382,13 @@ CIMEHR_timevarying_ou <- function(
   XO_obs  <- XO_all[obs_rows_idx, , drop = FALSE]
   R_obs   <- r_vec[obs_rows_idx]
 
-  has_random_slopes <- !is.null(covars_obs_random_ZO) && length(covars_obs_random_ZO) > 0
+  has_random_slopes <- !is.null(covars_obs_random_link_ZO) && length(covars_obs_random_link_ZO) > 0
   is_frailty_zero   <- (var_eta_mom < 1e-6)
 
   fit_obs_random <- (has_random_slopes && !is_frailty_zero)
 
   if (fit_obs_random) {
-    form_ZO <- stats::as.formula(paste("~", paste(covars_obs_random_ZO, collapse = "+")))
+    form_ZO <- stats::as.formula(paste("~", paste(covars_obs_random_link_ZO, collapse = "+")))
     ZO_all  <- stats::model.matrix(form_ZO, data = df)
     ZO_obs  <- ZO_all[obs_rows_idx, , drop = FALSE]
   } else {
@@ -757,8 +757,8 @@ CIMEHR_timevarying_ou <- function(
 
   kappa_it <- mu_Ui_row + correction_term
 
-  use_time_in_ZY <- time_col %in% covars_outcome_link_ZY
-  ZY_vars_no_time <- setdiff(covars_outcome_link_ZY, time_col)
+  use_time_in_ZY <- time_col %in% covars_outcome_random_link_ZY
+  ZY_vars_no_time <- setdiff(covars_outcome_random_link_ZY, time_col)
 
   if (length(ZY_vars_no_time) > 0) {
     ZY_matrix_row <- cbind(Intercept = 1, as.matrix(df[, ZY_vars_no_time, drop = FALSE]))
@@ -887,7 +887,7 @@ CIMEHR_timevarying_ou <- function(
 
   obs_params <- list(alpha_fixed = alpha_O_hat)
   if (fit_obs_random) {
-    obs_params$delta_latent_link <- delta_O_hat
+    obs_params$delta_latent_random_link <- delta_O_hat
     obs_params$Sigma_q           <- Sigma_q_hat
     obs_params$phi_OU            <- phi_hat
     obs_params$pcl_value         <- pcl_value

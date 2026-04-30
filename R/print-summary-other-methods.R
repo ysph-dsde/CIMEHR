@@ -78,6 +78,8 @@ print.EHRJoint <- function(x, digits = 4, level = 0.95, ...) {
 
   cat("\nNote: Standard errors are not available for EHRJoint.",
       "Consider bootstrap for inference.\n")
+  cat("\nModel note: visiting process uses a visit-count/frailty-compensation component.\n")
+  cat("Observation process uses logistic regression with a logit link.\n")
   cat("Use summary() for all process estimates, or\n")
   cat("summary(x, specify = \"visiting\" / \"observation\" / \"outcome\") for one layer.\n")
   invisible(x)
@@ -122,6 +124,8 @@ summary.EHRJoint <- function(object, level = 0.95, digits = 4,
     cat(sprintf("Layer requested: %s\n", specify))
   cat("\nNote: Standard errors are not available for this method.\n")
   cat("Consider bootstrap for inference.\n")
+  cat("\nModel note: visiting process uses a visit-count/frailty-compensation component.\n")
+  cat("Observation process uses logistic regression with a logit link.\n")
 
   if ("visiting" %in% layers) {
     .print_section("Visiting Process -- Fixed Effect (gamma)",
@@ -142,7 +146,7 @@ summary.EHRJoint <- function(object, level = 0.95, digits = 4,
                    .CIMEHR_coef_table(object$beta_hat, se = NULL, level),
                    digits, width)
     if (!is.null(object$theta_hat) && !all(is.na(object$theta_hat))) {
-      .print_section("Longitudinal Outcome -- Random (Link) (theta)",
+      .print_section("Longitudinal Outcome -- Random Link (theta)",
                      .CIMEHR_coef_table(object$theta_hat, se = NULL, level),
                      digits, width)
     }

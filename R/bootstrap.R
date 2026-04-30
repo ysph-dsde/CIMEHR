@@ -88,9 +88,9 @@
 #' \describe{
 #'   \item{\code{covars_visit_XV}}{Default \code{c("Z", "X")}.}
 #'   \item{\code{covars_outcome_fixed_XY}}{Default \code{c("Z", "X")}.}
-#'   \item{\code{covars_outcome_link_ZY}}{Default \code{"Z"}.}
+#'   \item{\code{covars_outcome_random_link_ZY}}{Default \code{"Z"}.}
 #'   \item{\code{covars_obs_fixed_XO}}{Default \code{c("Z", "X")}.}
-#'   \item{\code{covars_obs_random_ZO}}{Default \code{"Z"}.}
+#'   \item{\code{covars_obs_random_link_ZO}}{Default \code{"Z"}.}
 #' }
 #'
 #' \strong{EHRJoint, Joint_modeling_visiting_and_longitudinal_Liang:}
@@ -308,8 +308,8 @@ bootstrap <- function(fit,
          CIMEHR        = ,
          CIMEHR_timevarying_ghq     = ,
          CIMEHR_timevarying_ou = c("covars_visit_XV", "covars_outcome_fixed_XY",
-                                   "covars_outcome_link_ZY", "covars_obs_fixed_XO",
-                                   "covars_obs_random_ZO"),
+                                   "covars_outcome_random_link_ZY", "covars_obs_fixed_XO",
+                                   "covars_obs_random_link_ZO"),
          EHRJoint      = ,
          Joint_modeling_visiting_and_longitudinal_Liang    = c("visit_covs", "long_covs", "random_covs"),
          Inverse_intensity_rate_ratio_weighting = c("visit_covs", "formula"),
@@ -342,9 +342,9 @@ bootstrap <- function(fit,
            obs <- fit$observation_process
            s2_alpha <- setNames(obs$alpha_fixed,
                                 paste0("s2.", names(obs$alpha_fixed)))
-           s2_delta <- if (!is.null(obs$delta_latent_link))
-             setNames(obs$delta_latent_link,
-                      paste0("s2.delta.", names(obs$delta_latent_link)))
+           s2_delta <- if (!is.null(obs$delta_latent_random_link))
+             setNames(obs$delta_latent_random_link,
+                      paste0("s2.delta.", names(obs$delta_latent_random_link)))
            else
              NULL
            # CIMEHR_timevarying_ou additionally carries phi_OU (scalar)
@@ -472,9 +472,9 @@ bootstrap <- function(fit,
              id_col                  = id,
              covars_visit_XV         = cv("covars_visit_XV",         c("Z", "X")),
              covars_outcome_fixed_XY = cv("covars_outcome_fixed_XY", c("Z", "X")),
-             covars_outcome_link_ZY  = cv("covars_outcome_link_ZY",  "Z"),
+             covars_outcome_random_link_ZY  = cv("covars_outcome_random_link_ZY",  "Z"),
              covars_obs_fixed_XO     = cv("covars_obs_fixed_XO",     c("Z", "X")),
-             covars_obs_random_ZO    = cv("covars_obs_random_ZO",    "Z")
+             covars_obs_random_link_ZO    = cv("covars_obs_random_link_ZO",    "Z")
            )
            .bootstrap_extract_coef(f, "CIMEHR", NULL)
          },
@@ -485,9 +485,9 @@ bootstrap <- function(fit,
              id_col                  = id,
              covars_visit_XV         = cv("covars_visit_XV",         c("Z", "X")),
              covars_outcome_fixed_XY = cv("covars_outcome_fixed_XY", c("Z", "X")),
-             covars_outcome_link_ZY  = cv("covars_outcome_link_ZY",  "Z"),
+             covars_outcome_random_link_ZY  = cv("covars_outcome_random_link_ZY",  "Z"),
              covars_obs_fixed_XO     = cv("covars_obs_fixed_XO",     c("Z", "X")),
-             covars_obs_random_ZO    = cv("covars_obs_random_ZO",    "Z")
+             covars_obs_random_link_ZO    = cv("covars_obs_random_link_ZO",    "Z")
            )
            .bootstrap_extract_coef(f, "CIMEHR_timevarying_ghq", NULL)
          },
@@ -498,9 +498,9 @@ bootstrap <- function(fit,
              id_col                  = id,
              covars_visit_XV         = cv("covars_visit_XV",         c("Z", "X")),
              covars_outcome_fixed_XY = cv("covars_outcome_fixed_XY", c("Z", "X")),
-             covars_outcome_link_ZY  = cv("covars_outcome_link_ZY",  "Z"),
+             covars_outcome_random_link_ZY  = cv("covars_outcome_random_link_ZY",  "Z"),
              covars_obs_fixed_XO     = cv("covars_obs_fixed_XO",     c("Z", "X")),
-             covars_obs_random_ZO    = cv("covars_obs_random_ZO",    "Z")
+             covars_obs_random_link_ZO    = cv("covars_obs_random_link_ZO",    "Z")
            )
            .bootstrap_extract_coef(f, "CIMEHR_timevarying_ou", NULL)
          },

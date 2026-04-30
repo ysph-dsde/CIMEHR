@@ -94,7 +94,7 @@
 #' @param sigma_y Positive numeric scalar; residual standard deviation of
 #'   the outcome measurement error. Default is \code{1}.
 #'
-#' @return An object of class \code{"sim_CIMEHR_timevarying_ou"}, which is a named
+#' @return An object of class \code{"sim_CIMEHR"}, which is a named
 #'   list with the following components:
 #'
 #' @seealso
@@ -379,6 +379,6 @@ sim_data_gen <- function(
         beta = beta, beta_t = beta_t, theta = theta, Sigma_b = Sigma_b, sigma_y = sigma_y
       )
     ),
-    class = "sim_CIMEHR_timevarying_ou"
+    class = "sim_CIMEHR"
   )
 }

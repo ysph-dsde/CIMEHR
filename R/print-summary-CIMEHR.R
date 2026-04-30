@@ -166,6 +166,8 @@ summary.CIMEHR <- function(object, level = 0.95, digits = 4,
 
   cat("\nCIMEHR Joint Model -- Summary\n")
   cat(strrep("=", width), "\n")
+  cat("\nModel note: visiting process uses Andersen-Gill partial likelihood with log-normal frailty where estimated.\n")
+  cat("Observation process uses a probit link; the OU variant adds OU serial correlation via PCL.\n")
   if (specify != "all")
     cat(sprintf("Layer requested: %s\n", specify))
 
@@ -189,10 +191,10 @@ summary.CIMEHR <- function(object, level = 0.95, digits = 4,
       digits, width
     )
 
-    if (!is.null(op$delta_latent_link)) {
+    if (!is.null(op$delta_latent_random_link)) {
       .print_section(
-        "Observation Process -- Random (Link) (delta)",
-        .CIMEHR_coef_table(op$delta_latent_link, op$se_delta, level),
+        "Observation Process -- Random Link (delta)",
+        .CIMEHR_coef_table(op$delta_latent_random_link, op$se_delta, level),
         digits, width
       )
       if (!is.null(op$Sigma_q)) {
@@ -222,7 +224,7 @@ summary.CIMEHR <- function(object, level = 0.95, digits = 4,
         se_theta <- sqrt(pmax(diag(lo$vcov_joint)[idx_theta], 0))
       }
       .print_section(
-        "Longitudinal Outcome -- Random (Link) (theta)",
+        "Longitudinal Outcome -- Random Link (theta)",
         .CIMEHR_coef_table(lo$theta_Y, se_theta, level),
         digits, width
       )
@@ -312,6 +314,8 @@ summary.CIMEHR_timevarying_ghq <- function(object, level = 0.95, digits = 4,
 
   cat("\nCIMEHR Joint Model (Gauss-Hermite) -- Summary\n")
   cat(strrep("=", width), "\n")
+  cat("\nModel note: visiting process uses Andersen-Gill partial likelihood with log-normal frailty where estimated.\n")
+  cat("Observation process uses a probit link; the OU variant adds OU serial correlation via PCL.\n")
   if (specify != "all")
     cat(sprintf("Layer requested: %s\n", specify))
   cat("\nNote: Standard errors are not available for this method.\n")
@@ -335,10 +339,10 @@ summary.CIMEHR_timevarying_ghq <- function(object, level = 0.95, digits = 4,
       .CIMEHR_coef_table(op$alpha_fixed, se = NULL, level),
       digits, width
     )
-    if (!is.null(op$delta_latent_link)) {
+    if (!is.null(op$delta_latent_random_link)) {
       .print_section(
-        "Observation Process -- Random (Link) (delta)",
-        .CIMEHR_coef_table(op$delta_latent_link, se = NULL, level),
+        "Observation Process -- Random Link (delta)",
+        .CIMEHR_coef_table(op$delta_latent_random_link, se = NULL, level),
         digits, width
       )
     }
@@ -355,7 +359,7 @@ summary.CIMEHR_timevarying_ghq <- function(object, level = 0.95, digits = 4,
     )
     if (!is.null(lo$theta_Y) && length(lo$theta_Y) > 0) {
       .print_section(
-        "Longitudinal Outcome -- Random (Link) (theta)",
+        "Longitudinal Outcome -- Random Link (theta)",
         .CIMEHR_coef_table(lo$theta_Y, se = NULL, level),
         digits, width
       )
@@ -448,6 +452,8 @@ summary.CIMEHR_timevarying_ou <- function(object, level = 0.95, digits = 4,
 
   cat("\nCIMEHR Joint Model (OU + PCL) -- Summary\n")
   cat(strrep("=", width), "\n")
+  cat("\nModel note: visiting process uses Andersen-Gill partial likelihood with log-normal frailty where estimated.\n")
+  cat("Observation process uses a probit link; the OU variant adds OU serial correlation via PCL.\n")
   if (specify != "all")
     cat(sprintf("Layer requested: %s\n", specify))
 
@@ -476,10 +482,10 @@ summary.CIMEHR_timevarying_ou <- function(object, level = 0.95, digits = 4,
       .CIMEHR_coef_table(op$alpha_fixed, se = NULL, level),
       digits, width
     )
-    if (!is.null(op$delta_latent_link)) {
+    if (!is.null(op$delta_latent_random_link)) {
       .print_section(
-        "Observation Process -- Random (Link) (delta)",
-        .CIMEHR_coef_table(op$delta_latent_link, se = NULL, level),
+        "Observation Process -- Random Link (delta)",
+        .CIMEHR_coef_table(op$delta_latent_random_link, se = NULL, level),
         digits, width
       )
     }
@@ -510,7 +516,7 @@ summary.CIMEHR_timevarying_ou <- function(object, level = 0.95, digits = 4,
         }
       }
       .print_section(
-        "Longitudinal Outcome -- Random (Link) (theta)",
+        "Longitudinal Outcome -- Random Link (theta)",
         .CIMEHR_coef_table(lo$theta_Y, se_theta, level),
         digits, width
       )
@@ -572,7 +578,7 @@ coef.CIMEHR_timevarying_ou <- function(object, type = c("outcome", "visiting", "
          outcome     = c(object$longitudinal_outcome$beta_Y, object$longitudinal_outcome$theta_Y),
          visiting    = object$visiting_process$gamma_V,
          observation = c(object$observation_process$alpha_fixed,
-                         object$observation_process$delta_latent_link)
+                         object$observation_process$delta_latent_random_link)
   )
 }
 
