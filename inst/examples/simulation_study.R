@@ -150,6 +150,7 @@ methods <- list(
   CIMEHR = function(dat, focal) {
     fit <- CIMEHR(
       data                          = dat,
+      y_col                         = "log_HbA1C",
       covars_visit_XV               = ALL_COVARS,
       covars_outcome_fixed_XY       = ALL_COVARS,
       covars_outcome_random_link_ZY = focal,
@@ -174,6 +175,7 @@ methods <- list(
   CIMEHR_Liang = function(dat, focal) {
     fit <- Joint_modeling_visiting_and_longitudinal_Liang(
       data        = dat,
+      outcome     = "log_HbA1c",
       visit_covs  = ALL_COVARS,
       long_covs   = ALL_COVARS,
       random_covs = focal
@@ -191,7 +193,7 @@ methods <- list(
     # visits. The estimates are unaffected; suppress to keep stdout clean.
     fit <- suppressWarnings(IrregLong::Liang(
       data       = prep$obs,
-      Yname      = "Y",
+      Yname      = "log_HbA1c",
       Xnames     = ALL_COVARS,
       Wnames     = focal,
       Znames     = ALL_COVARS,
@@ -213,7 +215,7 @@ methods <- list(
   },
 
   CIMEHR_IIRR = function(dat, focal) {
-    out_form <- stats::reformulate(c(ALL_COVARS, "time"), response = "Y")
+    out_form <- stats::reformulate(c(ALL_COVARS, "time"), response = "log_HbA1c")
     fit <- Inverse_intensity_rate_ratio_weighting(
       data       = dat,
       visit_covs = ALL_COVARS,
@@ -226,7 +228,7 @@ methods <- list(
 
   IrregLong_iiwgee = function(dat, focal) {
     prep        <- prep_irreglong(dat)
-    out_form    <- stats::reformulate(c(ALL_COVARS, "time"), response = "Y")
+    out_form    <- stats::reformulate(c(ALL_COVARS, "time"), response = "log_HbA1c")
     visit_form  <- make_irreg_formula(ALL_COVARS, include_cluster = TRUE)
     # See note above on IrregLong row.names warning.
     fit <- suppressWarnings(IrregLong::iiwgee(

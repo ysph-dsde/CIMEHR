@@ -176,7 +176,7 @@ We define a covariate vector once and reuse it. The focal coefficient for the bu
 
 ```{r covars-vec}
 covars_all <- c("Age", "Gender", "Marital", "Black", "Hispanic", "NSES")
-out_form   <- Y ~ Age + Gender + Marital + Black + Hispanic + NSES + time
+out_form   <- log_HbA1c ~ Age + Gender + Marital + Black + Hispanic + NSES + time
 ```
 
 ### 4.1 Summary-statistic regression
@@ -186,6 +186,7 @@ out_form   <- Y ~ Age + Gender + Marital + Black + Hispanic + NSES + time
 ```{r summarystat}
 fit_ss <- Summary_stat(
   ehr500,
+  outcome = "log_HbA1c",
   formula = ~ Age + Gender + Marital + Black + Hispanic + NSES
 )
 print(fit_ss)
@@ -237,6 +238,7 @@ summary(fit_pl)
 ```{r iirr}
 fit_iirr <- Inverse_intensity_rate_ratio_weighting(
   ehr500,
+  outcome    = "log_HbA1c",
   visit_covs = covars_all
 )
 summary(fit_iirr)
@@ -247,6 +249,7 @@ summary(fit_iirr)
 ```{r iirr-bal}
 fit_iirr_bal <- Inverse_intensity_rate_ratio_balancing(
   ehr500,
+  outcome    = "log_HbA1c",
   visit_covs = covars_all
 )
 summary(fit_iirr_bal)
@@ -257,6 +260,7 @@ summary(fit_iirr_bal)
 ```{r liang}
 fit_liang <- Joint_modeling_visiting_and_longitudinal_Liang(
   ehr500,
+  outcome = "log_HbA1c",
   visit_covs  = covars_all,
   long_covs   = covars_all,
   random_covs = "NSES"
@@ -271,6 +275,7 @@ summary(fit_liang)
 ```{r ehrjoint}
 fit_ej <- EHRJoint(
   ehr500,
+  outcome     = "log_HbA1c",
   visit_covs  = covars_all,
   long_covs   = covars_all,
   random_covs = "NSES"
@@ -287,6 +292,7 @@ summary(fit_ej)
 ```{r cimehr}
 fit_cimehr <- CIMEHR(
   data                          = ehr500,
+  y_col                         = "log_HbA1c",
   covars_visit_XV               = covars_all,
   covars_outcome_fixed_XY       = covars_all,
   covars_outcome_random_link_ZY = "NSES",
@@ -319,6 +325,7 @@ extract_coefficient(fit_cimehr, stage = "observation", parameter = "NSES")
 ```{r cimehr-integral}
 fit_integral <- CIMEHR_timevarying_integral(
   data                          = ehr500,
+  y_col                         = "log_HbA1c",
   covars_visit_XV               = covars_all,
   covars_outcome_fixed_XY       = covars_all,
   covars_outcome_random_link_ZY = "NSES",
@@ -337,6 +344,7 @@ summary(fit_integral)
 ```{r cimehr-ou}
 fit_ou <- CIMEHR_timevarying_ou(
   data                          = ehr500,
+  y_col                         = "log_HbA1c",
   covars_visit_XV               = covars_all,
   covars_outcome_fixed_XY       = covars_all,
   covars_outcome_random_link_ZY = "NSES",
@@ -362,16 +370,19 @@ cmp_subset <- method_comparisons(
               "CIMEHR"),
   method_args = list(
     Summary_stat                          = list(
+      outcome = "log_HbA1c",
       formula = ~ Age + Gender + Marital + Black + Hispanic + NSES
     ),
     Linear_mixed_model                    = list(
       fixed = out_form, random = ~ 1 | id, obs_indicator = "R"
     ),
-    Inverse_intensity_rate_ratio_weighting = list(visit_covs = covars_all),
+    Inverse_intensity_rate_ratio_weighting = list(outcome = "log_HbA1c", visit_covs = covars_all),
     Joint_modeling_visiting_and_longitudinal_Liang = list(
+      outcome = "log_HbA1c",
       visit_covs = covars_all, long_covs = covars_all, random_covs = "NSES"
     ),
     CIMEHR = list(
+      y_col                         = "log_HbA1c",
       covars_visit_XV               = covars_all,
       covars_outcome_fixed_XY       = covars_all,
       covars_outcome_random_link_ZY = "NSES",

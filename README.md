@@ -32,7 +32,7 @@ Most functions in **CIMEHR** expect **long-format longitudinal data**, with one 
 | Outcome                 | `Y`          | Longitudinal outcome; usually `NA` when the outcome was not recorded |
 | Observation indicator   | `R`          | 1 if the outcome was recorded at the visit, 0 otherwise              |
 | Censoring/follow-up end | `C`          | End of follow-up for each subject                                    |
-| Covariates              | user-named   | Baseline or model covariates (e.g., `Age`, `Gender`, `NSES`)         |
+| Covariates              | user-named   | Baseline or model covariates (e.g., `Age`, `Gender`, `Marital Status`)         |
 
 The package methods are designed for long/panel data. Some benchmark methods use only observed rows internally, but the user-supplied dataset should still be organized in long form so visit timing, observation indicators, and outcomes are aligned.
 
@@ -94,6 +94,7 @@ head(sim_ehr_data)
 
 fit <- CIMEHR(
   data = sim_ehr_data,
+  y_col                         = "log_HbA1c",
   covars_visit_XV               = c("Age", "Gender", "Marital", "Black", "Hispanic", "NSES"),
   covars_outcome_fixed_XY       = c("Age", "Gender", "Marital", "Black", "Hispanic", "NSES"),
   covars_outcome_random_link_ZY = "NSES",
@@ -154,6 +155,7 @@ covars_all <- c("Age", "Gender", "Marital", "Black", "Hispanic", "NSES")
 
 fit_base <- CIMEHR(
   data = sim_ehr_data,
+  y_col                         = "log_HbA1c",
   covars_visit_XV               = covars_all,
   covars_outcome_fixed_XY       = covars_all,
   covars_outcome_random_link_ZY = "NSES",
@@ -163,6 +165,7 @@ fit_base <- CIMEHR(
 
 fit_integral <- CIMEHR_timevarying_integral(
   data = sim_ehr_data,
+  y_col                         = "log_HbA1c",
   covars_visit_XV               = covars_all,
   covars_outcome_fixed_XY       = covars_all,
   covars_outcome_random_link_ZY = "NSES",
@@ -174,6 +177,7 @@ fit_integral <- CIMEHR_timevarying_integral(
 
 fit_ou <- CIMEHR_timevarying_ou(
   data = sim_ehr_data,
+  y_col                         = "log_HbA1c",
   covars_visit_XV               = covars_all,
   covars_outcome_fixed_XY       = covars_all,
   covars_outcome_random_link_ZY = "NSES",
@@ -224,7 +228,7 @@ extract_coefficient(fit_base, stage = "observation", parameter = "NSES")
 available_comparison_methods()
 
 covars_all <- c("Age", "Gender", "Marital", "Black", "Hispanic", "NSES")
-out_form <- Y ~ Age + Gender + Marital + Black + Hispanic + NSES + time
+out_form <- log_HbA1c ~ Age + Gender + Marital + Black + Hispanic + NSES + time
 
 cmp_subset <- method_comparisons(
   data    = sim_ehr_data,
@@ -233,15 +237,17 @@ cmp_subset <- method_comparisons(
               "Joint_modeling_visiting_and_longitudinal_Liang",
               "CIMEHR"),
   method_args = list(
-    Summary_stat       = list(formula = ~ Age + Gender + Marital + Black + Hispanic + NSES),
+    Summary_stat       = list(outcome = "log_HbA1c", 
+                              formula = ~ Age + Gender + Marital + Black + Hispanic + NSES),
     Linear_mixed_model = list(fixed         = out_form,
                               random        = ~ 1 | id,
                               obs_indicator = "R"),
-    Inverse_intensity_rate_ratio_weighting = list(visit_covs = covars_all),
+    Inverse_intensity_rate_ratio_weighting = list(outcome = "log_HbA1c", visit_covs = covars_all),
     Joint_modeling_visiting_and_longitudinal_Liang = list(
-      visit_covs = covars_all, long_covs = covars_all, random_covs = "NSES"
+      outcome = "log_HbA1c", visit_covs = covars_all, long_covs = covars_all, random_covs = "NSES"
     ),
     CIMEHR = list(
+      y_col                         = "log_HbA1c",
       covars_visit_XV               = covars_all,
       covars_outcome_fixed_XY       = covars_all,
       covars_outcome_random_link_ZY = "NSES",
@@ -270,6 +276,7 @@ Use `bootstrap()` for methods without analytic standard errors or as a robustnes
 ```{r, eval = FALSE}
 fit_iirr <- Inverse_intensity_rate_ratio_weighting(
   sim_ehr_data,
+  outcome = "log_HbA1c,
   visit_covs = c("Age", "Gender", "Marital", "Black", "Hispanic", "NSES")
 )
 bs <- bootstrap(fit_iirr, data = sim_ehr_data, B = 200, seed = 1)
