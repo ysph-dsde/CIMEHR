@@ -18,9 +18,9 @@ bootstrap(
 }
 \arguments{
 \item{fit}{A fitted model object from one of the selected method functions.
-Supported classes: \code{"GIVEHR"}, \code{"GIVEHR_GH"},
-\code{"GIVEHR_OU_PCL"}, \code{"EHRJoint"}, \code{"JMVL_Liang"},
-\code{"IIRR_weighting"}, \code{"IIRR_balancing"}.}
+Supported classes: \code{"CIMEHR"}, \code{"CIMEHR_timevarying_integral"},
+\code{"CIMEHR_timevarying_ou"}, \code{"EHRJoint"}, \code{"Joint_modeling_visiting_and_longitudinal_Liang"},
+\code{"Inverse_intensity_rate_ratio_weighting"}, \code{"Inverse_intensity_rate_ratio_balancing"}.}
 
 \item{data}{The \code{data.frame} used to fit \code{fit}, in long
 (panel) format with one row per subject-visit.}
@@ -40,7 +40,7 @@ defaults listed in the Details section. Names must match the argument
 names of the underlying fitting function exactly; unrecognised names
 trigger a warning.}
 
-\item{which_estimate}{For \code{"IIRR_balancing"} fits only: which
+\item{which_estimate}{For \code{"Inverse_intensity_rate_ratio_balancing"} fits only: which
 estimator to display in \code{print} and \code{summary}. One of
 \code{"bal"} (default, balancing weights) or \code{"mle"} (maximum likelihood
 estimation (MLE) weights). Both estimators are always stored in
@@ -64,7 +64,7 @@ estimates from the original fit, with the same \code{"s1."} /
 vector from one bootstrap replicate, covering \emph{all} estimated
 stages. Columns are prefixed by stage: \code{"s1."} (visiting
 process), \code{"s2."} (observation process, where applicable),
-\code{"s3."} (longitudinal outcome). For \code{"IIRR_balancing"},
+\code{"s3."} (longitudinal outcome). For \code{"Inverse_intensity_rate_ratio_balancing"},
 outcome columns are prefixed \code{"s3.bal."} and \code{"s3.mle."}.}
 \item{\code{se}}{Named numeric vector of bootstrap standard errors
 for the Stage-3 outcome coefficients of the displayed estimator
@@ -77,7 +77,7 @@ coefficients of the displayed estimator (prefixes stripped).}
 \item{\code{B}}{Number of replicates requested.}
 \item{\code{B_success}}{Number of replicates that converged.}
 \item{\code{method}}{Character string; class of the original fit.}
-\item{\code{which_estimate}}{For \code{"IIRR_balancing"}: which
+\item{\code{which_estimate}}{For \code{"Inverse_intensity_rate_ratio_balancing"}: which
 estimator is shown in print/summary (\code{"bal"} or \code{"mle"}).
 \code{NULL} for all other methods.}
 \item{\code{call}}{The matched call.}
@@ -87,13 +87,13 @@ estimator is shown in print/summary (\code{"bal"} or \code{"mle"}).
 Computes bootstrap standard errors and percentile confidence intervals
 by resampling subjects with replacement and re-fitting the original model.
 Suitable for all selected methods that do not provide closed-form standard
-errors: \code{\link{GIVEHR_GH}}, \code{\link{EHRJoint}},
-\code{\link{JMVL_Liang}}, \code{\link{IIRR_weighting}}, and
-\code{\link{IIRR_balancing}}. Can also supplement the sandwich standard
-errors from \code{\link{GIVEHR}} and \code{\link{GIVEHR_OU_PCL}}.
+errors: \code{\link{CIMEHR_timevarying_integral}}, \code{\link{EHRJoint}},
+\code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}, \code{\link{Inverse_intensity_rate_ratio_weighting}}, and
+\code{\link{Inverse_intensity_rate_ratio_balancing}}. Can also supplement the sandwich standard
+errors from \code{\link{CIMEHR}} and \code{\link{CIMEHR_timevarying_ou}}.
 }
 \details{
-For two-stage methods (\code{\link{LI_IP}}, \code{\link{MI_IP}}), the
+For two-stage methods (\code{\link{Linear_increment_IP}}, \code{\link{Multiple_imputation_IP}}), the
 bootstrap must cover the full two-stage procedure. We recommend users
 implement a manual subject-level bootstrap loop.
 
@@ -112,30 +112,30 @@ Supply only entries in \code{covars} that differ from the defaults
 shown below. Names must match the argument names of the underlying
 fitting function exactly.
 
-\strong{GIVEHR, GIVEHR_GH, GIVEHR_OU_PCL:}
+\strong{CIMEHR, CIMEHR_timevarying_integral, CIMEHR_timevarying_ou:}
 \describe{
 \item{\code{covars_visit_XV}}{Default \code{c("Z", "X")}.}
 \item{\code{covars_outcome_fixed_XY}}{Default \code{c("Z", "X")}.}
-\item{\code{covars_outcome_link_ZY}}{Default \code{"Z"}.}
+\item{\code{covars_outcome_random_link_ZY}}{Default \code{"Z"}.}
 \item{\code{covars_obs_fixed_XO}}{Default \code{c("Z", "X")}.}
-\item{\code{covars_obs_random_ZO}}{Default \code{"Z"}.}
+\item{\code{covars_obs_random_link_ZO}}{Default \code{"Z"}.}
 }
 
-\strong{EHRJoint, JMVL_Liang:}
+\strong{EHRJoint, Joint_modeling_visiting_and_longitudinal_Liang:}
 \describe{
 \item{\code{visit_covs}}{Default \code{c("Z", "X")}.}
 \item{\code{long_covs}}{Default \code{c("Z", "X")}.}
 \item{\code{random_covs}}{Default \code{"Z"}.}
 }
 
-\strong{IIRR_weighting:}
+\strong{Inverse_intensity_rate_ratio_weighting:}
 \describe{
 \item{\code{visit_covs}}{Default \code{c("Z", "X")}.}
 \item{\code{formula}}{Default \code{NULL} (auto-constructed from
 \code{visit_covs} and \code{time}).}
 }
 
-\strong{IIRR_balancing:}
+\strong{Inverse_intensity_rate_ratio_balancing:}
 \describe{
 \item{\code{visit_covs}}{Default \code{c("Z", "X")}.}
 \item{\code{balance_covs}}{Default \code{NULL} (uses
@@ -147,13 +147,13 @@ fitting function exactly.
 
 \section{Plug-in vs. bootstrap}{
 
-\code{\link{GIVEHR}} and \code{\link{GIVEHR_OU_PCL}} already compute
+\code{\link{CIMEHR}} and \code{\link{CIMEHR_timevarying_ou}} already compute
 sandwich (plug-in) standard errors from per-subject score contributions
 evaluated at the fitted parameters --- no re-fitting is needed.
 Bootstrap is provided for those methods as an optional check.
-For \code{\link{GIVEHR_GH}}, \code{\link{EHRJoint}},
-\code{\link{JMVL_Liang}}, \code{\link{IIRR_weighting}}, and
-\code{\link{IIRR_balancing}}, per-subject score contributions are not
+For \code{\link{CIMEHR_timevarying_integral}}, \code{\link{EHRJoint}},
+\code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}, \code{\link{Inverse_intensity_rate_ratio_weighting}}, and
+\code{\link{Inverse_intensity_rate_ratio_balancing}}, per-subject score contributions are not
 exposed by the fitting routines, so bootstrap is the recommended
 approach for uncertainty quantification.
 }
@@ -171,16 +171,16 @@ bs <- bootstrap(fit, data = dat, B = 500)
 apply(bs$boot_matrix[, grepl("^s1\\.", colnames(bs$boot_matrix)), drop = FALSE],
       2, sd)
 
-# Stage-2 SE (observation process, GIVEHR family)
+# Stage-2 SE (observation process, CIMEHR family)
 apply(bs$boot_matrix[, grepl("^s2\\.", colnames(bs$boot_matrix)), drop = FALSE],
       2, sd)
 }
 }
 
 \examples{
-dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
-fit <- IIRR_weighting(dat, visit_covs = c("Z", "X"))
-bs  <- bootstrap(fit, data = dat, B = 5, seed = 1)
+dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
+bs  <- bootstrap(fit, data = dat, B = 3, seed = 1)
 print(bs)
 
 }

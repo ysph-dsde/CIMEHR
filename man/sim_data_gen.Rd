@@ -18,12 +18,13 @@ sim_data_gen(
   alpha = c(intercept = 1.5, Z = -0.5, X = -0.3),
   delta = c(intercept = -0.3, Z = -0.5),
   sigma_q = c(intercept = 0.3, Z = 0.2),
-  phi = 0.1,
+  phi = 0,
   beta = c(intercept = -2, Z = -0.5, X = 0.5),
   beta_t = 0.1,
   theta = c(intercept = 0.5, Z = 0.3),
   Sigma_b = matrix(c(1, 0, 0, 2), 2, 2),
-  sigma_y = 1
+  sigma_y = 1,
+  verbose = TRUE
 )
 }
 \arguments{
@@ -71,10 +72,13 @@ is \code{c(intercept = -0.3, Z = -0.5)}.}
 observation-process random effects (square roots of the diagonal of
 \eqn{\Sigma_q}). Default is \code{c(intercept = 0.3, Z = 0.2)}.}
 
-\item{phi}{Positive numeric scalar; decay rate of the OU process
-\eqn{\xi_i(t)}. The autocorrelation at lag \eqn{\Delta t} is
-\eqn{\exp(-\phi \Delta t)}. Larger values imply faster decay.
-Default is \code{0.1}.}
+\item{phi}{Nonnegative numeric scalar controlling the optional OU
+serial-correlation component in the observation process. The default is
+\code{0}, which sets \eqn{\xi_i(t) = 0} and therefore generates data
+without an OU component. If \code{phi > 0}, \eqn{\xi_i(t)} is generated
+from a stationary OU process with autocorrelation
+\eqn{\exp(-\phi \Delta t)} at lag \eqn{\Delta t}; larger values of
+\code{phi} imply faster decay.}
 
 \item{beta}{Named numeric vector with elements \code{intercept},
 \code{Z}, and \code{X} giving the outcome fixed-effect coefficients
@@ -96,21 +100,47 @@ removing the latent-factor contribution). Default is
 
 \item{sigma_y}{Positive numeric scalar; residual standard deviation of
 the outcome measurement error. Default is \code{1}.}
+
+\item{verbose}{Logical; if \code{TRUE} (the default), a short simulation
+summary (visit counts, observation rate) is printed via
+\code{\link{message}}, which can be silenced with
+\code{\link{suppressMessages}}.}
 }
 \value{
-An object of class \code{"sim_GIVEHR_OU_PCL"}, which is a named
+An object of class \code{"sim_CIMEHR"}, which is a named
 list with the following components:
+
+\describe{
+\item{\code{long_data}}{A long-format \code{data.frame} with one row per
+subject-visit (or one row with \code{NA} time values for subjects with
+no visits). Columns include \code{id}, \code{Z}, \code{X}, \code{time},
+\code{R}, \code{Y}, and the latent quantities \code{U}, \code{eta},
+\code{q_intercept}, \code{q_Z}, \code{b_intercept}, and \code{b_Z}
+(the last six are not available in real data and are included for
+simulation diagnostics).}
+\item{\code{subject_data}}{A subject-level \code{data.frame} with the
+baseline covariates, latent factor, frailty, and random effects.}
+\item{\code{prop_no_visit}}{Numeric scalar; proportion of subjects with
+no visits.}
+\item{\code{obs_rate}}{Numeric scalar; proportion of visits with an
+observed outcome (\code{R = 1}).}
+\item{\code{params}}{A named list echoing all data-generating parameters,
+suitable for passing to \code{method_comparisons()} as
+\code{true_values}.}
+}
 }
 \description{
 Generates synthetic longitudinal data from a joint model that includes an
 informative visiting process (Poisson with log-normal frailty), an
 informative observation process (probit with latent-factor-linked random
-effects and an Ornstein--Uhlenbeck (OU) serial correlation component), and a
-linear longitudinal outcome model with latent-factor-linked random effects.
+effects), and a linear longitudinal outcome model with
+latent-factor-linked random effects. By default, no OU serial-correlation
+component is added; an optional OU component can be enabled by setting
+\code{phi > 0}.
 The data-generating mechanism matches the model specification in
 Yang, Shi, and Mukherjee (2025) and is suitable for
-evaluating \code{\link{GIVEHR}}, \code{\link{GIVEHR_GH}}, and
-\code{\link{GIVEHR_OU_PCL}}.
+evaluating \code{\link{CIMEHR}}, \code{\link{CIMEHR_timevarying_integral}}, and
+\code{\link{CIMEHR_timevarying_ou}}.
 }
 \section{Visiting Process}{
 
@@ -127,10 +157,12 @@ homogeneous Poisson process with rate \eqn{\lambda_i}.
 At each visit, the latent propensity for outcome observation is
 \deqn{\tilde R_{ij} = \alpha^\top X_{ij}^O + q_i^\top Z_{ij}^O +
   \xi_i(t_{ij}),}
-where \eqn{R_{ij} = I(\tilde R_{ij} > 0)},
-\eqn{q_i \mid U_i \sim N(\delta U_i, \Sigma_q)}, and
-\eqn{\xi_i(t)} is a stationary Ornstein--Uhlenbeck process with unit
-marginal variance and decay parameter \eqn{\phi}.
+where \eqn{R_{ij} = I(\tilde R_{ij} > 0)} and
+\eqn{q_i \mid U_i \sim N(\delta U_i, \Sigma_q)}. By default,
+\eqn{\xi_i(t) = 0}, so the simulated observation process has no OU
+serial-correlation component. When \code{phi > 0}, \eqn{\xi_i(t)} is
+generated as a stationary Ornstein--Uhlenbeck process with unit marginal
+variance and decay parameter \eqn{\phi}.
 }
 
 \section{Outcome Process}{
@@ -150,6 +182,6 @@ dat$params$beta
 
 }
 \seealso{
-\code{\link{GIVEHR}}, \code{\link{GIVEHR_GH}}, and
-\code{\link{GIVEHR_OU_PCL}} for fitting models to the simulated data.
+\code{\link{CIMEHR}}, \code{\link{CIMEHR_timevarying_integral}}, and
+\code{\link{CIMEHR_timevarying_ou}} for fitting models to the simulated data.
 }

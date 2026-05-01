@@ -189,7 +189,7 @@
 #' model;
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 20, ]
 #' fit <- CIMEHR_timevarying_ou(data = dat, pair_type = "adjacent")
 #' print(fit)
 #'
@@ -476,7 +476,6 @@ CIMEHR_timevarying_ou <- function(
     ZO_k <- ZO_obs[obs_df$obs_idx[idx_k], , drop = FALSE]
 
     row_j <- obs_df$row_idx[idx_j]
-    row_k <- obs_df$row_idx[idx_k]
 
     mu_U_pair <- mu_Ui_row[row_j]
     s2_U_pair <- sigma2_Ui_row[row_j]

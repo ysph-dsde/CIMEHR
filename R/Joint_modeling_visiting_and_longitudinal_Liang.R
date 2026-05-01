@@ -83,8 +83,7 @@
 #' weights enter the estimating equations.
 #'
 #' @note
-#' This function requires the \pkg{nleqslv} package. It will attempt to
-#' install the package automatically if it is not available.
+#' This function requires the \pkg{nleqslv} package.
 #'
 #' No standard errors are returned. For inference, consider bootstrapping
 #' the entire procedure.
@@ -95,10 +94,11 @@
 #' \doi{10.1111/j.1541-0420.2008.01104.x}.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Joint_modeling_visiting_and_longitudinal_Liang(dat)
 #' print(fit)
 #'
+#' @importFrom stats na.omit
 #' @export
 Joint_modeling_visiting_and_longitudinal_Liang <- function(data,
                                                            id = "id",
@@ -139,7 +139,6 @@ Joint_modeling_visiting_and_longitudinal_Liang <- function(data,
   ni <- sapply(unique_ids, function(i) sum(!is.na(time_vec[id_vec == i])))
   ni_0to1 <- ifelse(ni == 0, 1, ni)
 
-  C <- rep(max(time_vec, na.rm = TRUE), nrow(VV))
   Time <- time_vec
   y <- data[[outcome]]
 

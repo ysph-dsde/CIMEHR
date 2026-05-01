@@ -12,7 +12,7 @@ Authors@R: c(
          comment = c(ORCID = "0009-0005-0422-4268"))
  )
 Description: Fits semiparametric joint models for longitudinal electronic health record (EHR) data that addresses two-stage hierarchical missingness mechanism. The first stage is the visiting process, and the second stage is the observation process. The core CIMEHR method (Clinical Informative Missingness for Electronic Health Records) uses a three-stage procedure: partial likelihood with log-normal frailty for visit intensity, probit regression with shared latent factor-linked random effects for observation, and weighted least squares with risk-set centering for the ouctome. These three stages are connected through a shared latent factor that induces dependence across all three processes. A data simulator and implementations of common benchmark methods (linear midex models, multiple imputation, and others) are included for comparative studies. Detailed methods are described in Yang, Shi, and Mukherjee (2026) <https://doi.org/10.48550/arXiv.2602.15374>.
-License: MIT + file LICENSE
+License: GPL-3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3

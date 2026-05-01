@@ -49,7 +49,7 @@
 #' methods such as \code{\link{CIMEHR}}.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Summary_stat(dat, formula = ~ Z + X)
 #' print(fit)
 #'

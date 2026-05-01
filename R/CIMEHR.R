@@ -167,14 +167,9 @@
 #' \code{\link{sim_data_gen}} for simulating data compatible with this model.
 #'
 #' @examples
-#' \donttest{
-#' data(sim_ehr_data)
-#' fit <- CIMEHR(data = sim_ehr_data)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+#' fit <- CIMEHR(data = dat)
 #' print(fit)
-#' summary(fit)
-#' coef(fit)
-#' confint(fit)
-#' }
 #'
 #' @importFrom stats binomial coef dnorm glm nlminb plogis pnorm reformulate setNames
 #' @export
@@ -589,15 +584,13 @@ CIMEHR <- function(
   XY_s <- XY_all[sf, , drop = FALSE]
   ZY_s <- ZY_row[sf, , drop = FALSE]
   ZY_s_notime <- if (use_time) ZY_s[, -ncol(ZY_s), drop = FALSE] else ZY_s
-  B_s  <- kappa_s * ZY_s_notime; p_B <- ncol(B_s)
+  B_s  <- kappa_s * ZY_s_notime
 
   dw_k    <- rs_accum_scalar(w_s)
   inv_dw  <- 1 / pmax(dw_k, 1e-30)
   XYbar_k <- rs_accum_matrix(w_s, XY_s) * inv_dw
   Bbar_k  <- rs_accum_matrix(w_s, B_s)  * inv_dw
   if (use_time) kbar_k <- rs_accum_scalar(w_s * kappa_s) * inv_dw
-
-  row_tidx <- match(raw_times, unique_times)
 
   eo_mask <- visit_mask & (r_vec == 1L) & !is.na(y_vec)
   eo_idx  <- which(eo_mask); n_eo <- length(eo_idx)

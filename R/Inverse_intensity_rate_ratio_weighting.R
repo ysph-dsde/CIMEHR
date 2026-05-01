@@ -75,11 +75,11 @@
 #' \emph{The Canadian Journal of Statistics}, 35(4), 485--500. \doi{10.1002/cjs.5550350402}.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
 #' print(fit)
 #'
-#' @importFrom stats as.formula model.frame model.matrix na.pass
+#' @importFrom stats as.formula model.frame model.matrix na.omit na.pass
 #' @export
 Inverse_intensity_rate_ratio_weighting <- function(data,
                                                    id = "id",
@@ -97,13 +97,6 @@ Inverse_intensity_rate_ratio_weighting <- function(data,
   # Build formula from column-name arguments if not supplied
   if (is.null(formula)) {
     formula <- as.formula(
-      paste("~", paste(c(visit_covs, time), collapse = " + "))
-    )
-  }
-
-  # Build formula from column-name arguments if not supplied
-  if (is.null(formula)) {
-    formula <- stats::as.formula(
       paste("~", paste(c(visit_covs, time), collapse = " + "))
     )
   }

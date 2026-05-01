@@ -2,6 +2,10 @@
 #'
 #' @return Character vector of method names that can be fitted by
 #'   \code{method_comparisons()}.
+#'
+#' @examples
+#' available_comparison_methods()
+#'
 #' @export
 available_comparison_methods <- function() {
   c(
@@ -64,6 +68,26 @@ available_comparison_methods <- function() {
 #'
 #' @return An object of class \code{"CIMEHR_method_comparisons"} with fitted
 #'   model objects and process-specific tables.
+#'
+#' @examples
+#' # Fast example: three quick methods on a small subset.
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+#' cmp <- method_comparisons(
+#'   data = dat,
+#'   methods = c("Summary_stat",
+#'               "Linear_mixed_model",
+#'               "Inverse_intensity_rate_ratio_weighting"),
+#'   method_args = list(
+#'     Summary_stat                           = list(formula = ~ Z + X),
+#'     Linear_mixed_model                     = list(fixed = Y ~ Z + X + time,
+#'                                                   random = ~ 1 | id,
+#'                                                   obs_indicator = "R"),
+#'     Inverse_intensity_rate_ratio_weighting = list(visit_covs = c("Z", "X"))
+#'   ),
+#'   true_value_verbose = FALSE
+#' )
+#' cmp$tables$outcome
+#'
 #' @export
 method_comparisons <- function(data,
                                methods = "all",

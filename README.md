@@ -17,7 +17,7 @@ The main estimator is `CIMEHR()`. Two extensions, `CIMEHR_timevarying_integral()
 
 ## Installation
 
-``` r
+```{r, eval = FALSE}
 # install.packages("devtools")
 devtools::install_github("ysph-dsde/CIMEHR")
 ```
@@ -41,7 +41,7 @@ The package methods are designed for long/panel data. Some benchmark methods use
 
 If your data are stored with one row per subject and repeated outcome/time columns, convert them to long format before fitting a model:
 
-``` r
+```{r, eval = FALSE}
 library(dplyr)
 library(tidyr)
 
@@ -56,9 +56,9 @@ wide_dat <- tibble::tibble(
 
 long_dat <- wide_dat %>%
   pivot_longer(
-    cols = matches("^(time|Y)_\\\\d+$"),
+    cols = matches("^(time|Y)_\\d+$"),
     names_to = c(".value", "visit"),
-    names_pattern = "(time|Y)_(\\\\d+)"
+    names_pattern = "(time|Y)_(\\d+)"
   ) %>%
   mutate(R = as.integer(!is.na(Y))) %>%
   arrange(id, time)
@@ -68,7 +68,7 @@ long_dat <- wide_dat %>%
 
 The package includes a simulated long-format dataset, `sim_ehr_data`.
 
-``` r
+```{r, eval = FALSE}
 library(CIMEHR)
 
 data("sim_ehr_data")
@@ -80,7 +80,7 @@ summary(fit)
 
 To simulate new data:
 
-``` r
+```{r, eval = FALSE}
 dat <- sim_data_gen(n = 500, seed = 42)
 fit <- CIMEHR(data = dat$long_data)
 ```
@@ -104,7 +104,7 @@ This table shows a comprehensive comparison of statistical methods for longitudi
 |:--|:--:|:--:|:--|:--|:--|
 | Liang (Liang et al., 2009) | ✓ | ✗ | Visiting & Outcome | Joint likelihood estimation via shared frailty linking visiting and outcome. | IrregLong |
 | JMVL-G (Gasparini et al., 2020) | ✓ | ✗ | Visiting & Outcome | Joint likelihood modeling inter-visit times via shared random effects. | merlin |
-| IIRR-Weighting (Burzykova and Lumley, 2007) | ✓ | ✗ | None | Inverse intensity weighting based on visiting intensity. | — |
+| IIRR-Weighting (Bůžková and Lumley, 2007) | ✓ | ✗ | None | Inverse intensity weighting based on visiting intensity. | — |
 | IIRR-Balanced (Yiu and Su, 2025) | ✓ | ✗ | None | Inverse intensity weighting adjusted for covariate balance. | — |
 | Pairwise Likelihood (Chen et al., 2015) | ✓ | ✗ | None | Constructs a likelihood from all within-subject pairs of observations; conditioning on observed visit times eliminates the visit intensity from the likelihood. | — |
 
@@ -128,7 +128,7 @@ The “Proposed” row corresponds to `CIMEHR()`; `CIMEHR_timevarying_integral()
 
 ## Primary CIMEHR methods
 
-``` r
+```{r, eval = FALSE}
 fit_base <- CIMEHR(
   data = sim_ehr_data,
   covars_visit_XV = c("Z", "X"),
@@ -236,7 +236,7 @@ For real, non-simulated data, the comparison tables omit true-value, bias, and R
 
 Use `bootstrap()` for methods without analytic standard errors or as a robustness check for CIMEHR-family methods:
 
-``` r
+```{r, eval = FALSE}
 fit_iirr <- Inverse_intensity_rate_ratio_weighting(sim_ehr_data,
                                                    visit_covs = c("Z", "X"))
 bs <- bootstrap(fit_iirr, data = sim_ehr_data, B = 200, seed = 1)
@@ -246,7 +246,7 @@ summary(bs)
 
 Model-specific arguments can be passed through `covars`:
 
-``` r
+```{r, eval = FALSE}
 bs_cimehr <- bootstrap(
   fit_base,
   data = sim_ehr_data,
@@ -272,7 +272,7 @@ Aalen, O. O., Borgan, Ø., and Gjessing, H. K. (2008). *Survival and event histo
 
 Aalen, O. O. and Gunnes, N. (2010). A dynamic approach for reconstructing missing longitudinal data using the linear increments model. *Biostatistics*, 11, 453--472.
 
-Burzykova, P. and Lumley, T. (2007). Longitudinal data analysis for generalized linear models with follow-up dependent on outcome-related variables. *Canadian Journal of Statistics*, 35, 485--500.
+Bůžková, P. and Lumley, T. (2007). Longitudinal data analysis for generalized linear models with follow-up dependent on outcome-related variables. *Canadian Journal of Statistics*, 35, 485--500.
 
 Chen, Y., Ning, J., and Cai, C. (2015). Regression analysis of longitudinal data with irregular and informative observation times. *Biostatistics*, 16, 727--739.
 

@@ -83,7 +83,7 @@
 #' \emph{Biometrics}, 38(4), 963--974.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Linear_mixed_model(dat, fixed = Y ~ Z + X + time,
 #'            random = ~ 1 | id, obs_indicator = "R")
 #' print(fit)

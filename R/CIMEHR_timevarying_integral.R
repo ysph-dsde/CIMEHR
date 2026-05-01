@@ -165,8 +165,9 @@
 #' \code{\link{sim_data_gen}} for simulating compatible data.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
-#' fit <- CIMEHR_timevarying_integral(data = dat, gh_points_U = 3, gh_points_q = 3)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 20, ]
+#' fit <- CIMEHR_timevarying_integral(data = dat,
+#'                                    gh_points_U = 2, gh_points_q = 2)
 #' print(fit)
 #'
 #' @importFrom stats as.formula binomial coef dnorm glm.fit model.matrix
@@ -255,7 +256,6 @@ CIMEHR_timevarying_integral <- function(
   # Joint Laplace update for w = (U, eps) with probit likelihood
   update_joint_laplace <- function(m_prior, V_prior, R, a_const, aw,
                                    max_iter, tol = 1e-8, clip_eta) {
-    p_dim <- length(m_prior)
 
     P <- tryCatch(solve(V_prior), error = function(e) {
       diag(1 / pmax(diag(V_prior), 1e-12))
@@ -572,7 +572,6 @@ CIMEHR_timevarying_integral <- function(
     ZY_row_base <- matrix(1, n_row, 1, dimnames = list(NULL, "Intercept"))
   }
   ZY_row <- if (use_time_in_ZY) cbind(ZY_row_base, time = df[[time_col]]) else ZY_row_base
-  pz <- ncol(ZY_subject_base)
 
   # Observation model quantities at subject level
   XO_subject <- XO_all[subj_first_idx, , drop = FALSE]

@@ -64,7 +64,7 @@
 #' @seealso \code{\link{summary.EHRJoint}}, \code{\link{EHRJoint}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- EHRJoint(dat)
 #' print(fit)
 #'
@@ -104,7 +104,7 @@ print.EHRJoint <- function(x, digits = 4, level = 0.95, ...) {
 #' @seealso \code{\link{print.EHRJoint}}, \code{\link{EHRJoint}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- EHRJoint(dat)
 #' summary(fit)
 #' summary(fit, specify = "visiting")
@@ -177,7 +177,7 @@ summary.EHRJoint <- function(object, level = 0.95, digits = 4,
 #'   \code{\link{Inverse_intensity_rate_ratio_weighting}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
 #' print(fit)
 #'
@@ -214,7 +214,7 @@ print.Inverse_intensity_rate_ratio_weighting <- function(x, digits = 4, level = 
 #'   \code{\link{Inverse_intensity_rate_ratio_weighting}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
 #' summary(fit)
 #' summary(fit, specify = "visiting")
@@ -271,7 +271,7 @@ summary.Inverse_intensity_rate_ratio_weighting <- function(object, level = 0.95,
 #'   \code{\link{Inverse_intensity_rate_ratio_balancing}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Inverse_intensity_rate_ratio_balancing(dat, visit_covs = c("Z", "X"))
 #' print(fit)
 #'
@@ -313,7 +313,7 @@ print.Inverse_intensity_rate_ratio_balancing <- function(x, digits = 4, level = 
 #'   \code{\link{Inverse_intensity_rate_ratio_balancing}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Inverse_intensity_rate_ratio_balancing(dat, visit_covs = c("Z", "X"))
 #' summary(fit)
 #' summary(fit, specify = "outcome")
@@ -377,7 +377,7 @@ summary.Inverse_intensity_rate_ratio_balancing <- function(object, level = 0.95,
 #'   \code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Joint_modeling_visiting_and_longitudinal_Liang(dat)
 #' print(fit)
 #'
@@ -416,7 +416,7 @@ print.Joint_modeling_visiting_and_longitudinal_Liang <- function(x, digits = 4, 
 #'   \code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Joint_modeling_visiting_and_longitudinal_Liang(dat)
 #' summary(fit)
 #' summary(fit, specify = "visiting")
@@ -474,7 +474,7 @@ summary.Joint_modeling_visiting_and_longitudinal_Liang <- function(object, level
 #'   \code{\link{Linear_mixed_model}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Linear_mixed_model(dat, fixed = Y ~ Z + X + time,
 #'            random = ~ 1 | id, obs_indicator = "R")
 #' print(fit)
@@ -506,7 +506,7 @@ print.Linear_mixed_model_result <- function(x, digits = 4, level = 0.95, ...) {
 #'   \code{\link{Linear_mixed_model}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Linear_mixed_model(dat, fixed = Y ~ Z + X + time,
 #'            random = ~ 1 | id, obs_indicator = "R")
 #' summary(fit)
@@ -550,7 +550,7 @@ summary.Linear_mixed_model_result <- function(object, level = 0.95, digits = 4,
 #'   \code{\link{Summary_stat}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Summary_stat(dat, formula = ~ Z + X)
 #' print(fit)
 #'
@@ -579,7 +579,7 @@ print.Summary_stat_result <- function(x, digits = 4, ...) {
 #'   \code{\link{Summary_stat}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Summary_stat(dat, formula = ~ Z + X)
 #' summary(fit)
 #'
@@ -626,10 +626,10 @@ summary.Summary_stat_result <- function(object, digits = 4,
 #'   \code{\link{Pairwise_likelihood}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100 &
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30 &
 #'                     sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
 #' fit <- Pairwise_likelihood(dat, formula = Y ~ Z + X + time,
-#'                            pair_sample = 200)
+#'                            pair_sample = 50, hessian = FALSE)
 #' print(fit)
 #'
 #' @export
@@ -668,10 +668,10 @@ print.Pairwise_likelihood <- function(x, digits = 4, level = 0.95, ...) {
 #'   \code{\link{Pairwise_likelihood}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100 &
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30 &
 #'                     sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
 #' fit <- Pairwise_likelihood(dat, formula = Y ~ Z + X + time,
-#'                            pair_sample = 200)
+#'                            pair_sample = 50, hessian = FALSE)
 #' summary(fit)
 #'
 #' @export
@@ -724,7 +724,7 @@ summary.Pairwise_likelihood <- function(object, level = 0.95, digits = 4,
 #'   \code{\link{Linear_increment_IP}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80,
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30,
 #'                     c("id", "Z", "X", "time", "R", "Y", "C")]
 #' fit <- Linear_increment_IP(data = dat, ip_method = "Linear_mixed_model",
 #'              visit_covs = c("Z", "X"))
@@ -769,7 +769,7 @@ print.Linear_increment_IP_result <- function(x, digits = 4, ...) {
 #'   \code{\link{Linear_increment_IP}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80,
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30,
 #'                     c("id", "Z", "X", "time", "R", "Y", "C")]
 #' fit <- Linear_increment_IP(data = dat, ip_method = "Linear_mixed_model",
 #'              visit_covs = c("Z", "X"))
@@ -828,10 +828,10 @@ summary.Linear_increment_IP_result <- function(object, digits = 4,
 #'   \code{\link{Multiple_imputation_IP}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80,
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30,
 #'                     c("id", "Z", "X", "time", "R", "Y", "C")]
 #' fit <- Multiple_imputation_IP(data = dat, ip_method = "Linear_mixed_model",
-#'              visit_covs = c("Z", "X"), m = 2, maxit = 5)
+#'              visit_covs = c("Z", "X"), m = 1, maxit = 1)
 #' print(fit)
 #'
 #' @export
@@ -875,10 +875,10 @@ print.Multiple_imputation_IP_result <- function(x, digits = 4, ...) {
 #'   \code{\link{Multiple_imputation_IP}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80,
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30,
 #'                     c("id", "Z", "X", "time", "R", "Y", "C")]
 #' fit <- Multiple_imputation_IP(data = dat, ip_method = "Linear_mixed_model",
-#'              visit_covs = c("Z", "X"), m = 2, maxit = 5)
+#'              visit_covs = c("Z", "X"), m = 1, maxit = 1)
 #' summary(fit)
 #'
 #' @export

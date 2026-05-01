@@ -109,7 +109,7 @@
 #' @seealso \code{\link{summary.CIMEHR}}, \code{\link{CIMEHR}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- CIMEHR(data = dat)
 #' print(fit)
 #'
@@ -148,7 +148,7 @@ print.CIMEHR <- function(x, digits = 4, level = 0.95, ...) {
 #' @seealso \code{\link{print.CIMEHR}}, \code{\link{CIMEHR}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- CIMEHR(data = dat)
 #' summary(fit)
 #' summary(fit, specify = "visiting")
@@ -258,8 +258,8 @@ summary.CIMEHR <- function(object, level = 0.95, digits = 4,
 #'   \code{\link{CIMEHR_timevarying_integral}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
-#' fit <- CIMEHR_timevarying_integral(data = dat, gh_points_U = 3, gh_points_q = 3)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 20, ]
+#' fit <- CIMEHR_timevarying_integral(data = dat, gh_points_U = 2, gh_points_q = 2)
 #' print(fit)
 #'
 #' @export
@@ -298,8 +298,8 @@ print.CIMEHR_timevarying_integral <- function(x, digits = 4, level = 0.95, ...) 
 #'   \code{\link{CIMEHR_timevarying_integral}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
-#' fit <- CIMEHR_timevarying_integral(data = dat, gh_points_U = 3, gh_points_q = 3)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 20, ]
+#' fit <- CIMEHR_timevarying_integral(data = dat, gh_points_U = 2, gh_points_q = 2)
 #' summary(fit)
 #' summary(fit, specify = "outcome")
 #'
@@ -394,7 +394,7 @@ summary.CIMEHR_timevarying_integral <- function(object, level = 0.95, digits = 4
 #'   \code{\link{CIMEHR_timevarying_ou}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- CIMEHR_timevarying_ou(data = dat, pair_type = "adjacent")
 #' print(fit)
 #'
@@ -436,7 +436,7 @@ print.CIMEHR_timevarying_ou <- function(x, digits = 4, level = 0.95, ...) {
 #'   \code{\link{CIMEHR_timevarying_ou}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- CIMEHR_timevarying_ou(data = dat, pair_type = "adjacent")
 #' summary(fit)
 #' summary(fit, specify = "observation")
@@ -544,7 +544,7 @@ summary.CIMEHR_timevarying_ou <- function(object, level = 0.95, digits = 4,
 #' @return Named numeric vector.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- CIMEHR(data = dat)
 #' coef(fit)
 #' coef(fit, type = "visiting")
@@ -598,7 +598,7 @@ coef.CIMEHR_timevarying_ou <- function(object, type = c("outcome", "visiting", "
 #' @return Numeric matrix.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- CIMEHR(data = dat)
 #' vcov(fit)
 #'
@@ -632,7 +632,7 @@ vcov.CIMEHR_timevarying_ou <- function(object, ...) {
 #'   standard errors are unavailable.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- CIMEHR(data = dat)
 #' confint(fit)
 #' confint(fit, parm = "Z", level = 0.90)

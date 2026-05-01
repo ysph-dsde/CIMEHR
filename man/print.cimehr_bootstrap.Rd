@@ -21,9 +21,9 @@ Prints bootstrap standard errors and percentile confidence intervals
 for outcome coefficients.
 }
 \examples{
-dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
-fit <- IIRR_weighting(dat, visit_covs = c("Z", "X"))
-bs  <- bootstrap(fit, data = dat, B = 5, seed = 1)
+dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
+bs  <- bootstrap(fit, data = dat, B = 3, seed = 1)
 print(bs)
 
 }

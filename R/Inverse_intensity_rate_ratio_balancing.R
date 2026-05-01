@@ -122,11 +122,11 @@
 #' 74(3), 824--843. \doi{10.1093/jrsssc/qlaf002}.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Inverse_intensity_rate_ratio_balancing(dat, visit_covs = c("Z", "X"))
 #' print(fit)
 #'
-#' @importFrom stats as.formula model.frame model.matrix optim na.pass
+#' @importFrom stats as.formula model.frame model.matrix na.pass
 #' @export
 Inverse_intensity_rate_ratio_balancing <- function(data,
                                                    id = "id",
@@ -149,14 +149,6 @@ Inverse_intensity_rate_ratio_balancing <- function(data,
     )
   }
 
-
-  # Build formula from column-name arguments if not supplied
-  if (is.null(formula)) {
-    formula <- stats::as.formula(
-      paste("~", paste(c(visit_covs, time), collapse = " + "))
-    )
-  }
-
   # ============================================
   # Data Preparation
   # ============================================
@@ -171,7 +163,6 @@ Inverse_intensity_rate_ratio_balancing <- function(data,
 
   y_vec <- data[[outcome]]
   time_vec <- data[[time]]
-  id_vec <- data[[id]]
 
   unique_times <- sort(unique(time_vec))
   n_obs <- nrow(data)

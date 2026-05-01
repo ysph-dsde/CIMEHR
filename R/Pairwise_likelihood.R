@@ -114,10 +114,10 @@
 #' 16(4), 727--739. \doi{10.1093/biostatistics/kxv008}.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100 &
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30 &
 #'                     sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
 #' fit <- Pairwise_likelihood(dat, formula = Y ~ Z + X + time,
-#'                           pair_sample = 200)
+#'                            pair_sample = 50, hessian = FALSE)
 #' print(fit)
 #'
 #' @importFrom stats coef complete.cases glm.fit lm.fit model.frame
@@ -187,6 +187,14 @@ Pairwise_likelihood <- function(
   # 4) subject-pairs
   subj_pairs <- utils::combn(seq_len(G), 2L)
   if (!is.null(pair_sample) && ncol(subj_pairs) > pair_sample) {
+    # Save and restore the user's RNG state so we don't mutate it globally.
+    if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+      old_seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+      on.exit(assign(".Random.seed", old_seed, envir = .GlobalEnv), add = TRUE)
+    } else {
+      on.exit(rm(".Random.seed", envir = .GlobalEnv, inherits = FALSE),
+              add = TRUE)
+    }
     set.seed(pair_seed)
     subj_pairs <- subj_pairs[, sample.int(ncol(subj_pairs), pair_sample), drop = FALSE]
   }

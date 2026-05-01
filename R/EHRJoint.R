@@ -27,11 +27,11 @@
 #' \doi{10.48550/arXiv.2410.13113}. \url{https://arxiv.org/abs/2410.13113}.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 80, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- EHRJoint(dat)
 #' print(fit)
 #'
-#' @importFrom stats as.formula binomial coef glm plogis
+#' @importFrom stats as.formula binomial coef glm na.omit plogis
 #' @export
 EHRJoint <- function(data,
                      id = "id",
@@ -68,8 +68,6 @@ EHRJoint <- function(data,
   ni <- sapply(unique_ids, function(i) sum(!is.na(R[id_vec == i])))
   ni_0to1 <- ifelse(ni == 0, 1, ni)
 
-  Nit <- as.numeric(!is.na(data[[time]]))
-  C <- rep(max(data[[time]], na.rm = TRUE), nrow(VV))
   Time <- data[[time]]
   y <- data[[outcome]]
 

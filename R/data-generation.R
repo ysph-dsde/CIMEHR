@@ -100,9 +100,32 @@
 #'   \code{matrix(c(1, 0, 0, 2), 2, 2)}.
 #' @param sigma_y Positive numeric scalar; residual standard deviation of
 #'   the outcome measurement error. Default is \code{1}.
+#' @param verbose Logical; if \code{TRUE} (the default), a short simulation
+#'   summary (visit counts, observation rate) is printed via
+#'   \code{\link{message}}, which can be silenced with
+#'   \code{\link{suppressMessages}}.
 #'
 #' @return An object of class \code{"sim_CIMEHR"}, which is a named
 #'   list with the following components:
+#'
+#' \describe{
+#'   \item{\code{long_data}}{A long-format \code{data.frame} with one row per
+#'     subject-visit (or one row with \code{NA} time values for subjects with
+#'     no visits). Columns include \code{id}, \code{Z}, \code{X}, \code{time},
+#'     \code{R}, \code{Y}, and the latent quantities \code{U}, \code{eta},
+#'     \code{q_intercept}, \code{q_Z}, \code{b_intercept}, and \code{b_Z}
+#'     (the last six are not available in real data and are included for
+#'     simulation diagnostics).}
+#'   \item{\code{subject_data}}{A subject-level \code{data.frame} with the
+#'     baseline covariates, latent factor, frailty, and random effects.}
+#'   \item{\code{prop_no_visit}}{Numeric scalar; proportion of subjects with
+#'     no visits.}
+#'   \item{\code{obs_rate}}{Numeric scalar; proportion of visits with an
+#'     observed outcome (\code{R = 1}).}
+#'   \item{\code{params}}{A named list echoing all data-generating parameters,
+#'     suitable for passing to \code{method_comparisons()} as
+#'     \code{true_values}.}
+#' }
 #'
 #' @seealso
 #' \code{\link{CIMEHR}}, \code{\link{CIMEHR_timevarying_integral}}, and
@@ -147,9 +170,18 @@ sim_data_gen <- function(
     beta_t  = 0.1,
     theta   = c(intercept = 0.5, Z = 0.3),  # outcome link
     Sigma_b = matrix(c(1, 0, 0, 2), 2, 2),  # residual RE covariance
-    sigma_y = 1
+    sigma_y = 1,
+    verbose = TRUE
 ) {
 
+  # Save and restore the user's RNG state so we don't mutate it globally.
+  if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+    old_seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+    on.exit(assign(".Random.seed", old_seed, envir = .GlobalEnv), add = TRUE)
+  } else {
+    on.exit(rm(".Random.seed", envir = .GlobalEnv, inherits = FALSE),
+            add = TRUE)
+  }
   set.seed(seed)
 
   if (!is.numeric(phi) || length(phi) != 1L || is.na(phi) || phi < 0) {
@@ -248,7 +280,6 @@ sim_data_gen <- function(
   q_dim <- length(delta)
   delta_vec <- c(delta["intercept"], delta["Z"])
   sigma_q_vec <- c(sigma_q["intercept"], sigma_q["Z"])
-  Sigma_q_diag <- sigma_q_vec^2
 
   # Residual random effects for observation process
   b_tilde_obs <- matrix(rnorm(n * q_dim), nrow = n, ncol = q_dim)
@@ -368,12 +399,14 @@ sim_data_gen <- function(
   prop_no_visit <- mean(n_visits == 0)
   obs_rate <- mean(long_df$R[!is.na(long_df$R)])
 
-  cat(sprintf("Simulation summary (n=%d):\n", n))
-  cat(sprintf("  Subjects with no visits: %.1f%%\n", 100 * prop_no_visit))
-  cat(sprintf("  Total visits: %d\n", sum(n_visits)))
-  cat(sprintf("  Median visits per subject: %.1f\n", median(n_visits)))
-  cat(sprintf("  Observation rate: %.1f%%\n", 100 * obs_rate))
-  cat(sprintf("  Total observed outcomes: %d\n", sum(long_df$R == 1, na.rm = TRUE)))
+  if (isTRUE(verbose)) {
+    message(sprintf("Simulation summary (n=%d):", n))
+    message(sprintf("  Subjects with no visits: %.1f%%", 100 * prop_no_visit))
+    message(sprintf("  Total visits: %d", sum(n_visits)))
+    message(sprintf("  Median visits per subject: %.1f", median(n_visits)))
+    message(sprintf("  Observation rate: %.1f%%", 100 * obs_rate))
+    message(sprintf("  Total observed outcomes: %d", sum(long_df$R == 1, na.rm = TRUE)))
+  }
 
   # ============================================================
   # Return

@@ -152,9 +152,9 @@
 #' the Bootstrap}. Chapman & Hall/CRC.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
-#' bs  <- bootstrap(fit, data = dat, B = 5, seed = 1)
+#' bs  <- bootstrap(fit, data = dat, B = 3, seed = 1)
 #' print(bs)
 #'
 #' @importFrom stats quantile sd
@@ -202,7 +202,17 @@ bootstrap <- function(fit,
             paste(unknown, collapse = ", "), ". These will be ignored.",
             call. = FALSE)
 
-  if (!is.null(seed)) set.seed(seed)
+  if (!is.null(seed)) {
+    # Save and restore the user's RNG state so we don't mutate it globally.
+    if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+      old_seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+      on.exit(assign(".Random.seed", old_seed, envir = .GlobalEnv), add = TRUE)
+    } else {
+      on.exit(rm(".Random.seed", envir = .GlobalEnv, inherits = FALSE),
+              add = TRUE)
+    }
+    set.seed(seed)
+  }
 
   # -----------------------------------------------------------------------
   # Point estimates from original fit
@@ -560,9 +570,12 @@ bootstrap <- function(fit,
 }
 
 #' Null-coalescing operator
+#'
+#' Defined in R/utils.R; this section retained only as a documentation anchor.
+#'
 #' @keywords internal
 #' @noRd
-`%||%` <- function(x, y) if (is.null(x)) y else x
+NULL
 
 
 # ============================================================================
@@ -583,9 +596,9 @@ bootstrap <- function(fit,
 #' @seealso \code{\link{summary.cimehr_bootstrap}}, \code{\link{bootstrap}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
-#' bs  <- bootstrap(fit, data = dat, B = 5, seed = 1)
+#' bs  <- bootstrap(fit, data = dat, B = 3, seed = 1)
 #' print(bs)
 #'
 #' @export
@@ -641,9 +654,9 @@ print.cimehr_bootstrap <- function(x, digits = 4, ...) {
 #' @seealso \code{\link{print.cimehr_bootstrap}}, \code{\link{bootstrap}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 100, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
-#' bs  <- bootstrap(fit, data = dat, B = 5, seed = 1)
+#' bs  <- bootstrap(fit, data = dat, B = 3, seed = 1)
 #' summary(bs)
 #'
 #' @export
