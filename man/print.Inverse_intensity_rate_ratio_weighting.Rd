@@ -24,7 +24,7 @@ ratio weighting estimator.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
+fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = "Age")
 print(fit)
 
 }

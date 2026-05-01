@@ -34,11 +34,12 @@ column. Default is \code{"id"}.}
 \code{0.95}.}
 
 \item{covars}{Named list of model-specific arguments forwarded to the
-re-fitting function on each replicate. Supply only arguments that
-differ from the function defaults; unspecified arguments use the
-defaults listed in the Details section. Names must match the argument
-names of the underlying fitting function exactly; unrecognised names
-trigger a warning.}
+re-fitting function on each replicate. Defaults to an empty list, in
+which case the bootstrap re-uses the covariate arguments stored on
+\code{fit$call} from the original fit. Any entries supplied here
+override the corresponding entries from the original call. Names
+must match the argument names of the underlying fitting function
+exactly; unrecognised names trigger a warning.}
 
 \item{which_estimate}{For \code{"Inverse_intensity_rate_ratio_balancing"} fits only: which
 estimator to display in \code{print} and \code{summary}. One of
@@ -108,41 +109,25 @@ replicates fail.
 }
 \section{Covariate arguments by method}{
 
-Supply only entries in \code{covars} that differ from the defaults
-shown below. Names must match the argument names of the underlying
-fitting function exactly.
+By default, \code{bootstrap()} re-uses the covariate arguments that
+were passed to the original fitting call (\code{fit$call}). Supply
+entries in \code{covars} only when you want to override one of those
+arguments for the bootstrap re-fits. Names must match the argument
+names of the underlying fitting function exactly. Recognised entries:
 
 \strong{CIMEHR, CIMEHR_timevarying_integral, CIMEHR_timevarying_ou:}
-\describe{
-\item{\code{covars_visit_XV}}{Default \code{c("Z", "X")}.}
-\item{\code{covars_outcome_fixed_XY}}{Default \code{c("Z", "X")}.}
-\item{\code{covars_outcome_random_link_ZY}}{Default \code{"Z"}.}
-\item{\code{covars_obs_fixed_XO}}{Default \code{c("Z", "X")}.}
-\item{\code{covars_obs_random_link_ZO}}{Default \code{"Z"}.}
-}
+\code{covars_visit_XV}, \code{covars_outcome_fixed_XY},
+\code{covars_outcome_random_link_ZY}, \code{covars_obs_fixed_XO},
+\code{covars_obs_random_link_ZO}.
 
 \strong{EHRJoint, Joint_modeling_visiting_and_longitudinal_Liang:}
-\describe{
-\item{\code{visit_covs}}{Default \code{c("Z", "X")}.}
-\item{\code{long_covs}}{Default \code{c("Z", "X")}.}
-\item{\code{random_covs}}{Default \code{"Z"}.}
-}
+\code{visit_covs}, \code{long_covs}, \code{random_covs}.
 
 \strong{Inverse_intensity_rate_ratio_weighting:}
-\describe{
-\item{\code{visit_covs}}{Default \code{c("Z", "X")}.}
-\item{\code{formula}}{Default \code{NULL} (auto-constructed from
-\code{visit_covs} and \code{time}).}
-}
+\code{visit_covs}, \code{formula}.
 
 \strong{Inverse_intensity_rate_ratio_balancing:}
-\describe{
-\item{\code{visit_covs}}{Default \code{c("Z", "X")}.}
-\item{\code{balance_covs}}{Default \code{NULL} (uses
-\code{visit_covs}).}
-\item{\code{formula}}{Default \code{NULL} (auto-constructed).}
-\item{\code{phi}}{Sensitivity parameter. Default \code{0}.}
-}
+\code{visit_covs}, \code{balance_covs}, \code{formula}, \code{phi}.
 }
 
 \section{Plug-in vs. bootstrap}{
@@ -179,7 +164,7 @@ apply(bs$boot_matrix[, grepl("^s2\\.", colnames(bs$boot_matrix)), drop = FALSE],
 
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
+fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = "Age")
 bs  <- bootstrap(fit, data = dat, B = 3, seed = 1)
 print(bs)
 

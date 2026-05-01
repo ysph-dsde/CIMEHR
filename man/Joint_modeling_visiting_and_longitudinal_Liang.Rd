@@ -12,9 +12,9 @@ Joint_modeling_visiting_and_longitudinal_Liang(
   time = "time",
   outcome = "Y",
   obs_indicator = "R",
-  visit_covs = c("Z", "X"),
-  long_covs = c("Z", "X"),
-  random_covs = "Z"
+  visit_covs = NULL,
+  long_covs = NULL,
+  random_covs = NULL
 )
 }
 \arguments{
@@ -38,15 +38,15 @@ observation indicator column. Rows with \code{R == 1} or \code{R} is
 \code{"R"}.}
 
 \item{visit_covs}{Character vector of covariate column names for the
-visiting-process intensity model. Default is \code{c("Z", "X")}.}
+visiting-process intensity model. Default is \code{NULL}.}
 
 \item{long_covs}{Character vector of covariate column names for the
 fixed-effect part of the longitudinal outcome model. Default is
-\code{c("Z", "X")}.}
+\code{NULL}.}
 
 \item{random_covs}{Character vector of covariate column names that
 interact with the latent factor in the outcome model. An intercept
-column is prepended automatically. Default is \code{"Z"}.}
+column is prepended automatically. Default is \code{NULL}.}
 }
 \value{
 A named list with four components:
@@ -115,8 +115,12 @@ the entire procedure.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-fit <- Joint_modeling_visiting_and_longitudinal_Liang(dat)
-print(fit)
+fit <- Joint_modeling_visiting_and_longitudinal_Liang(
+  dat,
+  visit_covs  = "Age",
+  long_covs   = "Age",
+  random_covs = "Age"
+)
 
 }
 \references{

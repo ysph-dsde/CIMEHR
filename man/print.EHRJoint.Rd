@@ -24,7 +24,12 @@ Prints outcome fixed-effect estimates from the joint model.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-fit <- EHRJoint(dat)
+fit <- EHRJoint(
+  dat,
+  visit_covs  = "Age",
+  long_covs   = "Age",
+  random_covs = "Age"
+)
 print(fit)
 
 }

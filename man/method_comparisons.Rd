@@ -15,7 +15,7 @@ method_comparisons(
   true_values = NULL,
   true_value_verbose = TRUE,
   which_balancing = c("balancing", "mle"),
-  default_formula = Y ~ Z + X + time,
+  default_formula = Y ~ Age + time,
   default_random_formula = ~1 | id,
   stop_on_error = FALSE,
   ...
@@ -59,7 +59,7 @@ columns when true values are available.}
 from \code{"balancing"} or \code{"mle"} weights.}
 
 \item{default_formula}{Formula used for methods that require a formula when
-one is not supplied in \code{method_args}; default is \code{Y ~ Z + X + time}.}
+one is not supplied in \code{method_args}; default is \code{Y ~ Age + time}.}
 
 \item{default_random_formula}{Random-effects formula used for
 \code{Linear_mixed_model()} and imputation methods when one is not supplied;
@@ -91,11 +91,11 @@ cmp <- method_comparisons(
               "Linear_mixed_model",
               "Inverse_intensity_rate_ratio_weighting"),
   method_args = list(
-    Summary_stat                           = list(formula = ~ Z + X),
-    Linear_mixed_model                     = list(fixed = Y ~ Z + X + time,
+    Summary_stat                           = list(formula = ~ Age),
+    Linear_mixed_model                     = list(fixed = Y ~ Age + time,
                                                   random = ~ 1 | id,
                                                   obs_indicator = "R"),
-    Inverse_intensity_rate_ratio_weighting = list(visit_covs = c("Z", "X"))
+    Inverse_intensity_rate_ratio_weighting = list(visit_covs = "Age")
   ),
   true_value_verbose = FALSE
 )

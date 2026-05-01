@@ -24,11 +24,12 @@
 #' @param level Confidence level for percentile intervals. Default is
 #'   \code{0.95}.
 #' @param covars Named list of model-specific arguments forwarded to the
-#'   re-fitting function on each replicate. Supply only arguments that
-#'   differ from the function defaults; unspecified arguments use the
-#'   defaults listed in the Details section. Names must match the argument
-#'   names of the underlying fitting function exactly; unrecognised names
-#'   trigger a warning.
+#'   re-fitting function on each replicate. Defaults to an empty list, in
+#'   which case the bootstrap re-uses the covariate arguments stored on
+#'   \code{fit$call} from the original fit. Any entries supplied here
+#'   override the corresponding entries from the original call. Names
+#'   must match the argument names of the underlying fitting function
+#'   exactly; unrecognised names trigger a warning.
 #' @param which_estimate For \code{"Inverse_intensity_rate_ratio_balancing"} fits only: which
 #'   estimator to display in \code{print} and \code{summary}. One of
 #'   \code{"bal"} (default, balancing weights) or \code{"mle"} (maximum likelihood
@@ -80,41 +81,25 @@
 #' replicates fail.
 #'
 #' @section Covariate arguments by method:
-#' Supply only entries in \code{covars} that differ from the defaults
-#' shown below. Names must match the argument names of the underlying
-#' fitting function exactly.
+#' By default, \code{bootstrap()} re-uses the covariate arguments that
+#' were passed to the original fitting call (\code{fit$call}). Supply
+#' entries in \code{covars} only when you want to override one of those
+#' arguments for the bootstrap re-fits. Names must match the argument
+#' names of the underlying fitting function exactly. Recognised entries:
 #'
 #' \strong{CIMEHR, CIMEHR_timevarying_integral, CIMEHR_timevarying_ou:}
-#' \describe{
-#'   \item{\code{covars_visit_XV}}{Default \code{c("Z", "X")}.}
-#'   \item{\code{covars_outcome_fixed_XY}}{Default \code{c("Z", "X")}.}
-#'   \item{\code{covars_outcome_random_link_ZY}}{Default \code{"Z"}.}
-#'   \item{\code{covars_obs_fixed_XO}}{Default \code{c("Z", "X")}.}
-#'   \item{\code{covars_obs_random_link_ZO}}{Default \code{"Z"}.}
-#' }
+#' \code{covars_visit_XV}, \code{covars_outcome_fixed_XY},
+#' \code{covars_outcome_random_link_ZY}, \code{covars_obs_fixed_XO},
+#' \code{covars_obs_random_link_ZO}.
 #'
 #' \strong{EHRJoint, Joint_modeling_visiting_and_longitudinal_Liang:}
-#' \describe{
-#'   \item{\code{visit_covs}}{Default \code{c("Z", "X")}.}
-#'   \item{\code{long_covs}}{Default \code{c("Z", "X")}.}
-#'   \item{\code{random_covs}}{Default \code{"Z"}.}
-#' }
+#' \code{visit_covs}, \code{long_covs}, \code{random_covs}.
 #'
 #' \strong{Inverse_intensity_rate_ratio_weighting:}
-#' \describe{
-#'   \item{\code{visit_covs}}{Default \code{c("Z", "X")}.}
-#'   \item{\code{formula}}{Default \code{NULL} (auto-constructed from
-#'     \code{visit_covs} and \code{time}).}
-#' }
+#' \code{visit_covs}, \code{formula}.
 #'
 #' \strong{Inverse_intensity_rate_ratio_balancing:}
-#' \describe{
-#'   \item{\code{visit_covs}}{Default \code{c("Z", "X")}.}
-#'   \item{\code{balance_covs}}{Default \code{NULL} (uses
-#'     \code{visit_covs}).}
-#'   \item{\code{formula}}{Default \code{NULL} (auto-constructed).}
-#'   \item{\code{phi}}{Sensitivity parameter. Default \code{0}.}
-#' }
+#' \code{visit_covs}, \code{balance_covs}, \code{formula}, \code{phi}.
 #'
 #' @section Plug-in vs. bootstrap:
 #' \code{\link{CIMEHR}} and \code{\link{CIMEHR_timevarying_ou}} already compute
@@ -153,11 +138,12 @@
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
+#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = "Age")
 #' bs  <- bootstrap(fit, data = dat, B = 3, seed = 1)
 #' print(bs)
 #'
 #' @importFrom stats quantile sd
+#' @importFrom utils modifyList
 #' @export
 bootstrap <- function(fit,
                       data,
@@ -202,6 +188,13 @@ bootstrap <- function(fit,
             paste(unknown, collapse = ", "), ". These will be ignored.",
             call. = FALSE)
 
+  # -----------------------------------------------------------------------
+  # Recover covariate spec from fit$call so the bootstrap re-uses the
+  # original arguments. Anything passed via `covars` overrides them.
+  # -----------------------------------------------------------------------
+  call_covars  <- .bootstrap_extract_call_covars(fit, known)
+  merged_covars <- modifyList(call_covars, covars[intersect(names(covars), known)])
+
   if (!is.null(seed)) {
     # Save and restore the user's RNG state so we don't mutate it globally.
     if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
@@ -240,14 +233,14 @@ bootstrap <- function(fit,
     boot_data   <- .bootstrap_resample(data, id, sampled_ids)
 
     coef_b <- tryCatch(
-      .bootstrap_refit(fit, fit_class, boot_data, id, covars),
+      .bootstrap_refit(fit, fit_class, boot_data, id, merged_covars),
       error   = function(e) NULL,
       warning = function(w) {
         if (grepl("converge|singular|failed", conditionMessage(w),
                   ignore.case = TRUE))
           return(NULL)
         withCallingHandlers(
-          .bootstrap_refit(fit, fit_class, boot_data, id, covars),
+          .bootstrap_refit(fit, fit_class, boot_data, id, merged_covars),
           warning = function(w2) invokeRestart("muffleWarning")
         )
       }
@@ -458,18 +451,51 @@ bootstrap <- function(fit,
   do.call(rbind, chunks)
 }
 
+#' Extract covariate arguments from a fitted model's call
+#'
+#' Walks \code{fit$call} and returns a named list of any \code{known}
+#' arguments that were passed to the original fitting function, evaluated
+#' so that expressions such as \code{c("Age", "Gender")} or
+#' \code{my_covs} resolve to the actual character vectors. Returns
+#' \code{list()} if \code{fit$call} is missing.
+#'
+#' @keywords internal
+#' @noRd
+.bootstrap_extract_call_covars <- function(fit, known) {
+  cl <- fit$call
+  if (is.null(cl)) return(list())
+  out <- list()
+  # Try the user's calling frame first, then global, then base — covers
+  # the common case where the user passed a literal vector or a variable
+  # bound at top level.
+  envs <- list(parent.frame(2L), globalenv(), baseenv())
+  for (nm in known) {
+    if (nm %in% names(cl)) {
+      val <- NULL
+      for (e in envs) {
+        val <- tryCatch(eval(cl[[nm]], envir = e),
+                        error = function(err) NULL)
+        if (!is.null(val)) break
+      }
+      if (!is.null(val)) out[[nm]] <- val
+    }
+  }
+  out
+}
+
 #' Re-fit a model on a bootstrap dataset
 #'
-#' The \code{cv()} helper resolves each argument: the user-supplied value
-#' from \code{covars} takes priority, falling back to the function default.
+#' \code{covars} is the merged covariate spec produced by
+#' \code{\link{bootstrap}} (call-derived defaults overlaid with any
+#' user-supplied overrides). Unspecified entries are passed through as
+#' \code{NULL}, which is now the documented default of every fitting
+#' function.
 #'
 #' @keywords internal
 #' @noRd
 .bootstrap_refit <- function(fit, fit_class, boot_data, id, covars) {
 
-  cv <- function(name, default) {
-    if (!is.null(covars[[name]])) covars[[name]] else default
-  }
+  cv <- function(name) covars[[name]]
 
   switch(fit_class,
 
@@ -479,12 +505,12 @@ bootstrap <- function(fit,
          CIMEHR = {
            f <- CIMEHR(
              boot_data,
-             id_col                  = id,
-             covars_visit_XV         = cv("covars_visit_XV",         c("Z", "X")),
-             covars_outcome_fixed_XY = cv("covars_outcome_fixed_XY", c("Z", "X")),
-             covars_outcome_random_link_ZY  = cv("covars_outcome_random_link_ZY",  "Z"),
-             covars_obs_fixed_XO     = cv("covars_obs_fixed_XO",     c("Z", "X")),
-             covars_obs_random_link_ZO    = cv("covars_obs_random_link_ZO",    "Z")
+             id_col                        = id,
+             covars_visit_XV               = cv("covars_visit_XV"),
+             covars_outcome_fixed_XY       = cv("covars_outcome_fixed_XY"),
+             covars_outcome_random_link_ZY = cv("covars_outcome_random_link_ZY"),
+             covars_obs_fixed_XO           = cv("covars_obs_fixed_XO"),
+             covars_obs_random_link_ZO    = cv("covars_obs_random_link_ZO")
            )
            .bootstrap_extract_coef(f, "CIMEHR", NULL)
          },
@@ -492,12 +518,12 @@ bootstrap <- function(fit,
          CIMEHR_timevarying_integral = {
            f <- CIMEHR_timevarying_integral(
              boot_data,
-             id_col                  = id,
-             covars_visit_XV         = cv("covars_visit_XV",         c("Z", "X")),
-             covars_outcome_fixed_XY = cv("covars_outcome_fixed_XY", c("Z", "X")),
-             covars_outcome_random_link_ZY  = cv("covars_outcome_random_link_ZY",  "Z"),
-             covars_obs_fixed_XO     = cv("covars_obs_fixed_XO",     c("Z", "X")),
-             covars_obs_random_link_ZO    = cv("covars_obs_random_link_ZO",    "Z")
+             id_col                        = id,
+             covars_visit_XV               = cv("covars_visit_XV"),
+             covars_outcome_fixed_XY       = cv("covars_outcome_fixed_XY"),
+             covars_outcome_random_link_ZY = cv("covars_outcome_random_link_ZY"),
+             covars_obs_fixed_XO           = cv("covars_obs_fixed_XO"),
+             covars_obs_random_link_ZO    = cv("covars_obs_random_link_ZO")
            )
            .bootstrap_extract_coef(f, "CIMEHR_timevarying_integral", NULL)
          },
@@ -505,12 +531,12 @@ bootstrap <- function(fit,
          CIMEHR_timevarying_ou = {
            f <- CIMEHR_timevarying_ou(
              boot_data,
-             id_col                  = id,
-             covars_visit_XV         = cv("covars_visit_XV",         c("Z", "X")),
-             covars_outcome_fixed_XY = cv("covars_outcome_fixed_XY", c("Z", "X")),
-             covars_outcome_random_link_ZY  = cv("covars_outcome_random_link_ZY",  "Z"),
-             covars_obs_fixed_XO     = cv("covars_obs_fixed_XO",     c("Z", "X")),
-             covars_obs_random_link_ZO    = cv("covars_obs_random_link_ZO",    "Z")
+             id_col                        = id,
+             covars_visit_XV               = cv("covars_visit_XV"),
+             covars_outcome_fixed_XY       = cv("covars_outcome_fixed_XY"),
+             covars_outcome_random_link_ZY = cv("covars_outcome_random_link_ZY"),
+             covars_obs_fixed_XO           = cv("covars_obs_fixed_XO"),
+             covars_obs_random_link_ZO    = cv("covars_obs_random_link_ZO")
            )
            .bootstrap_extract_coef(f, "CIMEHR_timevarying_ou", NULL)
          },
@@ -522,9 +548,9 @@ bootstrap <- function(fit,
            f <- EHRJoint(
              boot_data,
              id          = id,
-             visit_covs  = cv("visit_covs",  c("Z", "X")),
-             long_covs   = cv("long_covs",   c("Z", "X")),
-             random_covs = cv("random_covs", "Z")
+             visit_covs  = cv("visit_covs"),
+             long_covs   = cv("long_covs"),
+             random_covs = cv("random_covs")
            )
            .bootstrap_extract_coef(f, "EHRJoint", NULL)
          },
@@ -533,9 +559,9 @@ bootstrap <- function(fit,
            f <- Joint_modeling_visiting_and_longitudinal_Liang(
              boot_data,
              id          = id,
-             visit_covs  = cv("visit_covs",  c("Z", "X")),
-             long_covs   = cv("long_covs",   c("Z", "X")),
-             random_covs = cv("random_covs", "Z")
+             visit_covs  = cv("visit_covs"),
+             long_covs   = cv("long_covs"),
+             random_covs = cv("random_covs")
            )
            .bootstrap_extract_coef(f, "Joint_modeling_visiting_and_longitudinal_Liang", NULL)
          },
@@ -547,20 +573,21 @@ bootstrap <- function(fit,
            f <- Inverse_intensity_rate_ratio_weighting(
              boot_data,
              id         = id,
-             visit_covs = cv("visit_covs", c("Z", "X")),
-             formula    = cv("formula",    NULL)
+             visit_covs = cv("visit_covs"),
+             formula    = cv("formula")
            )
            .bootstrap_extract_coef(f, "Inverse_intensity_rate_ratio_weighting", NULL)
          },
 
          Inverse_intensity_rate_ratio_balancing = {
+           phi_val <- cv("phi"); if (is.null(phi_val)) phi_val <- 0
            f <- Inverse_intensity_rate_ratio_balancing(
              boot_data,
              id           = id,
-             visit_covs   = cv("visit_covs",   c("Z", "X")),
-             balance_covs = cv("balance_covs", NULL),
-             formula      = cv("formula",      NULL),
-             phi          = cv("phi",          0)
+             visit_covs   = cv("visit_covs"),
+             balance_covs = cv("balance_covs"),
+             formula      = cv("formula"),
+             phi          = phi_val
            )
            .bootstrap_extract_coef(f, "Inverse_intensity_rate_ratio_balancing", NULL)
          },
@@ -597,7 +624,7 @@ NULL
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
+#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = "Age")
 #' bs  <- bootstrap(fit, data = dat, B = 3, seed = 1)
 #' print(bs)
 #'
@@ -655,7 +682,7 @@ print.cimehr_bootstrap <- function(x, digits = 4, ...) {
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
+#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = "Age")
 #' bs  <- bootstrap(fit, data = dat, B = 3, seed = 1)
 #' summary(bs)
 #'

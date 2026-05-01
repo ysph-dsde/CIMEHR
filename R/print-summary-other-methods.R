@@ -65,7 +65,12 @@
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- EHRJoint(dat)
+#' fit <- EHRJoint(
+#'   dat,
+#'   visit_covs  = "Age",
+#'   long_covs   = "Age",
+#'   random_covs = "Age"
+#' )
 #' print(fit)
 #'
 #' @export
@@ -105,9 +110,13 @@ print.EHRJoint <- function(x, digits = 4, level = 0.95, ...) {
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- EHRJoint(dat)
+#' fit <- EHRJoint(
+#'   dat,
+#'   visit_covs  = "Age",
+#'   long_covs   = "Age",
+#'   random_covs = "Age"
+#' )
 #' summary(fit)
-#' summary(fit, specify = "visiting")
 #'
 #' @export
 summary.EHRJoint <- function(object, level = 0.95, digits = 4,
@@ -178,7 +187,7 @@ summary.EHRJoint <- function(object, level = 0.95, digits = 4,
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
+#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = "Age")
 #' print(fit)
 #'
 #' @export
@@ -215,7 +224,7 @@ print.Inverse_intensity_rate_ratio_weighting <- function(x, digits = 4, level = 
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
+#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = "Age")
 #' summary(fit)
 #' summary(fit, specify = "visiting")
 #'
@@ -272,7 +281,7 @@ summary.Inverse_intensity_rate_ratio_weighting <- function(object, level = 0.95,
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Inverse_intensity_rate_ratio_balancing(dat, visit_covs = c("Z", "X"))
+#' fit <- Inverse_intensity_rate_ratio_balancing(dat, visit_covs = "Age")
 #' print(fit)
 #'
 #' @export
@@ -314,7 +323,7 @@ print.Inverse_intensity_rate_ratio_balancing <- function(x, digits = 4, level = 
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Inverse_intensity_rate_ratio_balancing(dat, visit_covs = c("Z", "X"))
+#' fit <- Inverse_intensity_rate_ratio_balancing(dat, visit_covs = "Age")
 #' summary(fit)
 #' summary(fit, specify = "outcome")
 #'
@@ -378,7 +387,12 @@ summary.Inverse_intensity_rate_ratio_balancing <- function(object, level = 0.95,
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Joint_modeling_visiting_and_longitudinal_Liang(dat)
+#' fit <- Joint_modeling_visiting_and_longitudinal_Liang(
+#'   dat,
+#'   visit_covs  = "Age",
+#'   long_covs   = "Age",
+#'   random_covs = "Age"
+#' )
 #' print(fit)
 #'
 #' @export
@@ -417,9 +431,13 @@ print.Joint_modeling_visiting_and_longitudinal_Liang <- function(x, digits = 4, 
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Joint_modeling_visiting_and_longitudinal_Liang(dat)
+#' fit <- Joint_modeling_visiting_and_longitudinal_Liang(
+#'   dat,
+#'   visit_covs  = "Age",
+#'   long_covs   = "Age",
+#'   random_covs = "Age"
+#' )
 #' summary(fit)
-#' summary(fit, specify = "visiting")
 #'
 #' @export
 summary.Joint_modeling_visiting_and_longitudinal_Liang <- function(object, level = 0.95, digits = 4,
@@ -475,7 +493,7 @@ summary.Joint_modeling_visiting_and_longitudinal_Liang <- function(object, level
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Linear_mixed_model(dat, fixed = Y ~ Z + X + time,
+#' fit <- Linear_mixed_model(dat, fixed = log_HbA1c ~ Age + time,
 #'            random = ~ 1 | id, obs_indicator = "R")
 #' print(fit)
 #'
@@ -507,7 +525,7 @@ print.Linear_mixed_model_result <- function(x, digits = 4, level = 0.95, ...) {
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Linear_mixed_model(dat, fixed = Y ~ Z + X + time,
+#' fit <- Linear_mixed_model(dat, fixed = log_HbA1c ~ Age + time,
 #'            random = ~ 1 | id, obs_indicator = "R")
 #' summary(fit)
 #'
@@ -551,7 +569,7 @@ summary.Linear_mixed_model_result <- function(object, level = 0.95, digits = 4,
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Summary_stat(dat, formula = ~ Z + X)
+#' fit <- Summary_stat(dat, formula = ~ Age)
 #' print(fit)
 #'
 #' @export
@@ -580,7 +598,7 @@ print.Summary_stat_result <- function(x, digits = 4, ...) {
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Summary_stat(dat, formula = ~ Z + X)
+#' fit <- Summary_stat(dat, formula = ~ Age)
 #' summary(fit)
 #'
 #' @export
@@ -628,7 +646,7 @@ summary.Summary_stat_result <- function(object, digits = 4,
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30 &
 #'                     sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
-#' fit <- Pairwise_likelihood(dat, formula = Y ~ Z + X + time,
+#' fit <- Pairwise_likelihood(dat, formula = Y ~ Age + time,
 #'                            pair_sample = 50, hessian = FALSE)
 #' print(fit)
 #'
@@ -670,7 +688,7 @@ print.Pairwise_likelihood <- function(x, digits = 4, level = 0.95, ...) {
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30 &
 #'                     sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
-#' fit <- Pairwise_likelihood(dat, formula = Y ~ Z + X + time,
+#' fit <- Pairwise_likelihood(dat, formula = Y ~ Age + time,
 #'                            pair_sample = 50, hessian = FALSE)
 #' summary(fit)
 #'
@@ -724,10 +742,12 @@ summary.Pairwise_likelihood <- function(object, level = 0.95, digits = 4,
 #'   \code{\link{Linear_increment_IP}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 30,
-#'                     c("id", "Z", "X", "time", "R", "Y", "C")]
-#' fit <- Linear_increment_IP(data = dat, ip_method = "Linear_mixed_model",
-#'              visit_covs = c("Z", "X"))
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+#' fit <- Linear_increment_IP(data = dat,
+#'                            outcome_formula = Y ~ Age + time,
+#'                            random_formula  = ~ 1 | id,
+#'                            ip_method  = "Linear_mixed_model",
+#'                            visit_covs = "Age")
 #' print(fit)
 #'
 #' @export
@@ -769,10 +789,12 @@ print.Linear_increment_IP_result <- function(x, digits = 4, ...) {
 #'   \code{\link{Linear_increment_IP}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 30,
-#'                     c("id", "Z", "X", "time", "R", "Y", "C")]
-#' fit <- Linear_increment_IP(data = dat, ip_method = "Linear_mixed_model",
-#'              visit_covs = c("Z", "X"))
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+#' fit <- Linear_increment_IP(data = dat,
+#'                            outcome_formula = Y ~ Age + time,
+#'                            random_formula  = ~ 1 | id,
+#'                            ip_method  = "Linear_mixed_model",
+#'                            visit_covs = "Age")
 #' summary(fit)
 #'
 #' @export
@@ -828,10 +850,13 @@ summary.Linear_increment_IP_result <- function(object, digits = 4,
 #'   \code{\link{Multiple_imputation_IP}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 30,
-#'                     c("id", "Z", "X", "time", "R", "Y", "C")]
-#' fit <- Multiple_imputation_IP(data = dat, ip_method = "Linear_mixed_model",
-#'              visit_covs = c("Z", "X"), m = 1, maxit = 1)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+#' fit <- Multiple_imputation_IP(data = dat,
+#'                               outcome_formula = Y ~ Age + time,
+#'                               random_formula  = ~ 1 | id,
+#'                               ip_method  = "Linear_mixed_model",
+#'                               visit_covs = "Age",
+#'                               m = 1, maxit = 1)
 #' print(fit)
 #'
 #' @export
@@ -875,10 +900,13 @@ print.Multiple_imputation_IP_result <- function(x, digits = 4, ...) {
 #'   \code{\link{Multiple_imputation_IP}}
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 30,
-#'                     c("id", "Z", "X", "time", "R", "Y", "C")]
-#' fit <- Multiple_imputation_IP(data = dat, ip_method = "Linear_mixed_model",
-#'              visit_covs = c("Z", "X"), m = 1, maxit = 1)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+#' fit <- Multiple_imputation_IP(data = dat,
+#'                               outcome_formula = Y ~ Age + time,
+#'                               random_formula  = ~ 1 | id,
+#'                               ip_method  = "Linear_mixed_model",
+#'                               visit_covs = "Age",
+#'                               m = 1, maxit = 1)
 #' summary(fit)
 #'
 #' @export

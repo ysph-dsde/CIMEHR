@@ -11,11 +11,11 @@ CIMEHR(
   y_col = "Y",
   r_col = "R",
   censor_col = "C",
-  covars_visit_XV = c("Z", "X"),
-  covars_outcome_fixed_XY = c("Z", "X"),
-  covars_outcome_random_link_ZY = c("Z"),
-  covars_obs_fixed_XO = c("Z", "X"),
-  covars_obs_random_link_ZO = "Z",
+  covars_visit_XV = NULL,
+  covars_outcome_fixed_XY = NULL,
+  covars_outcome_random_link_ZY = NULL,
+  covars_obs_fixed_XO = NULL,
+  covars_obs_random_link_ZO = NULL,
   time_precision = 0.01
 )
 }
@@ -46,26 +46,30 @@ is \code{"C"}.}
 
 \item{covars_visit_XV}{Character vector of covariate column names for the
 visiting-process intensity model. These enter the exponent of the
-multiplicative intensity. Default is \code{c("Z", "X")}.}
+multiplicative intensity. Default is \code{NULL} (no covariates; the
+visiting model becomes a pure baseline-hazard plus frailty fit).}
 
 \item{covars_outcome_fixed_XY}{Character vector of covariate column names
 for the fixed-effect part of the longitudinal outcome model. No intercept
-is added automatically. Default is \code{c("Z", "X")}.}
+is added automatically. At least one covariate is required. Default is
+\code{NULL}.}
 
 \item{covars_outcome_random_link_ZY}{Character vector of covariate column names
 that interact with the conditional expectation of the latent factor
 \eqn{U_i} in the outcome model. An intercept column is prepended
 automatically. Including \code{time_col} in this vector adds a
-time-varying latent link. Default is \code{c("Z")}.}
+time-varying latent link. Set to \code{NULL} for an intercept-only
+latent link. Default is \code{NULL}.}
 
 \item{covars_obs_fixed_XO}{Character vector of covariate column names for
 the fixed-effect part of the observation-process probit model. An
-intercept is prepended automatically. Default is \code{c("Z", "X")}.}
+intercept is prepended automatically. Set to \code{NULL} for an
+intercept-only probit. Default is \code{NULL}.}
 
 \item{covars_obs_random_link_ZO}{Character vector of covariate column names that
 receive independent random effects in the observation process. An
 intercept is prepended automatically. Set to \code{NULL} or an empty
-vector to fit a fixed-effects-only probit. Default is \code{"Z"}.}
+vector to fit a fixed-effects-only probit. Default is \code{NULL}.}
 
 \item{time_precision}{Positive numeric scalar for time discretisation.
 Visit times are rounded to the nearest multiple of \code{time_precision}
@@ -187,8 +191,14 @@ observation probability \eqn{\varpi_i(t)} and the visit intensity.
 A sandwich estimator provides standard errors for \eqn{\beta}.
 }
 \examples{
-dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-fit <- CIMEHR(data = dat)
+dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+fit <- CIMEHR(
+  data                    = dat,
+  y_col                   = "log_HbA1c",
+  covars_visit_XV         = "Age",
+  covars_outcome_fixed_XY = "Age",
+  covars_obs_fixed_XO     = "Age"
+)
 print(fit)
 
 }

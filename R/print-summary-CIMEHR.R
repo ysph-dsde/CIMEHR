@@ -57,7 +57,11 @@
 #' @noRd
 .print_section <- function(title, tbl, digits = 4, width = 60) {
   cat("\n", title, "\n", strrep("-", width), "\n", sep = "")
-  print(round(tbl, digits))
+  if (is.null(tbl) || nrow(tbl) == 0L) {
+    cat("(no covariates specified)\n")
+  } else {
+    print(round(tbl, digits))
+  }
 }
 
 #' Validate the \code{specify} argument
@@ -110,7 +114,13 @@
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- CIMEHR(data = dat)
+#' fit <- CIMEHR(
+#'   data                    = dat,
+#'   y_col                   = "log_HbA1c",
+#'   covars_visit_XV         = "Age",
+#'   covars_outcome_fixed_XY = "Age",
+#'   covars_obs_fixed_XO     = "Age"
+#' )
 #' print(fit)
 #'
 #' @export
@@ -149,7 +159,13 @@ print.CIMEHR <- function(x, digits = 4, level = 0.95, ...) {
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- CIMEHR(data = dat)
+#' fit <- CIMEHR(
+#'   data                    = dat,
+#'   y_col                   = "log_HbA1c",
+#'   covars_visit_XV         = "Age",
+#'   covars_outcome_fixed_XY = "Age",
+#'   covars_obs_fixed_XO     = "Age"
+#' )
 #' summary(fit)
 #' summary(fit, specify = "visiting")
 #' summary(fit, specify = "observation")
@@ -259,7 +275,15 @@ summary.CIMEHR <- function(object, level = 0.95, digits = 4,
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 20, ]
-#' fit <- CIMEHR_timevarying_integral(data = dat, gh_points_U = 2, gh_points_q = 2)
+#' fit <- CIMEHR_timevarying_integral(
+#'   data                    = dat,
+#'   y_col                   = "log_HbA1c",
+#'   covars_visit_XV         = "Age",
+#'   covars_outcome_fixed_XY = "Age",
+#'   covars_obs_fixed_XO     = "Age",
+#'   gh_points_U             = 2,
+#'   gh_points_q             = 2
+#' )
 #' print(fit)
 #'
 #' @export
@@ -299,7 +323,15 @@ print.CIMEHR_timevarying_integral <- function(x, digits = 4, level = 0.95, ...) 
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 20, ]
-#' fit <- CIMEHR_timevarying_integral(data = dat, gh_points_U = 2, gh_points_q = 2)
+#' fit <- CIMEHR_timevarying_integral(
+#'   data                    = dat,
+#'   y_col                   = "log_HbA1c",
+#'   covars_visit_XV         = "Age",
+#'   covars_outcome_fixed_XY = "Age",
+#'   covars_obs_fixed_XO     = "Age",
+#'   gh_points_U             = 2,
+#'   gh_points_q             = 2
+#' )
 #' summary(fit)
 #' summary(fit, specify = "outcome")
 #'
@@ -395,7 +427,14 @@ summary.CIMEHR_timevarying_integral <- function(object, level = 0.95, digits = 4
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- CIMEHR_timevarying_ou(data = dat, pair_type = "adjacent")
+#' fit <- CIMEHR_timevarying_ou(
+#'   data                    = dat,
+#'   y_col                   = "log_HbA1c",
+#'   covars_visit_XV         = "Age",
+#'   covars_outcome_fixed_XY = "Age",
+#'   covars_obs_fixed_XO     = "Age",
+#'   pair_type               = "adjacent"
+#' )
 #' print(fit)
 #'
 #' @export
@@ -437,7 +476,14 @@ print.CIMEHR_timevarying_ou <- function(x, digits = 4, level = 0.95, ...) {
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- CIMEHR_timevarying_ou(data = dat, pair_type = "adjacent")
+#' fit <- CIMEHR_timevarying_ou(
+#'   data                    = dat,
+#'   y_col                   = "log_HbA1c",
+#'   covars_visit_XV         = "Age",
+#'   covars_outcome_fixed_XY = "Age",
+#'   covars_obs_fixed_XO     = "Age",
+#'   pair_type               = "adjacent"
+#' )
 #' summary(fit)
 #' summary(fit, specify = "observation")
 #'
@@ -545,7 +591,13 @@ summary.CIMEHR_timevarying_ou <- function(object, level = 0.95, digits = 4,
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- CIMEHR(data = dat)
+#' fit <- CIMEHR(
+#'   data                    = dat,
+#'   y_col                   = "log_HbA1c",
+#'   covars_visit_XV         = "Age",
+#'   covars_outcome_fixed_XY = "Age",
+#'   covars_obs_fixed_XO     = "Age"
+#' )
 #' coef(fit)
 #' coef(fit, type = "visiting")
 #'
@@ -599,7 +651,13 @@ coef.CIMEHR_timevarying_ou <- function(object, type = c("outcome", "visiting", "
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- CIMEHR(data = dat)
+#' fit <- CIMEHR(
+#'   data                    = dat,
+#'   y_col                   = "log_HbA1c",
+#'   covars_visit_XV         = "Age",
+#'   covars_outcome_fixed_XY = "Age",
+#'   covars_obs_fixed_XO     = "Age"
+#' )
 #' vcov(fit)
 #'
 #' @export
@@ -633,9 +691,15 @@ vcov.CIMEHR_timevarying_ou <- function(object, ...) {
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- CIMEHR(data = dat)
+#' fit <- CIMEHR(
+#'   data                    = dat,
+#'   y_col                   = "log_HbA1c",
+#'   covars_visit_XV         = "Age",
+#'   covars_outcome_fixed_XY = "Age",
+#'   covars_obs_fixed_XO     = "Age"
+#' )
 #' confint(fit)
-#' confint(fit, parm = "Z", level = 0.90)
+#' confint(fit, parm = "Age", level = 0.90)
 #'
 #' @export
 confint.CIMEHR <- function(object, parm = NULL, level = 0.95, ...) {

@@ -19,7 +19,7 @@ Multiple_imputation_IP(
   ip_method = c("Linear_mixed_model", "Joint_modeling_visiting_and_longitudinal_Liang",
     "Inverse_intensity_rate_ratio_weighting", "Inverse_intensity_rate_ratio_balancing",
     "Pairwise_likelihood"),
-  visit_covs = c("Z", "X"),
+  visit_covs = NULL,
   outcome_covs = NULL,
   random_covs = NULL,
   outcome_formula = NULL,
@@ -75,8 +75,9 @@ where fixed effects include an intercept plus all variables in
 
 \item{impute_random}{Character vector of covariate column names to
 include as random slopes in the imputation model. Default is
-\code{NULL} (random intercept only). For example, \code{c("Z")} adds
-a random slope for \eqn{Z}: \eqn{b_{0i} + b_{1i} Z_{ij}}.}
+\code{NULL} (random intercept only). For example, \code{c("Age")}
+adds a random slope for \eqn{\mathrm{Age}}: \eqn{b_{0i} + b_{1i}\,
+  \mathrm{Age}_{ij}}.}
 
 \item{impute_include_R}{Logical; whether to include the observation
 indicator \code{R} as a predictor in the imputation model. Default is
@@ -100,7 +101,7 @@ Yiu and Su (2024) via \code{\link{Inverse_intensity_rate_ratio_balancing}}.}
 
 \item{visit_covs}{Character vector of covariate column names for the
 visiting-process model (used by Liang and inverse intensity rate ratio
-methods). Default is \code{c("Z", "X")}.}
+methods). Default is \code{NULL}.}
 
 \item{outcome_covs}{Character vector of covariate column names for the
 outcome model in the Liang method. Default is \code{NULL} (uses
@@ -202,10 +203,12 @@ S3 methods \code{print} are available for objects of class
 \code{"Multiple_imputation_IP_result"}.
 }
 \examples{
-dat <- sim_ehr_data[sim_ehr_data$id <= 30,
-                    c("id", "Z", "X", "time", "R", "Y", "C")]
-fit <- Multiple_imputation_IP(dat, ip_method = "Linear_mixed_model",
-                              visit_covs = c("Z", "X"),
+dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+fit <- Multiple_imputation_IP(dat,
+                              outcome_formula = Y ~ Age + time,
+                              random_formula  = ~ 1 | id,
+                              ip_method  = "Linear_mixed_model",
+                              visit_covs = "Age",
                               m = 1, maxit = 1)
 print(fit)
 

@@ -27,10 +27,12 @@ errors and confidence intervals are not reported; see the bootstrap
 note in the output.
 }
 \examples{
-dat <- sim_ehr_data[sim_ehr_data$id <= 30,
-                    c("id", "Z", "X", "time", "R", "Y", "C")]
-fit <- Linear_increment_IP(data = dat, ip_method = "Linear_mixed_model",
-             visit_covs = c("Z", "X"))
+dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+fit <- Linear_increment_IP(data = dat,
+                           outcome_formula = Y ~ Age + time,
+                           random_formula  = ~ 1 | id,
+                           ip_method  = "Linear_mixed_model",
+                           visit_covs = "Age")
 summary(fit)
 
 }

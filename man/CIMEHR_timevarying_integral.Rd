@@ -12,11 +12,11 @@ CIMEHR_timevarying_integral(
   y_col = "Y",
   r_col = "R",
   r_lag_col = NULL,
-  covars_visit_XV = c("Z", "X"),
-  covars_outcome_fixed_XY = c("Z", "X"),
-  covars_outcome_random_link_ZY = c("Z"),
-  covars_obs_fixed_XO = c("Z", "X"),
-  covars_obs_random_link_ZO = "Z",
+  covars_visit_XV = NULL,
+  covars_outcome_fixed_XY = NULL,
+  covars_outcome_random_link_ZY = NULL,
+  covars_obs_fixed_XO = NULL,
+  covars_obs_random_link_ZO = NULL,
   gh_points_U = 7,
   gh_points_q = 5,
   gh_clip_eta = 12,
@@ -55,26 +55,27 @@ internally with first-visit values set to zero, but the
 \eqn{\lambda} coefficient is omitted from the model.}
 
 \item{covars_visit_XV}{Character vector of covariate column names for the
-visiting-process intensity model. Default is \code{c("Z", "X")}.}
+visiting-process intensity model. Default is \code{NULL}.}
 
 \item{covars_outcome_fixed_XY}{Character vector of covariate column names
 for the fixed-effect part of the longitudinal outcome model. No
-intercept is added automatically. Default is \code{c("Z", "X")}.}
+intercept is added automatically. At least one covariate is required.
+Default is \code{NULL}.}
 
 \item{covars_outcome_random_link_ZY}{Character vector of covariate column names
 that interact with the conditional expectation of the latent factor
 \eqn{U_i} in the outcome model. An intercept is prepended
 automatically. Including \code{time_col} adds a time-varying link.
-Default is \code{c("Z")}.}
+Default is \code{NULL}.}
 
 \item{covars_obs_fixed_XO}{Character vector of covariate column names for
 the fixed-effect part of the observation-process probit model. An
-intercept is prepended automatically. Default is \code{c("Z", "X")}.}
+intercept is prepended automatically. Default is \code{NULL}.}
 
 \item{covars_obs_random_link_ZO}{Character vector of covariate column names
 receiving independent random effects in the observation process. An
 intercept is prepended automatically. Set to \code{NULL} or an empty
-vector for a fixed-effects-only probit. Default is \code{"Z"}.}
+vector for a fixed-effects-only probit. Default is \code{NULL}.}
 
 \item{gh_points_U}{Integer giving the number of Gauss--Hermite quadrature
 nodes for integrating over the standardised latent factor \eqn{U_i}.
@@ -196,9 +197,16 @@ and the number of subjects. For very large datasets, consider using
 \code{\link{CIMEHR}} (which avoids quadrature) as a faster alternative.
 }
 \examples{
-dat <- sim_ehr_data[sim_ehr_data$id <= 20, ]
-fit <- CIMEHR_timevarying_integral(data = dat,
-                                   gh_points_U = 2, gh_points_q = 2)
+dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+fit <- CIMEHR_timevarying_integral(
+  data                    = dat,
+  y_col                   = "log_HbA1c",
+  covars_visit_XV         = "Age",
+  covars_outcome_fixed_XY = "Age",
+  covars_obs_fixed_XO     = "Age",
+  gh_points_U             = 2,
+  gh_points_q             = 2
+)
 print(fit)
 
 }

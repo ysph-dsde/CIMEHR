@@ -46,8 +46,9 @@
 #'   \code{impute_fixed}.
 #' @param impute_random Character vector of covariate column names to
 #'   include as random slopes in the imputation model. Default is
-#'   \code{NULL} (random intercept only). For example, \code{c("Z")} adds
-#'   a random slope for \eqn{Z}: \eqn{b_{0i} + b_{1i} Z_{ij}}.
+#'   \code{NULL} (random intercept only). For example, \code{c("Age")}
+#'   adds a random slope for \eqn{\mathrm{Age}}: \eqn{b_{0i} + b_{1i}\,
+#'   \mathrm{Age}_{ij}}.
 #' @param impute_include_R Logical; whether to include the observation
 #'   indicator \code{R} as a predictor in the imputation model. Default is
 #'   \code{TRUE}. Recommended because \code{R} may be informative about
@@ -69,7 +70,7 @@
 #'   }
 #' @param visit_covs Character vector of covariate column names for the
 #'   visiting-process model (used by Liang and inverse intensity rate ratio
-#'   methods). Default is \code{c("Z", "X")}.
+#'   methods). Default is \code{NULL}.
 #' @param outcome_covs Character vector of covariate column names for the
 #'   outcome model in the Liang method. Default is \code{NULL} (uses
 #'   \code{visit_covs}).
@@ -161,10 +162,12 @@
 #' John Wiley & Sons. \doi{10.1002/9780470316696}.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 30,
-#'                     c("id", "Z", "X", "time", "R", "Y", "C")]
-#' fit <- Multiple_imputation_IP(dat, ip_method = "Linear_mixed_model",
-#'                               visit_covs = c("Z", "X"),
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+#' fit <- Multiple_imputation_IP(dat,
+#'                               outcome_formula = Y ~ Age + time,
+#'                               random_formula  = ~ 1 | id,
+#'                               ip_method  = "Linear_mixed_model",
+#'                               visit_covs = "Age",
 #'                               m = 1, maxit = 1)
 #' print(fit)
 #'
@@ -191,7 +194,7 @@ Multiple_imputation_IP <- function(
     ip_method = c("Linear_mixed_model", "Joint_modeling_visiting_and_longitudinal_Liang", "Inverse_intensity_rate_ratio_weighting", "Inverse_intensity_rate_ratio_balancing", "Pairwise_likelihood"),
 
     # Common covariate specifications
-    visit_covs = c("Z", "X"),
+    visit_covs = NULL,
     outcome_covs = NULL,
     random_covs = NULL,
 
@@ -205,6 +208,10 @@ Multiple_imputation_IP <- function(
     # Pooling
     pool_method = c("mean", "rubin")
 ) {
+
+  visit_covs   <- .check_covars(visit_covs,   data, "visit_covs")
+  outcome_covs <- .check_covars(outcome_covs, data, "outcome_covs")
+  random_covs  <- .check_covars(random_covs,  data, "random_covs")
 
   # ============================================
   # Input validation and setup

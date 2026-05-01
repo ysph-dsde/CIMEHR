@@ -28,8 +28,14 @@ Computes Wald confidence intervals using sandwich standard errors.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-fit <- CIMEHR(data = dat)
+fit <- CIMEHR(
+  data                    = dat,
+  y_col                   = "log_HbA1c",
+  covars_visit_XV         = "Age",
+  covars_outcome_fixed_XY = "Age",
+  covars_obs_fixed_XO     = "Age"
+)
 confint(fit)
-confint(fit, parm = "Z", level = 0.90)
+confint(fit, parm = "Age", level = 0.90)
 
 }

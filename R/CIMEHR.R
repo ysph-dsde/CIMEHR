@@ -30,22 +30,26 @@
 #'   is \code{"C"}.
 #' @param covars_visit_XV Character vector of covariate column names for the
 #'   visiting-process intensity model. These enter the exponent of the
-#'   multiplicative intensity. Default is \code{c("Z", "X")}.
+#'   multiplicative intensity. Default is \code{NULL} (no covariates; the
+#'   visiting model becomes a pure baseline-hazard plus frailty fit).
 #' @param covars_outcome_fixed_XY Character vector of covariate column names
 #'   for the fixed-effect part of the longitudinal outcome model. No intercept
-#'   is added automatically. Default is \code{c("Z", "X")}.
+#'   is added automatically. At least one covariate is required. Default is
+#'   \code{NULL}.
 #' @param covars_outcome_random_link_ZY Character vector of covariate column names
 #'   that interact with the conditional expectation of the latent factor
 #'   \eqn{U_i} in the outcome model. An intercept column is prepended
 #'   automatically. Including \code{time_col} in this vector adds a
-#'   time-varying latent link. Default is \code{c("Z")}.
+#'   time-varying latent link. Set to \code{NULL} for an intercept-only
+#'   latent link. Default is \code{NULL}.
 #' @param covars_obs_fixed_XO Character vector of covariate column names for
 #'   the fixed-effect part of the observation-process probit model. An
-#'   intercept is prepended automatically. Default is \code{c("Z", "X")}.
+#'   intercept is prepended automatically. Set to \code{NULL} for an
+#'   intercept-only probit. Default is \code{NULL}.
 #' @param covars_obs_random_link_ZO Character vector of covariate column names that
 #'   receive independent random effects in the observation process. An
 #'   intercept is prepended automatically. Set to \code{NULL} or an empty
-#'   vector to fit a fixed-effects-only probit. Default is \code{"Z"}.
+#'   vector to fit a fixed-effects-only probit. Default is \code{NULL}.
 #' @param time_precision Positive numeric scalar for time discretisation.
 #'   Visit times are rounded to the nearest multiple of \code{time_precision}
 #'   before constructing risk sets. Set to \code{NULL} or \code{0} to skip
@@ -167,8 +171,14 @@
 #' \code{\link{sim_data_gen}} for simulating data compatible with this model.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- CIMEHR(data = dat)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+#' fit <- CIMEHR(
+#'   data                    = dat,
+#'   y_col                   = "log_HbA1c",
+#'   covars_visit_XV         = "Age",
+#'   covars_outcome_fixed_XY = "Age",
+#'   covars_obs_fixed_XO     = "Age"
+#' )
 #' print(fit)
 #'
 #' @importFrom stats binomial coef dnorm glm nlminb plogis pnorm reformulate setNames
@@ -180,17 +190,24 @@ CIMEHR <- function(
     y_col                   = "Y",
     r_col                   = "R",
     censor_col              = "C",
-    covars_visit_XV         = c("Z", "X"),
-    covars_outcome_fixed_XY = c("Z", "X"),
-    covars_outcome_random_link_ZY  = c("Z"),
-    covars_obs_fixed_XO     = c("Z", "X"),
-    covars_obs_random_link_ZO    = "Z",
+    covars_visit_XV         = NULL,
+    covars_outcome_fixed_XY = NULL,
+    covars_outcome_random_link_ZY  = NULL,
+    covars_obs_fixed_XO     = NULL,
+    covars_obs_random_link_ZO    = NULL,
     time_precision          = 0.01
 ) {
 
   # ====================================================================
   # 0. Data prep
   # ====================================================================
+  call <- match.call()
+  covars_visit_XV               <- .check_covars(covars_visit_XV,               data, "covars_visit_XV")
+  covars_outcome_fixed_XY       <- .check_covars(covars_outcome_fixed_XY,       data, "covars_outcome_fixed_XY")
+  covars_outcome_random_link_ZY <- .check_covars(covars_outcome_random_link_ZY, data, "covars_outcome_random_link_ZY")
+  covars_obs_fixed_XO           <- .check_covars(covars_obs_fixed_XO,           data, "covars_obs_fixed_XO")
+  covars_obs_random_link_ZO     <- .check_covars(covars_obs_random_link_ZO,     data, "covars_obs_random_link_ZO")
+
   id_vec   <- data[[id_col]]
   time_vec <- data[[time_col]]
   y_vec    <- data[[y_col]]
@@ -220,19 +237,29 @@ CIMEHR <- function(
   dN_counts      <- tabulate(event_time_idx, nbins = K)
 
   # Design matrices
-  XV_subj <- as.matrix(data[sf, covars_visit_XV, drop = FALSE])
+  XV_subj <- if (length(covars_visit_XV) > 0L)
+    as.matrix(data[sf, covars_visit_XV, drop = FALSE]) else
+      matrix(0, n_subj, 0L)
   p_V     <- ncol(XV_subj)
 
   build_dm <- function(vars, intercept = TRUE) {
-    M <- as.matrix(data[, vars, drop = FALSE])
+    if (length(vars) > 0L) {
+      M <- as.matrix(data[, vars, drop = FALSE])
+    } else {
+      M <- matrix(0, n_row, 0L)
+    }
     if (intercept) M <- cbind(`(Intercept)` = 1, M)
     M
   }
   XO_all <- build_dm(covars_obs_fixed_XO, intercept = TRUE); p_XO <- ncol(XO_all)
-  has_random <- !is.null(covars_obs_random_link_ZO) && length(covars_obs_random_link_ZO) > 0
+  has_random <- length(covars_obs_random_link_ZO) > 0
   if (has_random) { ZO_all <- build_dm(covars_obs_random_link_ZO, intercept = TRUE); q_dim <- ncol(ZO_all)
   } else { ZO_all <- NULL; q_dim <- 0L }
   XY_all <- build_dm(covars_outcome_fixed_XY, intercept = FALSE); p_XY <- ncol(XY_all)
+  if (p_XY == 0L) {
+    stop("`covars_outcome_fixed_XY` is empty; the outcome model needs at least one fixed-effect covariate.",
+         call. = FALSE)
+  }
 
   # Helper: tcrossprod(X, beta_mat) replaces X %*% beta — 1.5x faster at scale
   # beta_mat must be matrix(beta, nrow=1)
@@ -284,44 +311,61 @@ CIMEHR <- function(
   # ====================================================================
   # Stage 1: AG Partial Likelihood
   # ====================================================================
+  # When p_V == 0, the partial-likelihood score is empty; rs_vec is the
+  # constant 1 vector, and Breslow's estimator reduces to dN / # at risk.
   score_hess <- function(gamma) {
-    rs_vec <- exp(mat_vec(XV_subj, gamma))
+    rs_vec <- if (p_V > 0L) exp(mat_vec(XV_subj, gamma)) else rep(1, n_subj)
     sh <- rs_accum_01(rs_vec, XV_subj)
     S0 <- sh$s0; S1 <- sh$sM
     inv_S0 <- 1 / pmax(S0, 1e-30)
-    Xbar <- S1 * inv_S0
+    Xbar <- if (p_V > 0L) S1 * inv_S0 else matrix(0, K, 0L)
 
-    Xe     <- XV_subj[event_subj_idx, , drop = FALSE]
-    Xbar_e <- Xbar[event_time_idx, , drop = FALSE]
-    sc     <- drop(crossprod(rep(1, n_visits_total), Xe - Xbar_e))
+    if (p_V > 0L) {
+      Xe     <- XV_subj[event_subj_idx, , drop = FALSE]
+      Xbar_e <- Xbar[event_time_idx, , drop = FALSE]
+      sc     <- drop(crossprod(rep(1, n_visits_total), Xe - Xbar_e))
 
-    H <- matrix(0, p_V, p_V)
-    for (a in seq_len(p_V)) {
-      S2_a <- rs_accum_matrix(rs_vec * XV_subj[, a], XV_subj)
-      for (b in a:p_V) {
-        val <- -sum(dN_counts * (S2_a[, b] * inv_S0 - Xbar[, a] * Xbar[, b]))
-        H[a, b] <- val; H[b, a] <- val
+      H <- matrix(0, p_V, p_V)
+      for (a in seq_len(p_V)) {
+        S2_a <- rs_accum_matrix(rs_vec * XV_subj[, a], XV_subj)
+        for (b in a:p_V) {
+          val <- -sum(dN_counts * (S2_a[, b] * inv_S0 - Xbar[, a] * Xbar[, b]))
+          H[a, b] <- val; H[b, a] <- val
+        }
       }
+    } else {
+      sc <- numeric(0)
+      H  <- matrix(0, 0L, 0L)
     }
     list(score = sc, hessian = H, S0 = S0, Xbar = Xbar, rs_vec = rs_vec)
   }
 
   gamma_hat <- numeric(p_V)
   sh_final  <- NULL
-  for (it in 1:50) {
+  if (p_V > 0L) {
+    for (it in 1:50) {
+      sh_final <- score_hess(gamma_hat)
+      if (max(abs(sh_final$score)) < 1e-8) break
+      step <- tryCatch(solve(sh_final$hessian, sh_final$score), error = function(e) numeric(p_V))
+      step[!is.finite(step)] <- 0
+      step <- pmax(pmin(step, 3), -3)
+      gamma_hat <- gamma_hat - step
+    }
+    names(gamma_hat) <- colnames(XV_subj)
+  } else {
     sh_final <- score_hess(gamma_hat)
-    if (max(abs(sh_final$score)) < 1e-8) break
-    step <- tryCatch(solve(sh_final$hessian, sh_final$score), error = function(e) numeric(p_V))
-    step[!is.finite(step)] <- 0
-    step <- pmax(pmin(step, 3), -3)
-    gamma_hat <- gamma_hat - step
+    names(gamma_hat) <- character(0)
   }
-  names(gamma_hat) <- colnames(XV_subj)
 
   # -- Stage 1 Sandwich Variance (Lin-Wei-Ying) --
-  # Bread = -Hessian at final iteration
-  Info_gamma <- -sh_final$hessian
-  inv_Info   <- tryCatch(solve(Info_gamma), error = function(e) base::qr.solve(Info_gamma))
+  if (p_V > 0L) {
+    # Bread = -Hessian at final iteration
+    Info_gamma <- -sh_final$hessian
+    inv_Info   <- tryCatch(solve(Info_gamma), error = function(e) base::qr.solve(Info_gamma))
+  } else {
+    Info_gamma <- matrix(0, 0L, 0L)
+    inv_Info   <- matrix(0, 0L, 0L)
+  }
 
   # Breslow
   rs_final <- sh_final$rs_vec
@@ -340,31 +384,38 @@ CIMEHR <- function(
   #         = X_i * Lambda0(C_i) - A(C_i)
   # where A(t) = cumsum_k [Xbar(t_k) * dLambda0(t_k)]
 
-  # Event term: aggregate (X_i - Xbar_event) by subject
-  resid_event <- XV_subj[event_subj_idx, , drop = FALSE] -
-    Xbar_final[event_time_idx, , drop = FALSE]                    # n_visits x p_V
-  event_term_i <- matrix(0, n_subj, p_V)
-  if (n_visits_total > 0L) {
-    event_term_i <- rowsum(resid_event, event_subj_idx, reorder = FALSE)
-    # rowsum returns only subjects that have events; pad to n_subj
-    evt_ids  <- as.integer(rownames(event_term_i))
-    tmp      <- matrix(0, n_subj, p_V)
-    tmp[evt_ids, ] <- event_term_i
-    event_term_i   <- tmp
+  if (p_V > 0L) {
+    # Event term: aggregate (X_i - Xbar_event) by subject
+    resid_event <- XV_subj[event_subj_idx, , drop = FALSE] -
+      Xbar_final[event_time_idx, , drop = FALSE]                    # n_visits x p_V
+    event_term_i <- matrix(0, n_subj, p_V)
+    if (n_visits_total > 0L) {
+      event_term_i <- rowsum(resid_event, event_subj_idx, reorder = FALSE)
+      # rowsum returns only subjects that have events; pad to n_subj
+      evt_ids  <- as.integer(rownames(event_term_i))
+      tmp      <- matrix(0, n_subj, p_V)
+      tmp[evt_ids, ] <- event_term_i
+      event_term_i   <- tmp
+    }
+
+    # Compensator term: A(C_i) = cumsum(Xbar * dLambda0) evaluated at last_risk_idx
+    Xbar_dLam <- Xbar_final * dLam0                                 # K x p_V
+    cumA <- apply(Xbar_dLam, 2, cumsum)                              # K x p_V
+    if (!is.matrix(cumA)) cumA <- matrix(cumA, ncol = p_V)           # apply collapse guard
+    A_Ci <- matrix(0, n_subj, p_V)
+    A_Ci[valid_subj, ] <- cumA[lri_valid, , drop = FALSE]
+
+    comp_term_i <- XV_subj * Lam0_Ci - A_Ci                         # n_subj x p_V
+
+    L_i <- event_term_i - rs_final * comp_term_i                    # n_subj x p_V
+    Meat_gamma <- crossprod(L_i)                                     # p_V x p_V
+    vcov_gamma <- inv_Info %*% Meat_gamma %*% inv_Info
+    se_gamma   <- sqrt(pmax(diag(vcov_gamma), 0))
+  } else {
+    Meat_gamma <- matrix(0, 0L, 0L)
+    vcov_gamma <- matrix(0, 0L, 0L)
+    se_gamma   <- numeric(0)
   }
-
-  # Compensator term: A(C_i) = cumsum(Xbar * dLambda0) evaluated at last_risk_idx
-  Xbar_dLam <- Xbar_final * dLam0                                 # K x p_V
-  cumA <- apply(Xbar_dLam, 2, cumsum)                              # K x p_V
-  A_Ci <- matrix(0, n_subj, p_V)
-  A_Ci[valid_subj, ] <- cumA[lri_valid, , drop = FALSE]
-
-  comp_term_i <- XV_subj * Lam0_Ci - A_Ci                         # n_subj x p_V
-
-  L_i <- event_term_i - rs_final * comp_term_i                    # n_subj x p_V
-  Meat_gamma <- crossprod(L_i)                                     # p_V x p_V
-  vcov_gamma <- inv_Info %*% Meat_gamma %*% inv_Info
-  se_gamma   <- sqrt(pmax(diag(vcov_gamma), 0))
 
   # -- Continue Stage 1: frailty + EB --
   nu_i  <- rs_final * Lam0_Ci
@@ -668,7 +719,8 @@ CIMEHR <- function(
         theta_Y       = theta_hat,
         se_beta_naive = setNames(se_beta, names(beta_hat)),
         vcov_joint    = V3
-      )
+      ),
+      call = call
     ),
     class = "CIMEHR"
   )

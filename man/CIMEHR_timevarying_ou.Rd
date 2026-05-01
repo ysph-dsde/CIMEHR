@@ -12,11 +12,11 @@ CIMEHR_timevarying_ou(
   time_col = "time",
   y_col = "Y",
   r_col = "R",
-  covars_visit_XV = c("Z", "X"),
-  covars_outcome_fixed_XY = c("Z", "X"),
-  covars_outcome_random_link_ZY = c("Z"),
-  covars_obs_fixed_XO = c("Z", "X"),
-  covars_obs_random_link_ZO = "Z",
+  covars_visit_XV = NULL,
+  covars_outcome_fixed_XY = NULL,
+  covars_outcome_random_link_ZY = NULL,
+  covars_obs_fixed_XO = NULL,
+  covars_obs_random_link_ZO = NULL,
   pair_type = c("adjacent", "all"),
   phi_init = 0.1,
   phi_bounds = c(1e-04, 100),
@@ -45,27 +45,29 @@ indicator column (\code{1} = outcome observed, \code{0} = outcome
 missing at visit). Default is \code{"R"}.}
 
 \item{covars_visit_XV}{Character vector of covariate column names for the
-visiting-process intensity model. Default is \code{c("Z", "X")}.}
+visiting-process intensity model. Default is \code{NULL}.}
 
 \item{covars_outcome_fixed_XY}{Character vector of covariate column names
 for the fixed-effect part of the longitudinal outcome model. No
-intercept is added automatically. Default is \code{c("Z", "X")}.}
+intercept is added automatically. At least one covariate is required.
+Default is \code{NULL}.}
 
 \item{covars_outcome_random_link_ZY}{Character vector of covariate column names
 that interact with the conditional expectation of the latent factor
 \eqn{U_i} in the outcome model. An intercept is prepended
 automatically. Including \code{time_col} adds a time-varying link.
-Default is \code{c("Z")}.}
+Default is \code{NULL}.}
 
 \item{covars_obs_fixed_XO}{Character vector of covariate column names for
 the fixed-effect part of the observation-process probit model. An
-intercept is prepended automatically. Default is \code{c("Z", "X")}.}
+intercept is prepended automatically. Default is \code{NULL}.}
 
 \item{covars_obs_random_link_ZO}{Character vector of covariate column names
 receiving independent random effects in the observation process. An
 intercept is prepended automatically. Set to \code{NULL} for a
 fixed-effects-only probit (in which case PCL is skipped and a
-standard probit generalized linear model (GLM) is fitted). Default is \code{"Z"}.}
+standard probit generalized linear model (GLM) is fitted). Default is
+\code{NULL}.}
 
 \item{pair_type}{Character string specifying which within-subject visit
 pairs to use for the pairwise composite likelihood. One of:
@@ -214,8 +216,15 @@ S3 methods \code{print}, \code{summary}, \code{coef}, \code{vcov}, and
 \code{"CIMEHR_timevarying_ou"}.
 }
 \examples{
-dat <- sim_ehr_data[sim_ehr_data$id <= 20, ]
-fit <- CIMEHR_timevarying_ou(data = dat, pair_type = "adjacent")
+dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+fit <- CIMEHR_timevarying_ou(
+  data                    = dat,
+  y_col                   = "log_HbA1c",
+  covars_visit_XV         = "Age",
+  covars_outcome_fixed_XY = "Age",
+  covars_obs_fixed_XO     = "Age",
+  pair_type               = "adjacent"
+)
 print(fit)
 
 }

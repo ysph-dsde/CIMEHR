@@ -28,7 +28,7 @@
 #'   observation indicator column (\code{1} = outcome observed at visit).
 #'   Default is \code{"R"}.
 #' @param visit_covs Character vector of covariate column names for the
-#'   visiting-process intensity model. Default is \code{c("Z", "X")}.
+#'   visiting-process intensity model. Default is \code{NULL}.
 #' @param balance_covs Character vector of covariate column names for
 #'   which covariate-balance constraints are imposed. If \code{NULL}
 #'   (the default), \code{visit_covs} is used.
@@ -37,7 +37,7 @@
 #'   (the default), the formula is constructed automatically as
 #'   \code{outcome ~ visit_covs + time} from the column-name arguments.
 #'   A user-supplied formula overrides this (e.g.,
-#'   \code{Y ~ Z + X + Z:X + time} for interactions).
+#'   \code{Y ~ Age + Gender + time} for explicit covariate sets).
 #' @param phi Numeric scalar; sensitivity parameter controlling departures
 #'   from the semiparametric visiting-process model. When
 #'   \eqn{\phi = 0} (the default), the estimator coincides with the
@@ -123,7 +123,7 @@
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Inverse_intensity_rate_ratio_balancing(dat, visit_covs = c("Z", "X"))
+#' fit <- Inverse_intensity_rate_ratio_balancing(dat, visit_covs = "Age")
 #' print(fit)
 #'
 #' @importFrom stats as.formula model.frame model.matrix na.pass
@@ -133,7 +133,7 @@ Inverse_intensity_rate_ratio_balancing <- function(data,
                                                    time = "time",
                                                    outcome = "Y",
                                                    obs_indicator = "R",
-                                                   visit_covs = c("Z", "X"),
+                                                   visit_covs = NULL,
                                                    balance_covs = NULL,
                                                    formula = NULL,
                                                    phi = 0) {
@@ -141,6 +141,14 @@ Inverse_intensity_rate_ratio_balancing <- function(data,
   if (!requireNamespace("nleqslv", quietly = TRUE)) {
     stop("Package 'nleqslv' is required. Install it with: install.packages('nleqslv')")
   }
+
+  visit_covs   <- .check_covars(visit_covs,   data, "visit_covs")
+  balance_covs <- .check_covars(balance_covs, data, "balance_covs")
+  if (length(visit_covs) == 0L) {
+    stop("`Inverse_intensity_rate_ratio_balancing` requires non-empty `visit_covs`.",
+         call. = FALSE)
+  }
+  call <- match.call()
 
   # Build formula from column-name arguments if not supplied
   if (is.null(formula)) {
@@ -234,16 +242,26 @@ Inverse_intensity_rate_ratio_balancing <- function(data,
   # Step 5: Build design matrix for balancing
   # Includes: intercept, time, covariates, covariate*time interactions
   # ============================================
-  if (is.null(balance_covs)) balance_covs <- visit_covs
+  # `.check_covars()` returns character(0) for NULL, so use a length check
+  # rather than is.null(). By default, balance on the same covariates used
+  # in the visiting-process model.
+  if (length(balance_covs) == 0L) balance_covs <- visit_covs
+
+  V_bal <- as.matrix(data[, balance_covs, drop = FALSE])
 
   DesignMat <- cbind(
     intercept = 1,
     time = time_vec,
-    V_full,
-    V_full * time_vec
+    V_bal,
+    V_bal * time_vec
   )
-  colnames(DesignMat) <- c("intercept", "time", balance_covs,
-                           paste0(balance_covs, "_x_time"))
+
+  colnames(DesignMat) <- c(
+    "intercept",
+    "time",
+    balance_covs,
+    paste0(balance_covs, "_x_time")
+  )
 
   # ============================================
   # Step 6: Compute balancing constraints (target values)
@@ -347,6 +365,7 @@ Inverse_intensity_rate_ratio_balancing <- function(data,
     convergence = list(
       gamma = gamma_solve$termcd,
       balancing = bal_convergence
-    )
+    ),
+    call = call
   ), class = "Inverse_intensity_rate_ratio_balancing"))
 }

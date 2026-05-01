@@ -23,7 +23,13 @@ Returns the sandwich variance-covariance matrix for the outcome model.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-fit <- CIMEHR(data = dat)
+fit <- CIMEHR(
+  data                    = dat,
+  y_col                   = "log_HbA1c",
+  covars_visit_XV         = "Age",
+  covars_outcome_fixed_XY = "Age",
+  covars_obs_fixed_XO     = "Age"
+)
 vcov(fit)
 
 }

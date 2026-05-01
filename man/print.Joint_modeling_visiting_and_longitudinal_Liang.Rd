@@ -25,7 +25,12 @@ estimating equations approach.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-fit <- Joint_modeling_visiting_and_longitudinal_Liang(dat)
+fit <- Joint_modeling_visiting_and_longitudinal_Liang(
+  dat,
+  visit_covs  = "Age",
+  long_covs   = "Age",
+  random_covs = "Age"
+)
 print(fit)
 
 }

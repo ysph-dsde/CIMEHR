@@ -34,23 +34,25 @@
 #'   indicator column (\code{1} = outcome observed, \code{0} = outcome
 #'   missing at visit). Default is \code{"R"}.
 #' @param covars_visit_XV Character vector of covariate column names for the
-#'   visiting-process intensity model. Default is \code{c("Z", "X")}.
+#'   visiting-process intensity model. Default is \code{NULL}.
 #' @param covars_outcome_fixed_XY Character vector of covariate column names
 #'   for the fixed-effect part of the longitudinal outcome model. No
-#'   intercept is added automatically. Default is \code{c("Z", "X")}.
+#'   intercept is added automatically. At least one covariate is required.
+#'   Default is \code{NULL}.
 #' @param covars_outcome_random_link_ZY Character vector of covariate column names
 #'   that interact with the conditional expectation of the latent factor
 #'   \eqn{U_i} in the outcome model. An intercept is prepended
 #'   automatically. Including \code{time_col} adds a time-varying link.
-#'   Default is \code{c("Z")}.
+#'   Default is \code{NULL}.
 #' @param covars_obs_fixed_XO Character vector of covariate column names for
 #'   the fixed-effect part of the observation-process probit model. An
-#'   intercept is prepended automatically. Default is \code{c("Z", "X")}.
+#'   intercept is prepended automatically. Default is \code{NULL}.
 #' @param covars_obs_random_link_ZO Character vector of covariate column names
 #'   receiving independent random effects in the observation process. An
 #'   intercept is prepended automatically. Set to \code{NULL} for a
 #'   fixed-effects-only probit (in which case PCL is skipped and a
-#'   standard probit generalized linear model (GLM) is fitted). Default is \code{"Z"}.
+#'   standard probit generalized linear model (GLM) is fitted). Default is
+#'   \code{NULL}.
 #' @param pair_type Character string specifying which within-subject visit
 #'   pairs to use for the pairwise composite likelihood. One of:
 #'   \describe{
@@ -189,8 +191,15 @@
 #' model;
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 20, ]
-#' fit <- CIMEHR_timevarying_ou(data = dat, pair_type = "adjacent")
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+#' fit <- CIMEHR_timevarying_ou(
+#'   data                    = dat,
+#'   y_col                   = "log_HbA1c",
+#'   covars_visit_XV         = "Age",
+#'   covars_outcome_fixed_XY = "Age",
+#'   covars_obs_fixed_XO     = "Age",
+#'   pair_type               = "adjacent"
+#' )
 #' print(fit)
 #'
 #' @importFrom stats as.formula binomial coef dnorm glm model.matrix
@@ -203,11 +212,11 @@ CIMEHR_timevarying_ou <- function(
     time_col                = "time",
     y_col                   = "Y",
     r_col                   = "R",
-    covars_visit_XV         = c("Z", "X"),
-    covars_outcome_fixed_XY = c("Z", "X"),
-    covars_outcome_random_link_ZY  = c("Z"),
-    covars_obs_fixed_XO     = c("Z", "X"),
-    covars_obs_random_link_ZO    = "Z",
+    covars_visit_XV         = NULL,
+    covars_outcome_fixed_XY = NULL,
+    covars_outcome_random_link_ZY  = NULL,
+    covars_obs_fixed_XO     = NULL,
+    covars_obs_random_link_ZO    = NULL,
     pair_type               = c("adjacent", "all"),
     phi_init                = 0.1,
     phi_bounds              = c(1e-4, 100),
@@ -233,15 +242,14 @@ CIMEHR_timevarying_ou <- function(
                  paste(missing_cols, collapse = ", ")), call. = FALSE)
   }
 
-  all_covars <- unique(c(
-    covars_visit_XV, covars_outcome_fixed_XY, covars_outcome_random_link_ZY,
-    covars_obs_fixed_XO, covars_obs_random_link_ZO
-  ))
-  all_covars <- setdiff(all_covars, time_col)
-  missing_covars <- setdiff(all_covars, names(data))
-  if (length(missing_covars) > 0) {
-    stop(sprintf("Covariate columns not found: %s",
-                 paste(missing_covars, collapse = ", ")), call. = FALSE)
+  covars_visit_XV               <- .check_covars(covars_visit_XV,               data, "covars_visit_XV")
+  covars_outcome_fixed_XY       <- .check_covars(covars_outcome_fixed_XY,       data, "covars_outcome_fixed_XY")
+  covars_outcome_random_link_ZY <- .check_covars(covars_outcome_random_link_ZY, data, "covars_outcome_random_link_ZY")
+  covars_obs_fixed_XO           <- .check_covars(covars_obs_fixed_XO,           data, "covars_obs_fixed_XO")
+  covars_obs_random_link_ZO     <- .check_covars(covars_obs_random_link_ZO,     data, "covars_obs_random_link_ZO")
+  if (length(covars_outcome_fixed_XY) == 0L) {
+    stop("`covars_outcome_fixed_XY` is empty; the outcome model needs at least one fixed-effect covariate.",
+         call. = FALSE)
   }
 
   # ===========================================================================
@@ -285,36 +293,40 @@ CIMEHR_timevarying_ou <- function(
   # ===========================================================================
   if (verbose) message("Stage 1: Estimating visiting process parameters...")
 
-  XV_subject <- as.matrix(df[subj_first_idx, covars_visit_XV, drop = FALSE])
-
   visit_rows_idx <- which(visit_mask)
   n_visits_total <- length(visit_rows_idx)
 
-  XV_visits_only <- as.matrix(df[visit_rows_idx, covars_visit_XV, drop = FALSE])
-  V_target_sum   <- colSums(XV_visits_only, na.rm = TRUE)
+  if (length(covars_visit_XV) > 0L) {
+    XV_subject <- as.matrix(df[subj_first_idx, covars_visit_XV, drop = FALSE])
+    XV_visits_only <- as.matrix(df[visit_rows_idx, covars_visit_XV, drop = FALSE])
+    V_target_sum   <- colSums(XV_visits_only, na.rm = TRUE)
 
-  # Newton-Raphson for gamma
-  gamma <- rep(0, ncol(XV_subject))
-  for (iter in 1:100) {
-    risk_score <- as.vector(exp(XV_subject %*% gamma))
-    sum_risk <- sum(risk_score)
+    # Newton-Raphson for gamma
+    gamma <- rep(0, ncol(XV_subject))
+    for (iter in 1:100) {
+      risk_score <- as.vector(exp(XV_subject %*% gamma))
+      sum_risk <- sum(risk_score)
 
-    XV_bar <- colSums(risk_score * XV_subject) / sum_risk
-    score <- V_target_sum - XV_bar * n_visits_total
+      XV_bar <- colSums(risk_score * XV_subject) / sum_risk
+      score <- V_target_sum - XV_bar * n_visits_total
 
-    XV_centered <- sweep(XV_subject, 2, XV_bar, "-")
-    H <- -n_visits_total * crossprod(XV_centered * sqrt(risk_score)) / sum_risk
+      XV_centered <- sweep(XV_subject, 2, XV_bar, "-")
+      H <- -n_visits_total * crossprod(XV_centered * sqrt(risk_score)) / sum_risk
 
-    step <- tryCatch(solve(H, score), error = function(e) rep(0, length(gamma)))
-    gamma_new <- gamma - step
+      step <- tryCatch(solve(H, score), error = function(e) rep(0, length(gamma)))
+      gamma_new <- gamma - step
 
-    if (max(abs(step)) < 1e-8) break
-    gamma <- gamma_new
+      if (max(abs(step)) < 1e-8) break
+      gamma <- gamma_new
+    }
+    gamma_V_hat <- gamma
+    names(gamma_V_hat) <- colnames(XV_subject)
+
+    risk_scores_final <- as.vector(exp(XV_subject %*% gamma_V_hat))
+  } else {
+    gamma_V_hat <- numeric(0)
+    risk_scores_final <- rep(1, n_subj)
   }
-  gamma_V_hat <- gamma
-  names(gamma_V_hat) <- colnames(XV_subject)
-
-  risk_scores_final <- as.vector(exp(XV_subject %*% gamma_V_hat))
   denom_risk_set    <- sum(risk_scores_final)
 
   unique_visit_times <- sort(unique(time_vec[visit_rows_idx]))
@@ -377,12 +389,16 @@ CIMEHR_timevarying_ou <- function(
 
   obs_rows_idx <- which(!is.na(r_vec) & visit_mask)
 
-  form_XO <- stats::as.formula(paste("~", paste(covars_obs_fixed_XO, collapse = "+")))
+  if (length(covars_obs_fixed_XO) > 0L) {
+    form_XO <- stats::as.formula(paste("~", paste(covars_obs_fixed_XO, collapse = "+")))
+  } else {
+    form_XO <- stats::as.formula("~ 1")
+  }
   XO_all  <- stats::model.matrix(form_XO, data = df)
   XO_obs  <- XO_all[obs_rows_idx, , drop = FALSE]
   R_obs   <- r_vec[obs_rows_idx]
 
-  has_random_slopes <- !is.null(covars_obs_random_link_ZO) && length(covars_obs_random_link_ZO) > 0
+  has_random_slopes <- length(covars_obs_random_link_ZO) > 0L
   is_frailty_zero   <- (var_eta_mom < 1e-6)
 
   fit_obs_random <- (has_random_slopes && !is_frailty_zero)

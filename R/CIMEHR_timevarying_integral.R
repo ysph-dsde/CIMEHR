@@ -41,22 +41,23 @@
 #'   internally with first-visit values set to zero, but the
 #'   \eqn{\lambda} coefficient is omitted from the model.
 #' @param covars_visit_XV Character vector of covariate column names for the
-#'   visiting-process intensity model. Default is \code{c("Z", "X")}.
+#'   visiting-process intensity model. Default is \code{NULL}.
 #' @param covars_outcome_fixed_XY Character vector of covariate column names
 #'   for the fixed-effect part of the longitudinal outcome model. No
-#'   intercept is added automatically. Default is \code{c("Z", "X")}.
+#'   intercept is added automatically. At least one covariate is required.
+#'   Default is \code{NULL}.
 #' @param covars_outcome_random_link_ZY Character vector of covariate column names
 #'   that interact with the conditional expectation of the latent factor
 #'   \eqn{U_i} in the outcome model. An intercept is prepended
 #'   automatically. Including \code{time_col} adds a time-varying link.
-#'   Default is \code{c("Z")}.
+#'   Default is \code{NULL}.
 #' @param covars_obs_fixed_XO Character vector of covariate column names for
 #'   the fixed-effect part of the observation-process probit model. An
-#'   intercept is prepended automatically. Default is \code{c("Z", "X")}.
+#'   intercept is prepended automatically. Default is \code{NULL}.
 #' @param covars_obs_random_link_ZO Character vector of covariate column names
 #'   receiving independent random effects in the observation process. An
 #'   intercept is prepended automatically. Set to \code{NULL} or an empty
-#'   vector for a fixed-effects-only probit. Default is \code{"Z"}.
+#'   vector for a fixed-effects-only probit. Default is \code{NULL}.
 #' @param gh_points_U Integer giving the number of Gauss--Hermite quadrature
 #'   nodes for integrating over the standardised latent factor \eqn{U_i}.
 #'   More nodes improve accuracy at the cost of speed. Default is \code{7}.
@@ -165,9 +166,16 @@
 #' \code{\link{sim_data_gen}} for simulating compatible data.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 20, ]
-#' fit <- CIMEHR_timevarying_integral(data = dat,
-#'                                    gh_points_U = 2, gh_points_q = 2)
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+#' fit <- CIMEHR_timevarying_integral(
+#'   data                    = dat,
+#'   y_col                   = "log_HbA1c",
+#'   covars_visit_XV         = "Age",
+#'   covars_outcome_fixed_XY = "Age",
+#'   covars_obs_fixed_XO     = "Age",
+#'   gh_points_U             = 2,
+#'   gh_points_q             = 2
+#' )
 #' print(fit)
 #'
 #' @importFrom stats as.formula binomial coef dnorm glm.fit model.matrix
@@ -181,11 +189,11 @@ CIMEHR_timevarying_integral <- function(
     y_col                   = "Y",
     r_col                   = "R",
     r_lag_col               = NULL,
-    covars_visit_XV         = c("Z", "X"),
-    covars_outcome_fixed_XY = c("Z", "X"),
-    covars_outcome_random_link_ZY  = c("Z"),
-    covars_obs_fixed_XO     = c("Z", "X"),
-    covars_obs_random_link_ZO    = "Z",
+    covars_visit_XV         = NULL,
+    covars_outcome_fixed_XY = NULL,
+    covars_outcome_random_link_ZY  = NULL,
+    covars_obs_fixed_XO     = NULL,
+    covars_obs_random_link_ZO    = NULL,
     gh_points_U             = 7,
     gh_points_q             = 5,
     gh_clip_eta             = 12,
@@ -195,6 +203,17 @@ CIMEHR_timevarying_integral <- function(
 ) {
 
   if (!requireNamespace("nleqslv", quietly = TRUE)) stop("Package 'nleqslv' is required.")
+
+  call <- match.call()
+  covars_visit_XV               <- .check_covars(covars_visit_XV,               data, "covars_visit_XV")
+  covars_outcome_fixed_XY       <- .check_covars(covars_outcome_fixed_XY,       data, "covars_outcome_fixed_XY")
+  covars_outcome_random_link_ZY <- .check_covars(covars_outcome_random_link_ZY, data, "covars_outcome_random_link_ZY")
+  covars_obs_fixed_XO           <- .check_covars(covars_obs_fixed_XO,           data, "covars_obs_fixed_XO")
+  covars_obs_random_link_ZO     <- .check_covars(covars_obs_random_link_ZO,     data, "covars_obs_random_link_ZO")
+  if (length(covars_outcome_fixed_XY) == 0L) {
+    stop("`covars_outcome_fixed_XY` is empty; the outcome model needs at least one fixed-effect covariate.",
+         call. = FALSE)
+  }
 
   # ==========================================================================
   # Helper Functions
@@ -318,7 +337,9 @@ CIMEHR_timevarying_integral <- function(
 
     eig <- eigen(V_post, symmetric = TRUE)
     eig$values <- pmax(eig$values, 1e-10)
-    V_post <- eig$vectors %*% diag(eig$values) %*% t(eig$vectors)
+    # Use diag(x, nrow = length(x)) to avoid R's length-1 footgun where
+    # diag(c(0.5)) returns a 2x2 identity matrix instead of a 1x1 matrix.
+    V_post <- eig$vectors %*% diag(eig$values, nrow = length(eig$values)) %*% t(eig$vectors)
 
     list(m = w, V = V_post)
   }
@@ -367,19 +388,24 @@ CIMEHR_timevarying_integral <- function(
   # Stage 1: Visiting Process
   # ==========================================================================
   visit_rows_idx <- which(visit_mask)
-  XV_subject <- as.matrix(df[subj_first_idx, covars_visit_XV, drop = FALSE])
-  XV_visits  <- as.matrix(df[visit_rows_idx, covars_visit_XV, drop = FALSE])
+  if (length(covars_visit_XV) > 0L) {
+    XV_subject <- as.matrix(df[subj_first_idx, covars_visit_XV, drop = FALSE])
+    XV_visits  <- as.matrix(df[visit_rows_idx, covars_visit_XV, drop = FALSE])
 
-  score_gamma <- function(g) {
-    w <- exp(XV_subject %*% g)
-    sw <- sum(w)
-    colSums(XV_visits) - as.vector(crossprod(w, XV_subject)) / sw * length(visit_rows_idx)
+    score_gamma <- function(g) {
+      w <- exp(XV_subject %*% g)
+      sw <- sum(w)
+      colSums(XV_visits) - as.vector(crossprod(w, XV_subject)) / sw * length(visit_rows_idx)
+    }
+
+    gamma_V_hat <- nleqslv::nleqslv(rep(0, ncol(XV_subject)), score_gamma)$x
+    names(gamma_V_hat) <- colnames(XV_subject)
+
+    exp_gW <- as.vector(exp(XV_subject %*% gamma_V_hat))
+  } else {
+    gamma_V_hat <- numeric(0)
+    exp_gW <- rep(1, n_subj)
   }
-
-  gamma_V_hat <- nleqslv::nleqslv(rep(0, ncol(XV_subject)), score_gamma)$x
-  names(gamma_V_hat) <- colnames(XV_subject)
-
-  exp_gW <- as.vector(exp(XV_subject %*% gamma_V_hat))
   Lambda0_C <- length(visit_rows_idx) / sum(exp_gW)
 
   nu_i <- exp_gW * Lambda0_C
@@ -409,12 +435,16 @@ CIMEHR_timevarying_integral <- function(
   # ==========================================================================
   # Stage 2: Observation Process (GH Quadrature)
   # ==========================================================================
-  form_XO <- as.formula(paste("~", paste(covars_obs_fixed_XO, collapse = "+")))
+  if (length(covars_obs_fixed_XO) > 0L) {
+    form_XO <- as.formula(paste("~", paste(covars_obs_fixed_XO, collapse = "+")))
+  } else {
+    form_XO <- as.formula("~ 1")
+  }
   XO_all <- model.matrix(form_XO, data = df)
 
   d <- 0
   ZO_all <- NULL
-  if (!is.null(covars_obs_random_link_ZO) && length(covars_obs_random_link_ZO) > 0) {
+  if (length(covars_obs_random_link_ZO) > 0L) {
     form_ZO <- as.formula(paste("~", paste(covars_obs_random_link_ZO, collapse = "+")))
     ZO_all <- model.matrix(form_ZO, data = df)
     d <- ncol(ZO_all)
@@ -770,7 +800,8 @@ CIMEHR_timevarying_integral <- function(
       longitudinal_outcome = list(
         beta_Y = beta_Y_hat,
         theta_Y = theta_Y_hat
-      )
+      ),
+      call = call
     ),
     class = "CIMEHR_timevarying_integral"
   )

@@ -11,11 +11,11 @@
 #' @param obs_indicator Character string. Observation indicator column name.
 #'   Default is \code{"R"}.
 #' @param visit_covs Character vector of covariate names for the visiting
-#'   model. Default is \code{c("Z", "X")}.
+#'   model. Default is \code{NULL}.
 #' @param long_covs Character vector of covariate names for the longitudinal
-#'   outcome model. Default is \code{c("Z", "X")}.
+#'   outcome model. Default is \code{NULL}.
 #' @param random_covs Character string or vector of covariate names that
-#'   interact with the latent factor. Default is \code{"Z"}.
+#'   interact with the latent factor. Default is \code{NULL}.
 #'
 #' @return An object of class \code{"EHRJoint"} containing component-wise
 #' coefficient estimates.
@@ -28,8 +28,12 @@
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- EHRJoint(dat)
-#' print(fit)
+#' fit <- EHRJoint(
+#'   dat,
+#'   visit_covs  = "Age",
+#'   long_covs   = "Age",
+#'   random_covs = "Age"
+#' )
 #'
 #' @importFrom stats as.formula binomial coef glm na.omit plogis
 #' @export
@@ -38,14 +42,23 @@ EHRJoint <- function(data,
                      time = "time",
                      outcome = "Y",
                      obs_indicator = "R",
-                     visit_covs = c("Z", "X"),
-                     long_covs = c("Z", "X"),
-                     random_covs = "Z") {
+                     visit_covs = NULL,
+                     long_covs = NULL,
+                     random_covs = NULL) {
 
   if (!requireNamespace("nleqslv", quietly = TRUE)) {
     stop("Package 'nleqslv' is required. Install it with: install.packages('nleqslv')",
          call. = FALSE)
   }
+
+  visit_covs  <- .check_covars(visit_covs,  data, "visit_covs")
+  long_covs   <- .check_covars(long_covs,   data, "long_covs")
+  random_covs <- .check_covars(random_covs, data, "random_covs")
+  if (length(visit_covs) == 0L || length(long_covs) == 0L || length(random_covs) == 0L) {
+    stop("`EHRJoint` requires non-empty `visit_covs`, `long_covs`, and `random_covs`.",
+         call. = FALSE)
+  }
+  call <- match.call()
 
   # Visiting process variables
   V <- as.matrix(data[, c(id, visit_covs)])
@@ -173,6 +186,7 @@ EHRJoint <- function(data,
     Lambda_C_est = Lambda_C_est,
     sigma_sq_hat = sigma_sq_hat,
     beta_hat = beta_hat,
-    theta_hat = theta_hat
+    theta_hat = theta_hat,
+    call = call
   ), class = "EHRJoint"))
 }

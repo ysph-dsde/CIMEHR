@@ -10,7 +10,7 @@ Inverse_intensity_rate_ratio_weighting(
   time = "time",
   outcome = "Y",
   obs_indicator = "R",
-  visit_covs = c("Z", "X"),
+  visit_covs = NULL,
   formula = NULL
 )
 }
@@ -35,14 +35,14 @@ Default is \code{"R"}.}
 
 \item{visit_covs}{Character vector of covariate column names for the
 visiting-process intensity model. These enter the exponent of the
-multiplicative intensity. Default is \code{c("Z", "X")}.}
+multiplicative intensity. Default is \code{NULL}.}
 
 \item{formula}{An optional \code{\link[stats]{formula}} specifying the
 design matrix for the longitudinal outcome model. When \code{NULL}
 (the default), the formula is constructed automatically as
 \code{outcome ~ visit_covs + time} from the column-name arguments.
 A user-supplied formula overrides this (e.g.,
-\code{Y ~ Z + X + Z:X + time} for interactions).}
+\code{Y ~ Age + Gender + time} for explicit covariate sets).}
 }
 \value{
 An object of class \code{"Inverse_intensity_rate_ratio_weighting"}, which is a named
@@ -93,7 +93,7 @@ estimates, or bootstrap the entire procedure.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = c("Z", "X"))
+fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = "Age")
 print(fit)
 
 }

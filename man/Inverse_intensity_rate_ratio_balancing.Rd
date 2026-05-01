@@ -10,7 +10,7 @@ Inverse_intensity_rate_ratio_balancing(
   time = "time",
   outcome = "Y",
   obs_indicator = "R",
-  visit_covs = c("Z", "X"),
+  visit_covs = NULL,
   balance_covs = NULL,
   formula = NULL,
   phi = 0
@@ -36,7 +36,7 @@ observation indicator column (\code{1} = outcome observed at visit).
 Default is \code{"R"}.}
 
 \item{visit_covs}{Character vector of covariate column names for the
-visiting-process intensity model. Default is \code{c("Z", "X")}.}
+visiting-process intensity model. Default is \code{NULL}.}
 
 \item{balance_covs}{Character vector of covariate column names for
 which covariate-balance constraints are imposed. If \code{NULL}
@@ -47,7 +47,7 @@ design matrix for the longitudinal outcome model. When \code{NULL}
 (the default), the formula is constructed automatically as
 \code{outcome ~ visit_covs + time} from the column-name arguments.
 A user-supplied formula overrides this (e.g.,
-\code{Y ~ Z + X + Z:X + time} for interactions).}
+\code{Y ~ Age + Gender + time} for explicit covariate sets).}
 
 \item{phi}{Numeric scalar; sensitivity parameter controlling departures
 from the semiparametric visiting-process model. When
@@ -143,7 +143,7 @@ This function requires the \pkg{nleqslv} package.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-fit <- Inverse_intensity_rate_ratio_balancing(dat, visit_covs = c("Z", "X"))
+fit <- Inverse_intensity_rate_ratio_balancing(dat, visit_covs = "Age")
 print(fit)
 
 }

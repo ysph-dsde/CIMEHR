@@ -1,4 +1,3 @@
-
 # ============================================================================
 # Stage-specific summaries and coefficient extraction helpers
 # ============================================================================
@@ -9,6 +8,18 @@
 #' @param ... Additional arguments passed to the model-specific summary method.
 #'
 #' @return The input object, invisibly.
+#'
+#' @examples
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+#' fit <- CIMEHR(
+#'   data                    = dat,
+#'   y_col                   = "log_HbA1c",
+#'   covars_visit_XV         = "Age",
+#'   covars_outcome_fixed_XY = "Age",
+#'   covars_obs_fixed_XO     = "Age"
+#' )
+#' summary_visiting(fit)
+#'
 #' @export
 summary_visiting <- function(object, ...) {
   .summary_stage(object, stage = "visiting", ...)
@@ -20,6 +31,18 @@ summary_visiting <- function(object, ...) {
 #' @param ... Additional arguments passed to the model-specific summary method.
 #'
 #' @return The input object, invisibly.
+#'
+#' @examples
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+#' fit <- CIMEHR(
+#'   data                    = dat,
+#'   y_col                   = "log_HbA1c",
+#'   covars_visit_XV         = "Age",
+#'   covars_outcome_fixed_XY = "Age",
+#'   covars_obs_fixed_XO     = "Age"
+#' )
+#' summary_observation(fit)
+#'
 #' @export
 summary_observation <- function(object, ...) {
   .summary_stage(object, stage = "observation", ...)
@@ -31,6 +54,18 @@ summary_observation <- function(object, ...) {
 #' @param ... Additional arguments passed to the model-specific summary method.
 #'
 #' @return The input object, invisibly.
+#'
+#' @examples
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+#' fit <- CIMEHR(
+#'   data                    = dat,
+#'   y_col                   = "log_HbA1c",
+#'   covars_visit_XV         = "Age",
+#'   covars_outcome_fixed_XY = "Age",
+#'   covars_obs_fixed_XO     = "Age"
+#' )
+#' summary_outcome(fit)
+#'
 #' @export
 summary_outcome <- function(object, ...) {
   .summary_stage(object, stage = "outcome", ...)
@@ -70,7 +105,7 @@ summary_outcome <- function(object, ...) {
 #'
 #' This helper returns estimates from a requested model stage. Use
 #' \code{parameter = NULL} to return all coefficients from that stage, or set
-#' \code{parameter} to a coefficient name such as \code{"Z"}.
+#' \code{parameter} to a coefficient name such as \code{"Age"}.
 #'
 #' @param object A fitted CIMEHR package model object.
 #' @param stage One of \code{"outcome"}, \code{"visiting"}, or
@@ -79,6 +114,15 @@ summary_outcome <- function(object, ...) {
 #' @param ... Ignored.
 #'
 #' @return A named numeric vector.
+#'
+#' @examples
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+#' fit <- CIMEHR(data = dat, y_col = "log_HbA1c",
+#'               covars_visit_XV = "Age",
+#'               covars_outcome_fixed_XY = "Age",
+#'               covars_obs_fixed_XO = "Age")
+#' extract_coefficient(fit, stage = "outcome")
+#'
 #' @export
 extract_coefficient <- function(object,
                                 stage = c("outcome", "visiting", "observation"),

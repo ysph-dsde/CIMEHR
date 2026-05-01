@@ -26,7 +26,15 @@ variant. Standard errors are not available for this method.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 20, ]
-fit <- CIMEHR_timevarying_integral(data = dat, gh_points_U = 2, gh_points_q = 2)
+fit <- CIMEHR_timevarying_integral(
+  data                    = dat,
+  y_col                   = "log_HbA1c",
+  covars_visit_XV         = "Age",
+  covars_outcome_fixed_XY = "Age",
+  covars_obs_fixed_XO     = "Age",
+  gh_points_U             = 2,
+  gh_points_q             = 2
+)
 print(fit)
 
 }

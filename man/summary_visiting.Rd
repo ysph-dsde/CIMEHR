@@ -17,3 +17,15 @@ The input object, invisibly.
 \description{
 Summarise the Visiting Process of a Fitted Method
 }
+\examples{
+dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+fit <- CIMEHR(
+  data                    = dat,
+  y_col                   = "log_HbA1c",
+  covars_visit_XV         = "Age",
+  covars_outcome_fixed_XY = "Age",
+  covars_obs_fixed_XO     = "Age"
+)
+summary_visiting(fit)
+
+}

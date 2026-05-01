@@ -10,17 +10,17 @@ sim_data_gen(
   time.start = 0,
   time.end = 60,
   seed = 123,
-  pZ = 0.5,
-  muX = 0,
-  sdX = 1,
+  covariates = NULL,
   gamma = c(intercept = -2.2, Z = 1, X = 1),
   sigma_zeta = 1,
   alpha = c(intercept = 1.5, Z = -0.5, X = -0.3),
+  obs_random_covs = "Z",
   delta = c(intercept = -0.3, Z = -0.5),
   sigma_q = c(intercept = 0.3, Z = 0.2),
   phi = 0,
   beta = c(intercept = -2, Z = -0.5, X = 0.5),
   beta_t = 0.1,
+  outcome_random_covs = "Z",
   theta = c(intercept = 0.5, Z = 0.3),
   Sigma_b = matrix(c(1, 0, 0, 2), 2, 2),
   sigma_y = 1,
@@ -30,158 +30,159 @@ sim_data_gen(
 \arguments{
 \item{n}{Integer; number of subjects to simulate.}
 
-\item{time.start}{Numeric scalar; start of the observation window.
-Default is \code{0}.}
+\item{time.start}{Numeric scalar; start of the observation window. Default
+is \code{0}.}
 
-\item{time.end}{Numeric scalar; end of the observation window (censoring
-time for all subjects). Default is \code{60}.}
+\item{time.end}{Numeric scalar; end of the observation window (the constant
+censoring time used for all subjects). Default is \code{60}.}
 
-\item{seed}{Integer; random seed for reproducibility. Default is
-\code{123}.}
+\item{seed}{Integer; random seed for reproducibility. Default is \code{123}.}
 
-\item{pZ}{Numeric scalar in \eqn{[0, 1]}; probability that the binary
-covariate \eqn{Z_i} equals 1 (Bernoulli). Default is \code{0.5}.}
+\item{covariates}{Named list specifying the baseline covariates to generate.
+Each element is itself a list with at least a \code{type} entry, which
+must be either \code{"continuous"} or \code{"binary"}. Continuous
+covariates accept additional fields \code{dist} (\code{"normal"} or
+\code{"uniform"}; default \code{"normal"}), \code{mean}/\code{sd} (for
+normal), \code{min}/\code{max} (for uniform), and \code{standardize}
+(logical; whether to z-standardize after generation, default \code{FALSE}).
+Binary covariates accept \code{prob}, the Bernoulli success probability
+(default \code{0.5}). When \code{covariates = NULL} (the default), a
+minimal generic spec \code{list(Z = list(type = "binary", prob = 0.5),
+  X = list(type = "continuous", dist = "normal", mean = 0, sd = 1))} is
+used so that the function works out of the box for the package's
+internal tests and existing examples.}
 
-\item{muX}{Numeric scalar; mean of the continuous covariate
-\eqn{X_i \sim N(\mu_X, \sigma_X^2)}. Default is \code{0}.}
-
-\item{sdX}{Positive numeric scalar; standard deviation of \eqn{X_i}.
-Default is \code{1}.}
-
-\item{gamma}{Named numeric vector of length 3 with elements
-\code{intercept}, \code{Z}, and \code{X} giving the visiting-process
-log-intensity coefficients. Default is
-\code{c(intercept = -2.2, Z = 1, X = 1)}.}
+\item{gamma}{Named numeric vector of visiting-process log-intensity
+coefficients. Must include an \code{intercept} entry; remaining names
+should match a subset of the covariates declared in \code{covariates}.
+Covariates declared but not named in \code{gamma} are excluded from the
+visiting model (coefficient zero).}
 
 \item{sigma_zeta}{Positive numeric scalar; standard deviation of the
-log-normal frailty on the log scale. Controls the degree of
-overdispersion in visit counts. Default is \code{1.0}.}
+log-normal frailty on the log scale. Default is \code{1.0}.}
 
-\item{alpha}{Named numeric vector with elements \code{intercept},
-\code{Z}, and \code{X} giving the observation-process fixed-effect
-probit coefficients. Default is
-\code{c(intercept = 1.5, Z = -0.5, X = -0.3)}.}
+\item{alpha}{Named numeric vector of observation-process probit
+fixed-effect coefficients. Must include an \code{intercept}; remaining
+names should be a subset of \code{covariates}.}
 
-\item{delta}{Named numeric vector with elements \code{intercept} and
-\code{Z} giving the latent-link coefficients that couple the shared
-factor \eqn{U_i} to the observation-process random effects. Default
-is \code{c(intercept = -0.3, Z = -0.5)}.}
+\item{obs_random_covs}{Character vector naming the covariates whose
+observation-process random slopes are linked to the shared latent
+factor. An intercept random effect is always included and need not be
+listed here. The default is \code{"Z"}, matching the default
+\code{delta} and \code{sigma_q} dimensions; pass \code{character(0)}
+for an intercept-only random effect.}
 
-\item{sigma_q}{Named numeric vector with elements \code{intercept} and
-\code{Z} giving the standard deviations of the residual
-observation-process random effects (square roots of the diagonal of
-\eqn{\Sigma_q}). Default is \code{c(intercept = 0.3, Z = 0.2)}.}
+\item{delta}{Named numeric vector of latent-link coefficients for the
+observation process. Must include an \code{intercept}; the remaining
+names should match \code{obs_random_covs}.}
+
+\item{sigma_q}{Named numeric vector of residual standard deviations for
+the observation-process random effects. Must include an
+\code{intercept}; the remaining names should match
+\code{obs_random_covs}.}
 
 \item{phi}{Nonnegative numeric scalar controlling the optional OU
-serial-correlation component in the observation process. The default is
-\code{0}, which sets \eqn{\xi_i(t) = 0} and therefore generates data
-without an OU component. If \code{phi > 0}, \eqn{\xi_i(t)} is generated
-from a stationary OU process with autocorrelation
-\eqn{\exp(-\phi \Delta t)} at lag \eqn{\Delta t}; larger values of
-\code{phi} imply faster decay.}
+serial-correlation component in the observation process. Default
+\code{0} (no OU component).}
 
-\item{beta}{Named numeric vector with elements \code{intercept},
-\code{Z}, and \code{X} giving the outcome fixed-effect coefficients
-(excluding the time slope). Default is
-\code{c(intercept = -2, Z = -0.5, X = 0.5)}.}
+\item{beta}{Named numeric vector of outcome fixed-effect coefficients
+(excluding the time slope). Must include \code{intercept}; remaining
+names should be a subset of \code{covariates}.}
 
 \item{beta_t}{Numeric scalar; coefficient for the linear time effect in
 the outcome model. Default is \code{0.1}.}
 
-\item{theta}{Named numeric vector with elements \code{intercept} and
-\code{Z} giving the outcome latent-link coefficients that couple the
-shared factor \eqn{U_i} to the outcome random effects. Default is
-\code{c(intercept = 0.5, Z = 0.3)}.}
+\item{outcome_random_covs}{Character vector naming the covariates whose
+outcome-model random slopes are linked to the shared latent factor. An
+intercept random effect is always included. The default is \code{"Z"}.}
 
-\item{Sigma_b}{Numeric \eqn{2 \times 2} positive-definite matrix; the
-residual covariance of the outcome random effects \eqn{b_i} (after
-removing the latent-factor contribution). Default is
-\code{matrix(c(1, 0, 0, 2), 2, 2)}.}
+\item{theta}{Named numeric vector of outcome latent-link coefficients.
+Must include \code{intercept}; remaining names should match
+\code{outcome_random_covs}.}
+
+\item{Sigma_b}{Numeric positive-definite matrix; the residual covariance
+of the outcome random effects. Dimension must equal
+\code{1 + length(outcome_random_covs)}. Default is the
+\eqn{2 \times 2} matrix \code{matrix(c(1, 0, 0, 2), 2, 2)} for a single
+random slope.}
 
 \item{sigma_y}{Positive numeric scalar; residual standard deviation of
 the outcome measurement error. Default is \code{1}.}
 
-\item{verbose}{Logical; if \code{TRUE} (the default), a short simulation
-summary (visit counts, observation rate) is printed via
-\code{\link{message}}, which can be silenced with
-\code{\link{suppressMessages}}.}
+\item{verbose}{Logical; if \code{TRUE} (the default), print a short
+simulation summary via \code{\link{message}}.}
 }
 \value{
-An object of class \code{"sim_CIMEHR"}, which is a named
-list with the following components:
-
-\describe{
-\item{\code{long_data}}{A long-format \code{data.frame} with one row per
-subject-visit (or one row with \code{NA} time values for subjects with
-no visits). Columns include \code{id}, \code{Z}, \code{X}, \code{time},
-\code{R}, \code{Y}, and the latent quantities \code{U}, \code{eta},
-\code{q_intercept}, \code{q_Z}, \code{b_intercept}, and \code{b_Z}
-(the last six are not available in real data and are included for
-simulation diagnostics).}
-\item{\code{subject_data}}{A subject-level \code{data.frame} with the
-baseline covariates, latent factor, frailty, and random effects.}
-\item{\code{prop_no_visit}}{Numeric scalar; proportion of subjects with
-no visits.}
-\item{\code{obs_rate}}{Numeric scalar; proportion of visits with an
-observed outcome (\code{R = 1}).}
-\item{\code{params}}{A named list echoing all data-generating parameters,
-suitable for passing to \code{method_comparisons()} as
-\code{true_values}.}
-}
+An object of class \code{"sim_CIMEHR"}, a named list with components
+\code{long_data} (the long-format \code{data.frame} returned to the user;
+contains \code{id}, the declared covariates, \code{time}, \code{R},
+\code{Y}, and \code{C}), \code{latent} (a subject-level
+\code{data.frame} with the latent factor \eqn{U_i}, frailty
+\eqn{\eta_i}, and random effects, retained for diagnostics and not
+merged into \code{long_data}), \code{prop_no_visit}, \code{obs_rate},
+and \code{params} (echoes all data-generating parameters for use as
+\code{true_values} in \code{method_comparisons()}).
 }
 \description{
 Generates synthetic longitudinal data from a joint model that includes an
 informative visiting process (Poisson with log-normal frailty), an
 informative observation process (probit with latent-factor-linked random
 effects), and a linear longitudinal outcome model with
-latent-factor-linked random effects. By default, no OU serial-correlation
-component is added; an optional OU component can be enabled by setting
-\code{phi > 0}.
+latent-factor-linked random effects. By default, no Ornstein-Uhlenbeck (OU)
+serial-correlation component is added; an optional OU component is enabled
+by setting \code{phi > 0}.
+
+Covariates are user-specified through the \code{covariates} argument as a
+named list, and per-process coefficients are passed as named numeric vectors
+keyed by those covariate names. This lets the same generator produce
+arbitrary covariate sets (e.g., generic Z/X, or EHR-style Age/Gender/NSES)
+without changes to the function. See the Examples section.
+
 The data-generating mechanism matches the model specification in
-Yang, Shi, and Mukherjee (2025) and is suitable for
-evaluating \code{\link{CIMEHR}}, \code{\link{CIMEHR_timevarying_integral}}, and
-\code{\link{CIMEHR_timevarying_ou}}.
+Yang, Shi, and Mukherjee (2026).
 }
-\section{Visiting Process}{
+\section{Latent quantities}{
 
-The visit intensity for subject \eqn{i} is
-\deqn{\lambda_i(t) = \eta_i \exp(\gamma_0 + \gamma_Z Z_i + \gamma_X X_i),}
-where \eqn{\eta_i = \exp(\mu_0 + \sigma_\zeta U_i)} is a log-normal
-frailty with \eqn{U_i \sim N(0,1)} and
-\eqn{\mu_0 = -\sigma_\zeta^2/2}. Visit times are generated as a
-homogeneous Poisson process with rate \eqn{\lambda_i}.
-}
-
-\section{Observation Process}{
-
-At each visit, the latent propensity for outcome observation is
-\deqn{\tilde R_{ij} = \alpha^\top X_{ij}^O + q_i^\top Z_{ij}^O +
-  \xi_i(t_{ij}),}
-where \eqn{R_{ij} = I(\tilde R_{ij} > 0)} and
-\eqn{q_i \mid U_i \sim N(\delta U_i, \Sigma_q)}. By default,
-\eqn{\xi_i(t) = 0}, so the simulated observation process has no OU
-serial-correlation component. When \code{phi > 0}, \eqn{\xi_i(t)} is
-generated as a stationary Ornstein--Uhlenbeck process with unit marginal
-variance and decay parameter \eqn{\phi}.
-}
-
-\section{Outcome Process}{
-
-The outcome for subject \eqn{i} at time \eqn{t} is
-\deqn{Y_i(t) = \beta_0 + \beta_Z Z_i + \beta_X X_i + \beta_t t +
-  b_i^\top Z_i^Y + \varepsilon_i(t),}
-where \eqn{b_i \mid U_i \sim N(\theta U_i, \Sigma_b)} and
-\eqn{\varepsilon_i(t) \sim N(0, \sigma_y^2)}. The outcome is set to
-\code{NA} when \eqn{R_{ij} = 0}.
+The latent variables \eqn{U_i}, \eqn{\eta_i}, \eqn{q_i}, and \eqn{b_i} are
+not returned in \code{long_data} because they are unobservable in real EHR
+data; including them would obscure the analyst's view of what a user
+actually has. They remain available in the \code{latent} component for
+simulation diagnostics.
 }
 
 \examples{
+# Generic two-covariate setup (back-compatible with earlier package versions)
 dat <- sim_data_gen(n = 30, seed = 42)
 head(dat$long_data)
-dat$params$beta
+
+# EHR-style multi-covariate setup
+ehr_covs <- list(
+  Age      = list(type = "continuous", dist = "uniform",
+                  min = 18, max = 99, standardize = TRUE),
+  Gender   = list(type = "binary", prob = 0.5),
+  Marital  = list(type = "binary", prob = 0.4),
+  Black    = list(type = "binary", prob = 0.30),
+  Hispanic = list(type = "binary", prob = 0.20),
+  NSES     = list(type = "continuous", dist = "normal",
+                  mean = 0, sd = 1, standardize = FALSE)
+)
+dat_ehr <- sim_data_gen(
+  n = 50, seed = 1, covariates = ehr_covs,
+  gamma = c(intercept = -2.0, Age = 0.10, Marital = -0.05,
+            Black = 0.15, Hispanic = -0.05, NSES = 0.12),
+  alpha = c(intercept = 0.5, Age = 0.10, Gender = -0.10, NSES = 0.20),
+  obs_random_covs     = "NSES",
+  delta   = c(intercept = -0.3, NSES = -0.5),
+  sigma_q = c(intercept =  0.3, NSES =  0.2),
+  beta = c(intercept = -2.0, Age = 0.05, Gender = 0.10,
+           Black = 0.15, Hispanic = 0.05, NSES = -0.25),
+  outcome_random_covs = "NSES",
+  theta   = c(intercept = 0.5, NSES = 0.3)
+)
+head(dat_ehr$long_data)
 
 }
 \seealso{
-\code{\link{CIMEHR}}, \code{\link{CIMEHR_timevarying_integral}}, and
-\code{\link{CIMEHR_timevarying_ou}} for fitting models to the simulated data.
+\code{\link{CIMEHR}}, \code{\link{CIMEHR_timevarying_integral}},
+\code{\link{CIMEHR_timevarying_ou}}.
 }

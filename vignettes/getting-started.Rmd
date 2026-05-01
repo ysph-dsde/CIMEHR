@@ -12,7 +12,8 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 7,
-  fig.height = 4
+  fig.height = 4,
+  eval = FALSE
 )
 ```
 
@@ -20,39 +21,56 @@ knitr::opts_chunk$set(
 
 Electronic Health Record (EHR) data are longitudinal but not collected by design. Patients visit at irregular times, and even when a visit occurs, an outcome or biomarker may not be measured. **CIMEHR** provides simple benchmark methods and semiparametric joint models for analyses affected by informative visiting and informative observation.
 
-This vignette starts with the data format, then moves from simpler baseline methods to the more complex CIMEHR estimators.
+This vignette starts with the data format, then moves from simpler baseline methods to the more complex CIMEHR estimators. Code blocks are not evaluated by default to keep the vignette build fast; copy a block into an R session to run it.
 
-```{r load-package}
+```{r load-package, eval = TRUE}
 library(CIMEHR)
 ```
 
 ## 1. Input data format
 
-The analysis functions expect **long-format data**, with one row per subject-visit or subject-time record. For the primary CIMEHR estimators, the default columns are:
+The analysis functions expect **long-format data**, with one row per subject-visit or subject-time record. The CIMEHR estimators expect at least the following column roles, with default column names shown:
 
-| Column role | Default name | Meaning |
-|:--|:--|:--|
-| Subject identifier | `id` | Unique subject ID |
-| Visit time | `time` | Visit time; rows with `NA` in `time` are treated as unvisited rows |
-| Outcome | `Y` | Longitudinal outcome; typically `NA` when unobserved |
-| Observation indicator | `R` | 1 if `Y` is observed at a visit, 0 otherwise |
-| Censoring/follow-up end | `C` | End of follow-up for each subject |
-| Covariates | e.g., `Z`, `X` | Baseline or model covariates |
+| Column role             | Default name | Meaning                                                              |
+|:------------------------|:-------------|:---------------------------------------------------------------------|
+| Subject identifier      | `id`         | Unique subject ID                                                    |
+| Visit time              | `time`       | Visit time; `NA` indicates a row without a visit                     |
+| Outcome                 | `Y`          | Longitudinal outcome; usually `NA` when the outcome was not recorded |
+| Observation indicator   | `R`          | 1 if the outcome was recorded at the visit, 0 otherwise              |
+| Censoring/follow-up end | `C`          | End of follow-up for each subject                                    |
+| Covariates              | user-named   | Baseline or model covariates                                         |
 
-All package methods should be given long/panel data. Some simpler benchmark methods analyze only observed outcome rows internally, but the user-supplied dataset should still contain aligned visit times, observation indicators, outcomes, and covariates in long format.
+All package methods should be given long/panel data. The CIMEHR-family functions accept custom column names through `id_col`, `time_col`, `y_col`, `r_col`, and `censor_col`, so renaming your data is not required:
+
+```{r custom-column-names}
+fit <- CIMEHR(
+  data       = my_data,
+  id_col     = "patient_id",
+  time_col   = "visit_time",
+  y_col      = "hba1c",
+  r_col      = "measured",
+  censor_col = "followup_end",
+  covars_visit_XV               = c("age", "female"),
+  covars_outcome_fixed_XY       = c("age", "female"),
+  covars_outcome_random_link_ZY = "female",
+  covars_obs_fixed_XO           = c("age", "female"),
+  covars_obs_random_link_ZO     = "female"
+)
+```
 
 ### 1.1 Converting short/wide data to long data
 
 If your dataset has one row per subject and repeated visit/outcome columns, reshape it first:
 
-```{r wide-to-long, eval = FALSE}
+```{r wide-to-long}
 library(dplyr)
 library(tidyr)
 
 wide_dat <- tibble::tibble(
   id = 1:2,
-  Z = c(0, 1),
-  X = c(0.2, -0.4),
+  Age = c(0.4, -0.2),
+  Gender = c(1, 0),
+  NSES = c(0.2, -0.4),
   C = c(60, 60),
   time_1 = c(5, 8),  time_2 = c(20, NA), time_3 = c(45, 50),
   Y_1 = c(1.2, NA), Y_2 = c(1.6, NA), Y_3 = c(2.0, 1.1)
@@ -68,36 +86,44 @@ long_dat <- wide_dat %>%
   arrange(id, time)
 ```
 
-For CIMEHR-family methods, you can also use custom column names:
-
-```{r custom-column-names, eval = FALSE}
-fit <- CIMEHR(
-  data = my_data,
-  id_col = "patient_id",
-  time_col = "visit_time",
-  y_col = "hba1c",
-  r_col = "measured",
-  censor_col = "followup_end",
-  covars_visit_XV = c("age", "female"),
-  covars_outcome_fixed_XY = c("age", "female"),
-  covars_outcome_random_link_ZY = "female",
-  covars_obs_fixed_XO = c("age", "female"),
-  covars_obs_random_link_ZO = "female"
-)
-```
-
 ## 2. Example dataset
 
-The package includes `sim_ehr_data`, generated from a model with informative visiting, informative observation, and a longitudinal outcome process.
+The package includes `sim_ehr_data`, a long-format simulated EHR cohort designed to look like an outpatient HbA1c extract. The bundled dataset has the following columns. Latent quantities used internally by the data-generating process (the shared factor U, the visiting frailty eta, and per-process random effects) are not included, since they are not observable in real EHR data.
 
-```{r load-data}
+| Column      | Type        | Description                                                  |
+|:------------|:------------|:-------------------------------------------------------------|
+| `id`        | integer     | Subject identifier                                           |
+| `Age`       | continuous  | Standardized age (z-score from a uniform [18, 99] draw)      |
+| `Age_raw`   | continuous  | Age in years (the raw Uniform[18, 99] draw); for descriptive use only |
+| `Gender`    | binary      | 1 = male, 0 = female                                         |
+| `Marital`   | binary      | 1 = married, 0 = not                                         |
+| `Black`     | binary      | 1 = Black race, 0 = otherwise                                |
+| `Hispanic`  | binary      | 1 = Hispanic ethnicity, 0 = otherwise                        |
+| `NSES`      | continuous  | Standardized neighborhood median household income            |
+| `time`      | continuous  | Visit time on [0, 60]; `NA` for subjects with no visits      |
+| `R`         | binary      | 1 if HbA1c was recorded at the visit, 0 otherwise            |
+| `Y`         | continuous  | Standardized linear outcome from the data-generating model   |
+| `HbA1c`     | continuous  | Raw HbA1c (~ 4.0–9.0 range), `exp(log(5.6) + 0.05 * Y)`      |
+| `log_HbA1c` | continuous  | Natural log of `HbA1c`; recommended outcome for analysis     |
+| `C`         | continuous  | End-of-follow-up time (60 for all subjects)                  |
+
+```{r load-data, eval = TRUE}
 data("sim_ehr_data")
+nrow(sim_ehr_data)
 head(sim_ehr_data)
 ```
 
-The true simulation parameters are stored as an attribute:
+For the rest of this vignette, we work with a 500-subject subset to keep the executable examples quick:
 
-```{r true-params}
+```{r subset-data, eval = TRUE}
+set.seed(1)
+sub_ids <- sample(unique(sim_ehr_data$id), 500)
+ehr500  <- sim_ehr_data[sim_ehr_data$id %in% sub_ids, ]
+```
+
+The true simulation parameters are stored as an attribute and can be passed to `method_comparisons()` to populate true-value, bias, and RMSE columns:
+
+```{r true-params, eval = TRUE}
 true_params <- attr(sim_ehr_data, "true_params")
 true_params$beta
 true_params$gamma
@@ -105,7 +131,7 @@ true_params$gamma
 
 ## 3. Method comparison
 
-This table shows a comprehensive comparison of statistical methods for longitudinal EHR data. Methods are differentiated by whether they account for informative visiting (IP) and informative observation (IO), the specific scope of the shared latent structure linking these processes to the outcome, and the adjustment mechanism applied. Symbols: ✓ = Explicitly handled/modeled; ✗ = Ignored or not handled. Abbreviations: LMM, linear mixed model; VA/OA, visit/observation-adjusted; JMVL, joint modeling of visiting and longitudinal data; IIRR, inverse intensity rate ratio; MAR, missing at random; MI, multiple imputation; LI, linear increment. 
+This table shows a comprehensive comparison of statistical methods for longitudinal EHR data. Methods are differentiated by whether they account for informative visiting (IP) and informative observation (IO), the specific scope of the shared latent structure linking these processes to the outcome, and the adjustment mechanism applied. Symbols: ✓ = Explicitly handled/modeled; ✗ = Ignored or not handled. Abbreviations: LMM, linear mixed model; VA/OA, visit/observation-adjusted; JMVL, joint modeling of visiting and longitudinal data; IIRR, inverse intensity rate ratio; MAR, missing at random; MI, multiple imputation; LI, linear increment.
 
 ### Outcome-only
 
@@ -142,18 +168,25 @@ This table shows a comprehensive comparison of statistical methods for longitudi
 | Proposed (this package) | ✓ | ✓ | All three processes | Tripartite model; full shared latent structure links Visiting, Observation, and Outcome. | CIMEHR |
 
 IP = informative visiting / informative presence adjustment; IO = informative observation adjustment.
-The “Proposed” row corresponds to `CIMEHR()`; `CIMEHR_timevarying_integral()` and `CIMEHR_timevarying_ou()` extend this framework with more flexible observation-process modeling.
+The "Proposed" row corresponds to `CIMEHR()`; `CIMEHR_timevarying_integral()` and `CIMEHR_timevarying_ou()` extend this framework with more flexible observation-process modeling.
 
 ## 4. Simpler benchmark methods first
+
+We define a covariate vector once and reuse it. The focal coefficient for the bundled dataset is `NSES`.
+
+```{r covars-vec}
+covars_all <- c("Age", "Gender", "Marital", "Black", "Hispanic", "NSES")
+out_form   <- Y ~ Age + Gender + Marital + Black + Hispanic + NSES + time
+```
 
 ### 4.1 Summary-statistic regression
 
 `Summary_stat()` is a naive baseline that collapses each subject's observed outcomes to a summary statistic and fits a cross-sectional regression.
 
-```{r summarystat, eval = FALSE}
+```{r summarystat}
 fit_ss <- Summary_stat(
-  sim_ehr_data,
-  formula = ~ Z + X
+  ehr500,
+  formula = ~ Age + Gender + Marital + Black + Hispanic + NSES
 )
 print(fit_ss)
 summary(fit_ss)
@@ -163,22 +196,22 @@ summary(fit_ss)
 
 `Linear_mixed_model()` wraps `nlme::lme()` and supports standard, observation-adjusted, and visit-adjusted variants.
 
-```{r lmm, eval = FALSE}
+```{r lmm}
 fit_lmm <- Linear_mixed_model(
-  sim_ehr_data,
-  fixed = Y ~ Z + X + time,
-  random = ~ 1 + Z | id,
+  ehr500,
+  fixed         = out_form,
+  random        = ~ 1 | id,
   obs_indicator = "R"
 )
 print(fit_lmm)
 summary(fit_lmm)
 
 fit_va <- Linear_mixed_model(
-  sim_ehr_data,
-  fixed = Y ~ Z + X + time,
-  random = ~ 1 + Z | id,
+  ehr500,
+  fixed         = out_form,
+  random        = ~ 1 | id,
   obs_indicator = "R",
-  visit_adjust = "VA"
+  visit_adjust  = "VA"
 )
 ```
 
@@ -186,13 +219,13 @@ fit_va <- Linear_mixed_model(
 
 `Pairwise_likelihood()` fits a pairwise composite likelihood model for observed outcomes.
 
-```{r pairwise, eval = FALSE}
-obs_data <- sim_ehr_data[sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
+```{r pairwise}
+obs_data <- ehr500[ehr500$R == 1 & !is.na(ehr500$R), ]
 
 fit_pl <- Pairwise_likelihood(
-  data = obs_data,
-  formula = Y ~ Z + X + time,
-  pair_sample = 5000
+  data        = obs_data,
+  formula     = out_form,
+  pair_sample = 1000
 )
 summary(fit_pl)
 ```
@@ -201,32 +234,32 @@ summary(fit_pl)
 
 ### 5.1 Inverse intensity rate ratio weighting
 
-```{r iirr, eval = FALSE}
+```{r iirr}
 fit_iirr <- Inverse_intensity_rate_ratio_weighting(
-  sim_ehr_data,
-  visit_covs = c("Z", "X")
+  ehr500,
+  visit_covs = covars_all
 )
 summary(fit_iirr)
 ```
 
 ### 5.2 Inverse intensity rate ratio balancing
 
-```{r iirr-bal, eval = FALSE}
-fit_bal <- Inverse_intensity_rate_ratio_balancing(
-  sim_ehr_data,
-  visit_covs = c("Z", "X")
+```{r iirr-bal}
+fit_iirr_bal <- Inverse_intensity_rate_ratio_balancing(
+  ehr500,
+  visit_covs = covars_all
 )
-summary(fit_bal)
+summary(fit_iirr_bal)
 ```
 
 ### 5.3 Liang--Lu--Ying joint visiting/outcome model
 
-```{r liang, eval = FALSE}
+```{r liang}
 fit_liang <- Joint_modeling_visiting_and_longitudinal_Liang(
-  sim_ehr_data,
-  visit_covs = c("Z", "X"),
-  long_covs = c("Z", "X"),
-  random_covs = "Z"
+  ehr500,
+  visit_covs  = covars_all,
+  long_covs   = covars_all,
+  random_covs = "NSES"
 )
 summary(fit_liang)
 ```
@@ -235,12 +268,12 @@ summary(fit_liang)
 
 `EHRJoint()` is a joint benchmark method. Its summary output notes that its observation process uses a logistic regression with a logit link.
 
-```{r ehrjoint, eval = FALSE}
+```{r ehrjoint}
 fit_ej <- EHRJoint(
-  sim_ehr_data,
-  visit_covs = c("Z", "X"),
-  long_covs = c("Z", "X"),
-  random_covs = "Z"
+  ehr500,
+  visit_covs  = covars_all,
+  long_covs   = covars_all,
+  random_covs = "NSES"
 )
 summary(fit_ej)
 ```
@@ -251,14 +284,14 @@ summary(fit_ej)
 
 `CIMEHR()` jointly models informative visiting, informative observation, and the longitudinal outcome. Its visiting process uses Andersen--Gill partial likelihood with log-normal frailty, and its observation process uses a probit model with latent-random-link random effects when specified.
 
-```{r cimehr, eval = FALSE}
+```{r cimehr}
 fit_cimehr <- CIMEHR(
-  data = sim_ehr_data,
-  covars_visit_XV = c("Z", "X"),
-  covars_outcome_fixed_XY = c("Z", "X"),
-  covars_outcome_random_link_ZY = "Z",
-  covars_obs_fixed_XO = c("Z", "X"),
-  covars_obs_random_link_ZO = "Z"
+  data                          = ehr500,
+  covars_visit_XV               = covars_all,
+  covars_outcome_fixed_XY       = covars_all,
+  covars_outcome_random_link_ZY = "NSES",
+  covars_obs_fixed_XO           = covars_all,
+  covars_obs_random_link_ZO     = "NSES"
 )
 
 print(fit_cimehr)
@@ -269,23 +302,28 @@ summary(fit_cimehr)
 
 You can print one process at a time and extract a particular coefficient programmatically:
 
-```{r stage-summary-extract, eval = FALSE}
+```{r stage-summary-extract}
 summary_visiting(fit_cimehr)
 summary_observation(fit_cimehr)
 summary_outcome(fit_cimehr)
 
-extract_coefficient(fit_cimehr, stage = "outcome", parameter = "Z")
-extract_coefficient(fit_cimehr, stage = "visiting", parameter = "Z")
-extract_coefficient(fit_cimehr, stage = "observation", parameter = "Z")
+extract_coefficient(fit_cimehr, stage = "outcome",     parameter = "NSES")
+extract_coefficient(fit_cimehr, stage = "visiting",    parameter = "NSES")
+extract_coefficient(fit_cimehr, stage = "observation", parameter = "NSES")
 ```
 
 ### 6.2 CIMEHR with Gauss--Hermite quadrature
 
 `CIMEHR_timevarying_integral()` uses numerical integration/Gauss--Hermite quadrature and online filtering for a more flexible observation process. Analytic standard errors are not currently exposed, so bootstrap inference is recommended.
 
-```{r cimehr-integral, eval = FALSE}
+```{r cimehr-integral}
 fit_integral <- CIMEHR_timevarying_integral(
-  data = sim_ehr_data,
+  data                          = ehr500,
+  covars_visit_XV               = covars_all,
+  covars_outcome_fixed_XY       = covars_all,
+  covars_outcome_random_link_ZY = "NSES",
+  covars_obs_fixed_XO           = covars_all,
+  covars_obs_random_link_ZO     = "NSES",
   gh_points_U = 7,
   gh_points_q = 5
 )
@@ -296,112 +334,142 @@ summary(fit_integral)
 
 `CIMEHR_timevarying_ou()` models serial correlation in the observation process using an Ornstein--Uhlenbeck process and pairwise composite likelihood.
 
-```{r cimehr-ou, eval = FALSE}
+```{r cimehr-ou}
 fit_ou <- CIMEHR_timevarying_ou(
-  data = sim_ehr_data,
+  data                          = ehr500,
+  covars_visit_XV               = covars_all,
+  covars_outcome_fixed_XY       = covars_all,
+  covars_outcome_random_link_ZY = "NSES",
+  covars_obs_fixed_XO           = covars_all,
+  covars_obs_random_link_ZO     = "NSES",
   pair_type = "adjacent"
 )
 summary(fit_ou)
-confint(fit_ou)
 ```
 
 ## 7. Comparing methods with `method_comparisons()`
 
-The helper `method_comparisons()` fits any user-specified combination of methods and returns separate tables for the visiting, observation, and outcome processes. If a method does not estimate a given process, that entry is shown as `NA`. Use `methods = "all"` to request all supported methods:
+The helper `method_comparisons()` fits any user-specified combination of methods and returns separate tables for the visiting, observation, and outcome processes. If a method does not estimate a given process, that entry is shown as `NA`.
 
-```{r method-comparisons, eval = FALSE}
+```{r method-comparisons}
 available_comparison_methods()
 
-cmp_all <- method_comparisons(
-  data = sim_ehr_data,
-  methods = "all",
+cmp_subset <- method_comparisons(
+  data    = ehr500,
+  methods = c("Summary_stat", "Linear_mixed_model",
+              "Inverse_intensity_rate_ratio_weighting",
+              "Joint_modeling_visiting_and_longitudinal_Liang",
+              "CIMEHR"),
   method_args = list(
-    Summary_stat = list(formula = ~ Z + X),
-    Linear_mixed_model = list(fixed = Y ~ Z + X + time,
-                              random = ~ 1 | id,
-                              obs_indicator = "R"),
-    Pairwise_likelihood = list(formula = Y ~ Z + X + time,
-                               pair_sample = 1000),
-    Linear_increment = list(ip_method = "Linear_mixed_model"),
-    Multiple_imputation = list(m = 2, maxit = 5,
-                               ip_method = "Linear_mixed_model")
+    Summary_stat                          = list(
+      formula = ~ Age + Gender + Marital + Black + Hispanic + NSES
+    ),
+    Linear_mixed_model                    = list(
+      fixed = out_form, random = ~ 1 | id, obs_indicator = "R"
+    ),
+    Inverse_intensity_rate_ratio_weighting = list(visit_covs = covars_all),
+    Joint_modeling_visiting_and_longitudinal_Liang = list(
+      visit_covs = covars_all, long_covs = covars_all, random_covs = "NSES"
+    ),
+    CIMEHR = list(
+      covars_visit_XV               = covars_all,
+      covars_outcome_fixed_XY       = covars_all,
+      covars_outcome_random_link_ZY = "NSES",
+      covars_obs_fixed_XO           = covars_all,
+      covars_obs_random_link_ZO     = "NSES"
+    )
   ),
   printSE = TRUE,
   print95CI = TRUE,
   true_value_verbose = TRUE
 )
 
-print(cmp_all)
-cmp_all$tables$visiting
-cmp_all$tables$observation
-cmp_all$tables$outcome
-
-cmp_subset <- method_comparisons(
-  data = sim_ehr_data,
-  methods = c("Summary_stat", "Inverse_intensity_rate_ratio_weighting", "CIMEHR"),
-  method_args = list(
-    Summary_stat = list(formula = ~ Z + X),
-    Inverse_intensity_rate_ratio_weighting = list(visit_covs = c("Z", "X")),
-    CIMEHR = list(
-      covars_visit_XV = c("Z", "X"),
-      covars_outcome_fixed_XY = c("Z", "X"),
-      covars_outcome_random_link_ZY = "Z",
-      covars_obs_fixed_XO = c("Z", "X"),
-      covars_obs_random_link_ZO = "Z"
-    )
-  )
-)
+print(cmp_subset)
+cmp_subset$tables$outcome
 ```
 
-If a method fails, `method_comparisons()` keeps going by default, stores the error in `cmp_all$errors`, and prints `NA` rows for that method.
+If a method fails, `method_comparisons()` keeps going by default, stores the error in `cmp$errors`, and prints `NA` rows for that method.
 
-## 8. Bootstrap inference
+## 8. Comparing CIMEHR with IrregLong benchmarks
+
+The companion package **IrregLong** (Pullenayegum, 2026) provides reference implementations of `Liang()` and `iiwgee()` (an IIW-GEE pipeline). The script `simulations/simulation_study.R` runs a four-scenario Monte Carlo study comparing CIMEHR against both the package's own wrappers and the IrregLong reference implementations. The default configuration is N_SIM = 1000 replications per scenario, each with a fresh dataset of n = 2000 participants:
+
+```{r simulation-example}
+# From the package root:
+# Rscript simulations/simulation_study.R
+# Rscript simulations/simulation_study.R --cores 8 --nsim 200
+```
+
+The four scenarios cross two focal-covariate types (continuous NSES vs. binary Gender) with two values of the OU serial-correlation parameter `phi` (0 and 0.3). For each scenario the script reports the mean estimate, true value, empirical bias, empirical SE, mean analytic SE, SE ratio, RMSE, and 95% CI coverage per method, separately for each of the six covariate coefficients.
+
+## 9. Bootstrap inference
 
 Several methods do not provide closed-form standard errors. `bootstrap()` resamples subjects with replacement and refits the selected method.
 
-```{r bootstrap, eval = FALSE}
+```{r bootstrap}
 bs <- bootstrap(
   fit_iirr,
-  data = sim_ehr_data,
-  B = 200,
+  data = ehr500,
+  B    = 200,
   seed = 1
 )
 print(bs)
 summary(bs)
 ```
 
-For CIMEHR-family methods, use the new symmetric argument names when forwarding covariate specifications:
+For CIMEHR-family methods, forward covariate specifications through `covars`:
 
-```{r bootstrap-cimehr, eval = FALSE}
+```{r bootstrap-cimehr}
 bs_cimehr <- bootstrap(
   fit_cimehr,
-  data = sim_ehr_data,
-  B = 200,
+  data = ehr500,
+  B    = 200,
   seed = 1,
   covars = list(
-    covars_visit_XV = c("Z", "X"),
-    covars_outcome_fixed_XY = c("Z", "X"),
-    covars_outcome_random_link_ZY = "Z",
-    covars_obs_fixed_XO = c("Z", "X"),
-    covars_obs_random_link_ZO = "Z"
+    covars_visit_XV               = covars_all,
+    covars_outcome_fixed_XY       = covars_all,
+    covars_outcome_random_link_ZY = "NSES",
+    covars_obs_fixed_XO           = covars_all,
+    covars_obs_random_link_ZO     = "NSES"
   )
 )
 ```
 
-## 9. Simulating custom data
+## 10. Simulating custom data
 
-```{r custom-sim, eval = FALSE}
-dat <- sim_data_gen(
-  n = 2000,
-  seed = 42,
-  gamma = c(intercept = -2.0, Z = 0.8, X = 0.5),
-  beta = c(intercept = -1.0, Z = -1.0, X = 0.3),
-  sigma_zeta = 0.8,
-  phi = 0.2
+`sim_data_gen()` accepts a `covariates` list spec; per-process coefficient vectors are keyed by the names declared there. The default spec is the generic two-covariate `Z`/`X` form used in the package's internal tests, but the EHR-style spec used to build `sim_ehr_data` is an instructive example:
+
+```{r custom-sim}
+ehr_covs <- list(
+  Age      = list(type = "continuous", dist = "uniform",
+                  min = 18, max = 99, standardize = TRUE),
+  Gender   = list(type = "binary", prob = 0.5),
+  Marital  = list(type = "binary", prob = 0.4),
+  Black    = list(type = "binary", prob = 0.30),
+  Hispanic = list(type = "binary", prob = 0.20),
+  NSES     = list(type = "continuous", dist = "normal",
+                  mean = 0, sd = 1, standardize = FALSE)
 )
 
-fit <- CIMEHR(data = dat$long_data)
-summary(fit)
+dat <- sim_data_gen(
+  n          = 500,
+  seed       = 42,
+  covariates = ehr_covs,
+  gamma = c(intercept = -2.0, Age = 0.10, Gender = -0.10, Marital = -0.05,
+            Black = 0.15, Hispanic = -0.05, NSES = 0.12),
+  alpha = c(intercept = 0.5, Age = 0.10, Gender = -0.10, Marital = 0.00,
+            Black = 0.05, Hispanic = -0.05, NSES = 0.20),
+  obs_random_covs = "NSES",
+  delta   = c(intercept = -0.3, NSES = -0.5),
+  sigma_q = c(intercept =  0.3, NSES =  0.2),
+  beta = c(intercept = -2.0, Age = 0.05, Gender = 0.10,
+           Marital = -0.03, Black = 0.15, Hispanic = 0.05,
+           NSES = -0.25),
+  outcome_random_covs = "NSES",
+  theta   = c(intercept = 0.5, NSES = 0.30)
+)
+
+head(dat$long_data)
 ```
 
 ## References
@@ -424,9 +492,10 @@ Laird, N. M. and Ware, J. H. (1982). Random-effects models for longitudinal data
 
 Liang, Y., Lu, W., and Ying, Z. (2009). Joint modeling and analysis of longitudinal data with informative observation times. *Biometrics*, 65, 377--384.
 
+Pullenayegum, E. M. (2026). IrregLong: Analysis of Longitudinal Data with Irregular Observation Times. R package version 0.4.1.
+
 Rubin, D. (1987). *Multiple imputation for nonresponse in surveys*. John Wiley & Sons, New York.
 
 Yiu, S. and Su, L. (2025). Accommodating informative visit times for analysing irregular longitudinal data: A sensitivity analysis approach with balancing weights estimators. *Journal of the Royal Statistical Society Series C: Applied Statistics*, 74, 824--843.
 
 Yang, C.-H., Shi, X., and Mukherjee, B. (2026). Joint modeling of longitudinal EHR data with shared random effects for informative visiting and observation processes. *arXiv:2602.15374*.
-

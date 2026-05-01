@@ -10,9 +10,9 @@ EHRJoint(
   time = "time",
   outcome = "Y",
   obs_indicator = "R",
-  visit_covs = c("Z", "X"),
-  long_covs = c("Z", "X"),
-  random_covs = "Z"
+  visit_covs = NULL,
+  long_covs = NULL,
+  random_covs = NULL
 )
 }
 \arguments{
@@ -29,13 +29,13 @@ Default is \code{"id"}.}
 Default is \code{"R"}.}
 
 \item{visit_covs}{Character vector of covariate names for the visiting
-model. Default is \code{c("Z", "X")}.}
+model. Default is \code{NULL}.}
 
 \item{long_covs}{Character vector of covariate names for the longitudinal
-outcome model. Default is \code{c("Z", "X")}.}
+outcome model. Default is \code{NULL}.}
 
 \item{random_covs}{Character string or vector of covariate names that
-interact with the latent factor. Default is \code{"Z"}.}
+interact with the latent factor. Default is \code{NULL}.}
 }
 \value{
 An object of class \code{"EHRJoint"} containing component-wise
@@ -47,8 +47,12 @@ irregularly observed longitudinal data.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-fit <- EHRJoint(dat)
-print(fit)
+fit <- EHRJoint(
+  dat,
+  visit_covs  = "Age",
+  long_covs   = "Age",
+  random_covs = "Age"
+)
 
 }
 \references{

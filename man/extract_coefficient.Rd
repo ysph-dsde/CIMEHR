@@ -35,5 +35,14 @@ A named numeric vector.
 \description{
 This helper returns estimates from a requested model stage. Use
 \code{parameter = NULL} to return all coefficients from that stage, or set
-\code{parameter} to a coefficient name such as \code{"Z"}.
+\code{parameter} to a coefficient name such as \code{"Age"}.
+}
+\examples{
+dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+fit <- CIMEHR(data = dat, y_col = "log_HbA1c",
+              covars_visit_XV = "Age",
+              covars_outcome_fixed_XY = "Age",
+              covars_obs_fixed_XO = "Age")
+extract_coefficient(fit, stage = "outcome")
+
 }

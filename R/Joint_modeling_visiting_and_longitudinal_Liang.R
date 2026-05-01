@@ -30,13 +30,13 @@
 #'   \code{NA} are retained; all others are dropped. Default is
 #'   \code{"R"}.
 #' @param visit_covs Character vector of covariate column names for the
-#'   visiting-process intensity model. Default is \code{c("Z", "X")}.
+#'   visiting-process intensity model. Default is \code{NULL}.
 #' @param long_covs Character vector of covariate column names for the
 #'   fixed-effect part of the longitudinal outcome model. Default is
-#'   \code{c("Z", "X")}.
+#'   \code{NULL}.
 #' @param random_covs Character vector of covariate column names that
 #'   interact with the latent factor in the outcome model. An intercept
-#'   column is prepended automatically. Default is \code{"Z"}.
+#'   column is prepended automatically. Default is \code{NULL}.
 #'
 #' @return A named list with four components:
 #'
@@ -95,8 +95,12 @@
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Joint_modeling_visiting_and_longitudinal_Liang(dat)
-#' print(fit)
+#' fit <- Joint_modeling_visiting_and_longitudinal_Liang(
+#'   dat,
+#'   visit_covs  = "Age",
+#'   long_covs   = "Age",
+#'   random_covs = "Age"
+#' )
 #'
 #' @importFrom stats na.omit
 #' @export
@@ -105,14 +109,23 @@ Joint_modeling_visiting_and_longitudinal_Liang <- function(data,
                                                            time = "time",
                                                            outcome = "Y",
                                                            obs_indicator = "R",
-                                                           visit_covs = c("Z", "X"),
-                                                           long_covs = c("Z", "X"),
-                                                           random_covs = "Z") {
+                                                           visit_covs = NULL,
+                                                           long_covs = NULL,
+                                                           random_covs = NULL) {
 
   if (!requireNamespace("nleqslv", quietly = TRUE)) {
     stop("Package 'nleqslv' is required. Install it with: install.packages('nleqslv')",
          call. = FALSE)
   }
+
+  visit_covs  <- .check_covars(visit_covs,  data, "visit_covs")
+  long_covs   <- .check_covars(long_covs,   data, "long_covs")
+  random_covs <- .check_covars(random_covs, data, "random_covs")
+  if (length(visit_covs) == 0L || length(long_covs) == 0L || length(random_covs) == 0L) {
+    stop("`Joint_modeling_visiting_and_longitudinal_Liang` requires non-empty `visit_covs`, `long_covs`, and `random_covs`.",
+         call. = FALSE)
+  }
+  call <- match.call()
 
   # Filter to observed data only (R == 1 or R is NA)
   R_vec <- data[[obs_indicator]]
@@ -230,6 +243,7 @@ Joint_modeling_visiting_and_longitudinal_Liang <- function(data,
     gamma_hat = gamma_hat,
     Lambda_C_est = Lambda_C_est,
     sigma_sq_hat = sigma_sq_hat,
-    beta_hat = beta_hat
+    beta_hat = beta_hat,
+    call = call
   ), class = "Joint_modeling_visiting_and_longitudinal_Liang"))
 }

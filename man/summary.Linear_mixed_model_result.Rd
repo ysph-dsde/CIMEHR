@@ -26,7 +26,7 @@ Displays the fixed-effects coefficient table.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-fit <- Linear_mixed_model(dat, fixed = Y ~ Z + X + time,
+fit <- Linear_mixed_model(dat, fixed = log_HbA1c ~ Age + time,
            random = ~ 1 | id, obs_indicator = "R")
 summary(fit)
 

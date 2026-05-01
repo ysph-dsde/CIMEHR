@@ -25,13 +25,13 @@ and is referenced in the random-effects formula. Default is
 \code{"id"}.}
 
 \item{fixed}{A \code{\link[stats]{formula}} specifying the fixed-effects
-structure (e.g., \code{Y ~ Z + X + time}). When \code{visit_adjust}
-is non-\code{NULL}, the term \code{n_visits} is appended
-automatically. Default is \code{Y ~ 1}.}
+structure (e.g., \code{Y ~ Age + Gender + time}). When
+\code{visit_adjust} is non-\code{NULL}, the term \code{n_visits} is
+appended automatically. Default is \code{Y ~ 1}.}
 
 \item{random}{A one-sided \code{\link[stats]{formula}} specifying the
 random-effects structure using \pkg{nlme} syntax (e.g.,
-\code{~ 1 + Z | id}). Default is \code{~ 1 | id}.}
+\code{~ 1 + Age | id}). Default is \code{~ 1 | id}.}
 
 \item{obs_indicator}{Character string giving the name of the
 observation indicator column. Rows where this column equals \code{0}
@@ -100,7 +100,7 @@ process but can reduce bias compared to a naive LMM.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-fit <- Linear_mixed_model(dat, fixed = Y ~ Z + X + time,
+fit <- Linear_mixed_model(dat, fixed = log_HbA1c ~ Age + time,
            random = ~ 1 | id, obs_indicator = "R")
 print(fit)
 

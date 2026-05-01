@@ -61,7 +61,7 @@
 #'   }
 #' @param visit_covs Character vector of covariate column names for the
 #'   visiting-process model (used by Liang and IIRR methods). Default is
-#'   \code{c("Z", "X")}.
+#'   \code{NULL}.
 #' @param outcome_covs Character vector of covariate column names for the
 #'   outcome model in the Liang method. Default is \code{NULL} (uses
 #'   \code{visit_covs}).
@@ -134,10 +134,12 @@
 #' 11(3), 453--472. \doi{10.1093/biostatistics/kxq014}.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 30,
-#'                     c("id", "Z", "X", "time", "R", "Y", "C")]
-#' fit <- Linear_increment_IP(dat, ip_method = "Linear_mixed_model",
-#'                            visit_covs = c("Z", "X"))
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+#' fit <- Linear_increment_IP(dat,
+#'                            outcome_formula = Y ~ Age + time,
+#'                            random_formula  = ~ 1 | id,
+#'                            ip_method  = "Linear_mixed_model",
+#'                            visit_covs = "Age")
 #' print(fit)
 #'
 #' @importFrom stats as.formula model.frame model.matrix predict
@@ -159,7 +161,7 @@ Linear_increment_IP <- function(
     ip_method = c("Linear_mixed_model", "Joint_modeling_visiting_and_longitudinal_Liang", "Inverse_intensity_rate_ratio_weighting", "Inverse_intensity_rate_ratio_balancing", "Pairwise_likelihood"),
 
     # Common covariate specifications
-    visit_covs = c("Z", "X"),
+    visit_covs = NULL,
     outcome_covs = NULL,
     random_covs = NULL,
 
@@ -170,6 +172,10 @@ Linear_increment_IP <- function(
     # Method-specific arguments
     ip_args = list()
 ) {
+
+  visit_covs   <- .check_covars(visit_covs,   data, "visit_covs")
+  outcome_covs <- .check_covars(outcome_covs, data, "outcome_covs")
+  random_covs  <- .check_covars(random_covs,  data, "random_covs")
 
   # ============================================
   # Input validation and setup

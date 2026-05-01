@@ -16,7 +16,7 @@
 #'   data. Rows with missing values in the outcome, covariates, or
 #'   identifier columns are removed.
 #' @param formula A \code{\link[stats]{formula}} specifying the model
-#'   (e.g., \code{Y ~ Z + X + time}). Must be supplied by the user;
+#'   (e.g., \code{Y ~ Age + time}). Must be supplied by the user;
 #'   there is no default. If an intercept is present it is removed
 #'   automatically with a message (when \code{verbose = TRUE}).
 #' @param id_col Character string giving the name of the subject/cluster
@@ -116,7 +116,7 @@
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30 &
 #'                     sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
-#' fit <- Pairwise_likelihood(dat, formula = Y ~ Z + X + time,
+#' fit <- Pairwise_likelihood(dat, formula = Y ~ Age + time,
 #'                            pair_sample = 50, hessian = FALSE)
 #' print(fit)
 #'

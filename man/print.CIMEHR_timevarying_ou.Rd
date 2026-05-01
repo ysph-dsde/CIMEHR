@@ -27,7 +27,14 @@ the Ornstein-Uhlenbeck pairwise composite likelihood variant.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-fit <- CIMEHR_timevarying_ou(data = dat, pair_type = "adjacent")
+fit <- CIMEHR_timevarying_ou(
+  data                    = dat,
+  y_col                   = "log_HbA1c",
+  covars_visit_XV         = "Age",
+  covars_outcome_fixed_XY = "Age",
+  covars_obs_fixed_XO     = "Age",
+  pair_type               = "adjacent"
+)
 print(fit)
 
 }
