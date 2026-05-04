@@ -82,8 +82,11 @@ the observation-process random effects. Must include an
 \code{obs_random_covs}.}
 
 \item{phi}{Nonnegative numeric scalar controlling the optional OU
-serial-correlation component in the observation process. Default
-\code{0} (no OU component).}
+serial-correlation component in the observation process. When
+\code{phi > 0}, the probit error is a stationary OU process with unit
+marginal variance and decay parameter \code{phi}. When \code{phi = 0}
+(the default), the probit error reduces to iid \eqn{N(0, 1)}, giving
+the standard probit observation model.}
 
 \item{beta}{Named numeric vector of outcome fixed-effect coefficients
 (excluding the time slope). Must include \code{intercept}; remaining

@@ -62,8 +62,11 @@
 #'   \code{intercept}; the remaining names should match
 #'   \code{obs_random_covs}.
 #' @param phi Nonnegative numeric scalar controlling the optional OU
-#'   serial-correlation component in the observation process. Default
-#'   \code{0} (no OU component).
+#'   serial-correlation component in the observation process. When
+#'   \code{phi > 0}, the probit error is a stationary OU process with unit
+#'   marginal variance and decay parameter \code{phi}. When \code{phi = 0}
+#'   (the default), the probit error reduces to iid \eqn{N(0, 1)}, giving
+#'   the standard probit observation model.
 #' @param beta Named numeric vector of outcome fixed-effect coefficients
 #'   (excluding the time slope). Must include \code{intercept}; remaining
 #'   names should be a subset of \code{covariates}.
@@ -203,7 +206,11 @@ sim_data_gen <- function(
   generate_OU <- function(times, phi) {
     n_times <- length(times)
     if (n_times == 0) return(numeric(0))
-    if (phi == 0) return(rep(0, n_times))
+    # phi == 0: no serial correlation, but still iid N(0,1) probit error
+    # (matches the standard probit observation model). The earlier
+    # `rep(0, n_times)` branch produced a deterministic-given-random-effects
+    # probit, which is not the intended observation-process specification.
+    if (phi == 0) return(rnorm(n_times, 0, 1))
     if (n_times == 1) return(rnorm(1, 0, 1))
     ord <- order(times)
     times_sorted <- times[ord]

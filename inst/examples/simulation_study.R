@@ -150,7 +150,7 @@ methods <- list(
   CIMEHR = function(dat, focal) {
     fit <- CIMEHR(
       data                          = dat,
-      y_col                         = "log_HbA1C",
+      y_col                         = "log_HbA1c",
       covars_visit_XV               = ALL_COVARS,
       covars_outcome_fixed_XY       = ALL_COVARS,
       covars_outcome_random_link_ZY = focal,
@@ -311,6 +311,12 @@ run_one_rep <- function(sim_id, Z_type, phi, focal) {
   )
   dat <- sim$long_data
   rownames(dat) <- NULL
+
+  # Add raw and log-scale HbA1c columns to match the bundled `sim_ehr_data`.
+  # `Y` is the standardized linear outcome; the back-transform mirrors
+  # `data-raw/sim_ehr_data.R`. Methods in this script reference `log_HbA1c`.
+  dat$HbA1c     <- exp(log(5.6) + 0.05 * dat$Y)
+  dat$log_HbA1c <- log(dat$HbA1c)
 
   rep_results <- list()
   for (m in SELECTED_METHODS) {

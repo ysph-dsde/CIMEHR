@@ -83,7 +83,9 @@ add_hba1c_columns <- function(data,
 ##   source("data-raw/sim_ehr_data.R")
 ## ---------------------------------------------------------------------------
 
-#library(CIMEHR)
+library(CIMEHR)
+
+# -------------------------------------------------------------------------
 
 ehr_covs <- list(
   Age      = list(type = "continuous", dist = "uniform",
