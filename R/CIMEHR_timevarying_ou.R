@@ -286,6 +286,57 @@ CIMEHR_timevarying_ou <- function(
   n_subj         <- length(id_levels)
   subj_index     <- match(id_vec, id_levels)
 
+  # ----- Time-varying covariate warnings ---------------------------------
+  # All covariate slots are treated as time-invariant (subject-level
+  # first-row values). Warn if any declared covariate varies within
+  # subject so the user is aware the result may be biased.
+  .check_tv <- function(col_name) {
+    vals      <- df[[col_name]]
+    sf        <- which(subj_first_idx)
+    first_val <- vals[sf][subj_index]
+    any(vals != first_val, na.rm = TRUE)
+  }
+  .warn_tv <- function(vars, label, msg) {
+    vars <- vars[!is.na(vars) & nzchar(vars)]
+    if (length(vars) == 0L) return(invisible(NULL))
+    tv <- vapply(vars, .check_tv, logical(1))
+    if (any(tv)) {
+      warning(
+        "Time-varying covariates detected in ", label, ": ",
+        paste(vars[tv], collapse = ", "), ". ", msg,
+        call. = FALSE
+      )
+    }
+  }
+  .warn_tv(
+    covars_visit_XV,
+    "covars_visit_XV",
+    "Visiting-process model uses subject-level first-row covariates; estimates may be biased."
+  )
+  .warn_tv(
+    covars_outcome_fixed_XY,
+    "covars_outcome_fixed_XY",
+    "Stage 3 risk-set centering assumes time-invariant outcome covariates; estimates may be biased."
+  )
+  .warn_tv(
+    covars_obs_fixed_XO,
+    "covars_obs_fixed_XO",
+    "Stage 2 OU-PCL likelihood uses subject-level first-row observation-process covariates; estimates may be biased."
+  )
+  if (length(covars_obs_random_link_ZO) > 0L) {
+    .warn_tv(
+      covars_obs_random_link_ZO,
+      "covars_obs_random_link_ZO",
+      "Stage 2 OU-PCL likelihood uses subject-level first-row random-effect covariates; estimates may be biased."
+    )
+  }
+  zy_vars_for_check <- setdiff(covars_outcome_random_link_ZY, time_col)
+  .warn_tv(
+    zy_vars_for_check,
+    "covars_outcome_random_link_ZY excluding time_col",
+    "Stage 3 risk-set centering only supports time_col as the optional time-varying latent-link term; other latent-link covariates should be time-invariant."
+  )
+
   mi_visits_per_subj <- tabulate(subj_index[visit_mask], nbins = n_subj)
 
   # ===========================================================================
@@ -295,6 +346,9 @@ CIMEHR_timevarying_ou <- function(
 
   visit_rows_idx <- which(visit_mask)
   n_visits_total <- length(visit_rows_idx)
+  if (n_visits_total == 0L) {
+    stop("No visited rows: all values in `time_col` are NA.", call. = FALSE)
+  }
 
   if (length(covars_visit_XV) > 0L) {
     XV_subject <- as.matrix(df[subj_first_idx, covars_visit_XV, drop = FALSE])

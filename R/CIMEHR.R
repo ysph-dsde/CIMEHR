@@ -220,10 +220,63 @@ CIMEHR <- function(
   subj_index     <- match(id_vec, id_levels)
   sf             <- which(subj_first_idx)
 
+  # ----- Time-varying covariate warnings ---------------------------------
+  # All covariate slots in this implementation are treated as time-invariant
+  # (subject-level first-row values). Warn if any declared covariate varies
+  # within subject so the user is aware the result may be biased.
+  .check_tv <- function(col_name) {
+    vals      <- data[[col_name]]
+    first_val <- vals[sf][subj_index]
+    any(vals != first_val, na.rm = TRUE)
+  }
+  .warn_tv <- function(vars, label, msg) {
+    vars <- vars[!is.na(vars) & nzchar(vars)]
+    if (length(vars) == 0L) return(invisible(NULL))
+    tv <- vapply(vars, .check_tv, logical(1))
+    if (any(tv)) {
+      warning(
+        "Time-varying covariates detected in ", label, ": ",
+        paste(vars[tv], collapse = ", "), ". ", msg,
+        call. = FALSE
+      )
+    }
+  }
+  .warn_tv(
+    covars_visit_XV,
+    "covars_visit_XV",
+    "Visiting-process model uses subject-level first-row covariates; estimates may be biased."
+  )
+  .warn_tv(
+    covars_outcome_fixed_XY,
+    "covars_outcome_fixed_XY",
+    "Stage 3 risk-set centering assumes time-invariant outcome covariates; estimates may be biased."
+  )
+  .warn_tv(
+    covars_obs_fixed_XO,
+    "covars_obs_fixed_XO",
+    "Stage 3 observation-weight construction uses subject-level first-row observation-process covariates; estimates may be biased."
+  )
+  if (length(covars_obs_random_link_ZO) > 0L) {
+    .warn_tv(
+      covars_obs_random_link_ZO,
+      "covars_obs_random_link_ZO",
+      "Stage 3 observation-weight construction uses subject-level first-row random-effect covariates; estimates may be biased."
+    )
+  }
+  zy_vars_for_check <- setdiff(covars_outcome_random_link_ZY, time_col)
+  .warn_tv(
+    zy_vars_for_check,
+    "covars_outcome_random_link_ZY excluding time_col",
+    "Stage 3 risk-set centering only supports time_col as the optional time-varying latent-link term; other latent-link covariates should be time-invariant."
+  )
+
   Ci_subj        <- data[[censor_col]][sf]
   visit_mask     <- !is.na(time_vec)
   visit_rows_idx <- which(visit_mask)
   n_visits_total <- length(visit_rows_idx)
+  if (n_visits_total == 0L) {
+    stop("No visited rows: all values in `time_col` are NA.", call. = FALSE)
+  }
   mi             <- tabulate(subj_index[visit_mask], nbins = n_subj)
 
   # Time discretization
@@ -269,8 +322,19 @@ CIMEHR <- function(
   # Risk-set engine
   # ====================================================================
   if (!is.null(time_precision) && time_precision > 0) {
-    Ci_disc <- floor(Ci_subj / time_precision) * time_precision
-  } else Ci_disc <- Ci_subj
+    Ci_disc <- round(Ci_subj / time_precision) * time_precision
+    # Enforce: discretised censoring time is at least the subject's last
+    # observed (discretised) visit time. `floor()` could otherwise put C_i
+    # before a visit that landed just below a discretization boundary.
+    last_visit_disc_tab <- tapply(raw_times, event_subj_idx, max)
+    lv      <- numeric(n_subj)
+    lv_idx  <- as.integer(names(last_visit_disc_tab))
+    stopifnot(all(lv_idx >= 1L & lv_idx <= n_subj))
+    lv[lv_idx] <- last_visit_disc_tab
+    Ci_disc    <- pmax(Ci_disc, lv)
+  } else {
+    Ci_disc <- Ci_subj
+  }
   last_risk_idx <- findInterval(Ci_disc, unique_times)
   valid_subj    <- which(last_risk_idx >= 1L)
   lri_valid     <- last_risk_idx[valid_subj]
