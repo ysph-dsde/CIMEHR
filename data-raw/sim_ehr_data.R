@@ -142,13 +142,16 @@ sim <- sim_data_gen(
 
 # ---- Add HbA1c columns and finalize ----------------------------------------
 sim_ehr_data <- add_hba1c_columns(sim$long_data)
-attr(sim_ehr_data, "true_params") <- sim$params
 
 # Reorder columns so Age_raw sits next to Age for readability
 preferred_order <- c("id", "Age", "Age_raw", "Gender", "Marital", "Black",
                      "Hispanic", "NSES", "time", "R", "Y", "HbA1c",
                      "log_HbA1c", "C")
 sim_ehr_data <- sim_ehr_data[, intersect(preferred_order, names(sim_ehr_data))]
+
+# Attach true-parameter attribute AFTER column subsetting (which would otherwise
+# strip user-added attributes from the data.frame).
+attr(sim_ehr_data, "true_params") <- sim$params
 
 # ---- Save ------------------------------------------------------------------
 usethis::use_data(sim_ehr_data, overwrite = TRUE)

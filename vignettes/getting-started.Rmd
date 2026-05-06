@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
   comment = "#>",
   fig.width = 7,
   fig.height = 4,
-  eval = FALSE
+  eval = TRUE
 )
 ```
 
@@ -42,7 +42,7 @@ The analysis functions expect **long-format data**, with one row per subject-vis
 
 All package methods should be given long/panel data. The CIMEHR-family functions accept custom column names through `id_col`, `time_col`, `y_col`, `r_col`, and `censor_col`, so renaming your data is not required:
 
-```{r custom-column-names}
+```{r custom-column-names, eval = FALSE}
 fit <- CIMEHR(
   data       = my_data,
   id_col     = "patient_id",
@@ -322,7 +322,7 @@ extract_coefficient(fit_cimehr, stage = "observation", parameter = "NSES")
 
 `CIMEHR_timevarying_integral()` uses numerical integration/Gauss--Hermite quadrature and online filtering for a more flexible observation process. Analytic standard errors are not currently exposed, so bootstrap inference is recommended.
 
-```{r cimehr-integral}
+```{r cimehr-integral, eval = FALSE}
 fit_integral <- CIMEHR_timevarying_integral(
   data                          = ehr500,
   y_col                         = "log_HbA1c",
@@ -341,7 +341,7 @@ summary(fit_integral)
 
 `CIMEHR_timevarying_ou()` models serial correlation in the observation process using an Ornstein--Uhlenbeck process and pairwise composite likelihood.
 
-```{r cimehr-ou}
+```{r cimehr-ou, eval = FALSE}
 fit_ou <- CIMEHR_timevarying_ou(
   data                          = ehr500,
   y_col                         = "log_HbA1c",
@@ -417,7 +417,7 @@ The four scenarios cross two focal-covariate types (continuous NSES vs. binary G
 
 Several methods do not provide closed-form standard errors. `bootstrap()` resamples subjects with replacement and refits the selected method.
 
-```{r bootstrap}
+```{r bootstrap, eval = FALSE}
 bs <- bootstrap(
   fit_iirr,
   data = ehr500,
@@ -430,7 +430,7 @@ summary(bs)
 
 For CIMEHR-family methods, forward covariate specifications through `covars`:
 
-```{r bootstrap-cimehr}
+```{r bootstrap-cimehr, eval = FALSE}
 bs_cimehr <- bootstrap(
   fit_cimehr,
   data = ehr500,
