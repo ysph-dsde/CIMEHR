@@ -1,12 +1,15 @@
 #' Bootstrap Confidence Intervals for Selected Model Fits
 #'
 #' Computes bootstrap standard errors and percentile confidence intervals
-#' by resampling subjects with replacement and re-fitting the original model.
-#' Suitable for all selected methods that do not provide closed-form standard
-#' errors: \code{\link{CIMEHR_timevarying_integral}}, \code{\link{EHRJoint}},
-#' \code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}, \code{\link{Inverse_intensity_rate_ratio_weighting}}, and
-#' \code{\link{Inverse_intensity_rate_ratio_balancing}}. Can also supplement the sandwich standard
-#' errors from \code{\link{CIMEHR}} and \code{\link{CIMEHR_timevarying_ou}}.
+#' by resampling subjects with replacement and re-fitting the original
+#' model. Suitable for methods that do not provide closed-form standard
+#' errors (\code{\link{CIMEHR_timevarying_integral}},
+#' \code{\link{Inverse_intensity_rate_ratio_weighting}}, and
+#' \code{\link{Inverse_intensity_rate_ratio_balancing}}), and as a
+#' robustness check or supplement to the analytic standard errors
+#' returned by \code{\link{CIMEHR}}, \code{\link{CIMEHR_timevarying_ou}},
+#' \code{\link{EHRJoint}}, and
+#' \code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}.
 #'
 #' For two-stage methods (\code{\link{Linear_increment_IP}}, \code{\link{Multiple_imputation_IP}}), the
 #' bootstrap must cover the full two-stage procedure. We recommend users
@@ -92,7 +95,11 @@
 #' \code{covars_outcome_random_link_ZY}, \code{covars_obs_fixed_XO},
 #' \code{covars_obs_random_link_ZO}.
 #'
-#' \strong{EHRJoint, Joint_modeling_visiting_and_longitudinal_Liang:}
+#' \strong{EHRJoint:}
+#' \code{visit_covs}, \code{long_covs}, \code{random_covs},
+#' \code{obs_link}, \code{sigma_sq_floor}.
+#'
+#' \strong{Joint_modeling_visiting_and_longitudinal_Liang:}
 #' \code{visit_covs}, \code{long_covs}, \code{random_covs}.
 #'
 #' \strong{Inverse_intensity_rate_ratio_weighting:}
@@ -105,12 +112,17 @@
 #' \code{\link{CIMEHR}} and \code{\link{CIMEHR_timevarying_ou}} already compute
 #' sandwich (plug-in) standard errors from per-subject score contributions
 #' evaluated at the fitted parameters --- no re-fitting is needed.
-#' Bootstrap is provided for those methods as an optional check.
-#' For \code{\link{CIMEHR_timevarying_integral}}, \code{\link{EHRJoint}},
-#' \code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}, \code{\link{Inverse_intensity_rate_ratio_weighting}}, and
-#' \code{\link{Inverse_intensity_rate_ratio_balancing}}, per-subject score contributions are not
-#' exposed by the fitting routines, so bootstrap is the recommended
-#' approach for uncertainty quantification.
+#' \code{\link{EHRJoint}} and \code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}
+#' return model-based standard errors for the visiting (and observation, for
+#' EHRJoint) processes and a clustered sandwich estimator for the outcome
+#' stage; these are conditional on the Stage 1 nuisance estimates and do not
+#' propagate their estimation uncertainty. Bootstrap is provided for all four
+#' of these methods as an optional check or to propagate Stage 1 uncertainty.
+#' For \code{\link{CIMEHR_timevarying_integral}},
+#' \code{\link{Inverse_intensity_rate_ratio_weighting}}, and
+#' \code{\link{Inverse_intensity_rate_ratio_balancing}}, per-subject score
+#' contributions are not exposed by the fitting routines, so bootstrap is
+#' the recommended approach for uncertainty quantification.
 #'
 #' @section Accessing standard errors for all stages:
 #' \code{print} and \code{summary} display bootstrap standard errors (SEs) and confidence
@@ -313,8 +325,9 @@ bootstrap <- function(fit,
          CIMEHR_timevarying_ou = c("covars_visit_XV", "covars_outcome_fixed_XY",
                                    "covars_outcome_random_link_ZY", "covars_obs_fixed_XO",
                                    "covars_obs_random_link_ZO"),
-         EHRJoint      = ,
-         Joint_modeling_visiting_and_longitudinal_Liang    = c("visit_covs", "long_covs", "random_covs"),
+         EHRJoint      = c("visit_covs", "long_covs", "random_covs",
+                           "obs_link", "sigma_sq_floor"),
+         Joint_modeling_visiting_and_longitudinal_Liang = c("visit_covs", "long_covs", "random_covs"),
          Inverse_intensity_rate_ratio_weighting = c("visit_covs", "formula"),
          Inverse_intensity_rate_ratio_balancing = c("visit_covs", "balance_covs", "formula", "phi"),
          character(0)
@@ -361,12 +374,15 @@ bootstrap <- function(fit,
          },
 
          # ------------------------------------------------------------------
-         # EHRJoint: gamma (s1), alpha (s2), beta (s3)
+         # EHRJoint: gamma (s1), alpha (s2), beta (s3) -- nested sublists
          # ------------------------------------------------------------------
          EHRJoint = {
-           s1 <- setNames(fit$gamma_hat,  paste0("s1.", names(fit$gamma_hat)))
-           s2 <- setNames(fit$alpha_hat,  paste0("s2.", names(fit$alpha_hat)))
-           s3 <- setNames(fit$beta_hat,   paste0("s3.", names(fit$beta_hat)))
+           vis <- fit$visiting_process
+           obs <- fit$observation_process
+           out <- fit$longitudinal_outcome
+           s1 <- setNames(vis$gamma_hat, paste0("s1.", names(vis$gamma_hat)))
+           s2 <- setNames(obs$alpha_hat, paste0("s2.", names(obs$alpha_hat)))
+           s3 <- setNames(out$beta_hat,  paste0("s3.", names(out$beta_hat)))
            c(s1, s2, s3)
          },
 
@@ -545,13 +561,17 @@ bootstrap <- function(fit,
          # EHRJoint / Joint_modeling_visiting_and_longitudinal_Liang
          # ------------------------------------------------------------------
          EHRJoint = {
-           f <- EHRJoint(
-             boot_data,
+           ehr_args <- list(
+             data        = boot_data,
              id          = id,
              visit_covs  = cv("visit_covs"),
              long_covs   = cv("long_covs"),
              random_covs = cv("random_covs")
            )
+           # Forward obs_link / sigma_sq_floor only if user supplied them
+           if (!is.null(cv("obs_link")))       ehr_args$obs_link       <- cv("obs_link")
+           if (!is.null(cv("sigma_sq_floor"))) ehr_args$sigma_sq_floor <- cv("sigma_sq_floor")
+           f <- do.call(EHRJoint, ehr_args)
            .bootstrap_extract_coef(f, "EHRJoint", NULL)
          },
 

@@ -12,9 +12,9 @@ Joint_modeling_visiting_and_longitudinal_Liang(
   time = "time",
   outcome = "Y",
   obs_indicator = "R",
-  visit_covs = NULL,
-  long_covs = NULL,
-  random_covs = NULL
+  visit_covs = c("Z", "X"),
+  long_covs = c("Z", "X"),
+  random_covs = "Z"
 )
 }
 \arguments{
@@ -38,23 +38,30 @@ observation indicator column. Rows with \code{R == 1} or \code{R} is
 \code{"R"}.}
 
 \item{visit_covs}{Character vector of covariate column names for the
-visiting-process intensity model. Default is \code{NULL}.}
+visiting-process intensity model. Default is \code{c("Z", "X")}.}
 
 \item{long_covs}{Character vector of covariate column names for the
 fixed-effect part of the longitudinal outcome model. Default is
-\code{NULL}.}
+\code{c("Z", "X")}.}
 
 \item{random_covs}{Character vector of covariate column names that
 interact with the latent factor in the outcome model. An intercept
-column is prepended automatically. Default is \code{NULL}.}
+column is prepended automatically. Default is \code{"Z"}.}
 }
 \value{
-A named list with four components:
+An object of class
+\code{"Joint_modeling_visiting_and_longitudinal_Liang"}, a named list
+with the following components:
 
 \describe{
 \item{\code{gamma_hat}}{Named numeric vector of visiting-process
 regression coefficients, estimated by solving the partial-likelihood
 score equation with \code{\link[nleqslv]{nleqslv}}.}
+\item{\code{se_gamma}}{Named numeric vector of model-based standard
+errors for \code{gamma_hat}, obtained from the inverse observed
+information matrix.}
+\item{\code{vcov_gamma}}{Numeric matrix; the model-based
+variance-covariance matrix for \code{gamma_hat}.}
 \item{\code{Lambda_C_est}}{Numeric scalar; Breslow estimate of the
 cumulative baseline hazard \eqn{\Lambda_0(C)} over the full
 follow-up window.}
@@ -63,6 +70,21 @@ of the frailty variance \eqn{\sigma^2}. Constrained to be
 non-negative.}
 \item{\code{beta_hat}}{Named numeric vector of outcome fixed-effect
 coefficients, estimated from the Liang-type estimating equations.}
+\item{\code{se_beta}}{Named numeric vector of clustered sandwich
+standard errors for \code{beta_hat}. The sandwich estimator is
+conditional on the Stage 1 estimates
+\eqn{(\hat\gamma, \hat\sigma^2, \hat\Lambda_0)}.}
+\item{\code{theta_hat}}{Named numeric vector of latent-link
+coefficients (the part of the augmented coefficient vector
+multiplying \eqn{\hat B_i Z^*_{ij}}). \code{NULL} when
+\eqn{\hat\sigma^2 = 0}.}
+\item{\code{se_theta}}{Named numeric vector of clustered sandwich
+standard errors for \code{theta_hat}. \code{NULL} when
+\eqn{\hat\sigma^2 = 0}.}
+\item{\code{vcov_outcome}}{Numeric matrix; the full clustered
+sandwich variance-covariance matrix for the augmented coefficient
+vector \code{c(beta_hat, theta_hat)}.}
+\item{\code{call}}{The matched call.}
 }
 }
 \description{
@@ -72,7 +94,10 @@ process using the estimating-equations approach of Liang, Lu, and Ying
 partial-likelihood score equation, and the longitudinal outcome is
 estimated by solving Liang-type risk-set-centred estimating equations
 that incorporate an empirical Bayes estimate of the shared latent
-factor.
+factor. Analytic standard errors are returned for both the visiting
+process (model-based, from the inverse information matrix) and the
+outcome (clustered sandwich, conditional on the Stage 1 nuisance
+estimates).
 
 Unlike \code{\link{EHRJoint}}, this method does not model a separate
 observation process; it assumes that the outcome is always observed at
@@ -89,7 +114,8 @@ where \eqn{\eta_i} is a shared frailty. The coefficient vector
 \eqn{\gamma} is estimated by solving the partial-likelihood score
 equation, the cumulative baseline hazard \eqn{\Lambda_0(C)} by the
 Breslow estimator, and the frailty variance \eqn{\sigma^2} by method
-of moments.
+of moments. Standard errors come from the inverse observed information
+matrix.
 
 \strong{Outcome Model.}
 An empirical Bayes estimator of the latent loading \eqn{B_i} is
@@ -102,16 +128,25 @@ is estimated by solving risk-set-centred estimating equations
 \deqn{\sum_{i,j} \bigl[(M_{ij} - \bar M(t_j))\bigr]
   (Y_{ij} - M_{ij}^\top \beta^*) = 0,}
 where \eqn{M_{ij} = (X_{ij}, \hat B_i Z_{ij}^*)} and
-\eqn{\bar M(t)} is the risk-set-weighted mean.
+\eqn{\bar M(t)} is the risk-set-weighted mean. Because this
+equation is linear in \eqn{\beta^*}, it admits a closed-form
+solution \eqn{\hat\beta^* = (H^\top M)^{-1} H^\top Y} with
+\eqn{H = M - \bar M}.
+
+\strong{Sandwich Variance.}
+The clustered sandwich estimator for \eqn{\hat\beta^*} is
+\deqn{\hat V = B^{-1}\Bigl(\sum_i A_i A_i^\top\Bigr) B^{-\top},
+  \qquad B = H^\top M,\quad
+  A_i = \sum_j H_{ij}(Y_{ij} - M_{ij}^\top\hat\beta^*).}
+This variance is conditional on the Stage 1 nuisance estimates;
+it does not propagate estimation uncertainty from
+\eqn{(\hat\gamma, \hat\sigma^2, \hat\Lambda_0)}.
 
 This differs from \code{\link{EHRJoint}} in that no observation-process
 weights enter the estimating equations.
 }
 \note{
-This function requires the \pkg{nleqslv} package.
-
-No standard errors are returned. For inference, consider bootstrapping
-the entire procedure.
+This function requires the \pkg{nleqslv} and \pkg{MASS} packages.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
@@ -121,10 +156,18 @@ fit <- Joint_modeling_visiting_and_longitudinal_Liang(
   long_covs   = "Age",
   random_covs = "Age"
 )
+print(fit)
 
 }
 \references{
-Yu Liang, Wenbin Lu, and Zhiliang Ying (2009). Joint modeling and analysis of longitudinal
-data with informative observation times. \emph{Biometrics}, 65(2), 377--384.
+Liang, Y., Lu, W., and Ying, Z. (2009). Joint modeling and analysis of
+longitudinal data with informative observation times.
+\emph{Biometrics}, 65(2), 377--384.
 \doi{10.1111/j.1541-0420.2008.01104.x}.
+}
+\seealso{
+\code{\link{EHRJoint}} for a three-stage joint model that additionally
+incorporates an observation-process component;
+\code{\link{CIMEHR}} for the three-stage CIMEHR estimator with a full
+shared latent structure.
 }

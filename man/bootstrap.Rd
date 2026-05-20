@@ -86,12 +86,15 @@ estimator is shown in print/summary (\code{"bal"} or \code{"mle"}).
 }
 \description{
 Computes bootstrap standard errors and percentile confidence intervals
-by resampling subjects with replacement and re-fitting the original model.
-Suitable for all selected methods that do not provide closed-form standard
-errors: \code{\link{CIMEHR_timevarying_integral}}, \code{\link{EHRJoint}},
-\code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}, \code{\link{Inverse_intensity_rate_ratio_weighting}}, and
-\code{\link{Inverse_intensity_rate_ratio_balancing}}. Can also supplement the sandwich standard
-errors from \code{\link{CIMEHR}} and \code{\link{CIMEHR_timevarying_ou}}.
+by resampling subjects with replacement and re-fitting the original
+model. Suitable for methods that do not provide closed-form standard
+errors (\code{\link{CIMEHR_timevarying_integral}},
+\code{\link{Inverse_intensity_rate_ratio_weighting}}, and
+\code{\link{Inverse_intensity_rate_ratio_balancing}}), and as a
+robustness check or supplement to the analytic standard errors
+returned by \code{\link{CIMEHR}}, \code{\link{CIMEHR_timevarying_ou}},
+\code{\link{EHRJoint}}, and
+\code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}.
 }
 \details{
 For two-stage methods (\code{\link{Linear_increment_IP}}, \code{\link{Multiple_imputation_IP}}), the
@@ -120,7 +123,11 @@ names of the underlying fitting function exactly. Recognised entries:
 \code{covars_outcome_random_link_ZY}, \code{covars_obs_fixed_XO},
 \code{covars_obs_random_link_ZO}.
 
-\strong{EHRJoint, Joint_modeling_visiting_and_longitudinal_Liang:}
+\strong{EHRJoint:}
+\code{visit_covs}, \code{long_covs}, \code{random_covs},
+\code{obs_link}, \code{sigma_sq_floor}.
+
+\strong{Joint_modeling_visiting_and_longitudinal_Liang:}
 \code{visit_covs}, \code{long_covs}, \code{random_covs}.
 
 \strong{Inverse_intensity_rate_ratio_weighting:}
@@ -135,12 +142,17 @@ names of the underlying fitting function exactly. Recognised entries:
 \code{\link{CIMEHR}} and \code{\link{CIMEHR_timevarying_ou}} already compute
 sandwich (plug-in) standard errors from per-subject score contributions
 evaluated at the fitted parameters --- no re-fitting is needed.
-Bootstrap is provided for those methods as an optional check.
-For \code{\link{CIMEHR_timevarying_integral}}, \code{\link{EHRJoint}},
-\code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}, \code{\link{Inverse_intensity_rate_ratio_weighting}}, and
-\code{\link{Inverse_intensity_rate_ratio_balancing}}, per-subject score contributions are not
-exposed by the fitting routines, so bootstrap is the recommended
-approach for uncertainty quantification.
+\code{\link{EHRJoint}} and \code{\link{Joint_modeling_visiting_and_longitudinal_Liang}}
+return model-based standard errors for the visiting (and observation, for
+EHRJoint) processes and a clustered sandwich estimator for the outcome
+stage; these are conditional on the Stage 1 nuisance estimates and do not
+propagate their estimation uncertainty. Bootstrap is provided for all four
+of these methods as an optional check or to propagate Stage 1 uncertainty.
+For \code{\link{CIMEHR_timevarying_integral}},
+\code{\link{Inverse_intensity_rate_ratio_weighting}}, and
+\code{\link{Inverse_intensity_rate_ratio_balancing}}, per-subject score
+contributions are not exposed by the fitting routines, so bootstrap is
+the recommended approach for uncertainty quantification.
 }
 
 \section{Accessing standard errors for all stages}{

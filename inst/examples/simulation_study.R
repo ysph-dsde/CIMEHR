@@ -16,6 +16,7 @@
 ##
 ## SE / coverage availability:
 ##   - CIMEHR              : sandwich SE -> coverage available
+##   - CIMEHR_Liang        : sandwich SE -> coverage available
 ##   - IrregLong::iiwgee   : sandwich SE -> coverage available
 ##   - All others          : no analytic SE -> coverage reported as ---
 ##
@@ -183,7 +184,11 @@ methods <- list(
     beta <- fit$beta_hat
     keep <- intersect(PARAM_NAMES, names(beta))
     beta <- beta[keep]
-    list(beta = beta, se = NULL, ci_low = NULL, ci_high = NULL)
+    se   <- fit$se_beta[keep]
+    z    <- stats::qnorm(0.975)
+    list(beta = beta, se = se,
+         ci_low  = beta - z * se,
+         ci_high = beta + z * se)
   },
 
   IrregLong_Liang = function(dat, focal) {

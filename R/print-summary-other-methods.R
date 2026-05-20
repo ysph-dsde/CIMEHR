@@ -78,13 +78,15 @@ print.EHRJoint <- function(x, digits = 4, level = 0.95, ...) {
   cat("\nEHRJoint -- Outcome Fixed Effect (beta)\n")
   cat(strrep("=", 50), "\n")
 
-  tbl <- .CIMEHR_coef_table(x$beta_hat, se = NULL, level = level)
+  beta_hat <- x$longitudinal_outcome$beta_hat
+  se_beta  <- x$longitudinal_outcome$se_beta
+  tbl <- .CIMEHR_coef_table(beta_hat, se = se_beta, level = level)
   print(round(tbl, digits))
 
-  cat("\nNote: Standard errors are not available for EHRJoint.",
-      "Consider bootstrap for inference.\n")
+  link_lbl <- x$observation_process$link %||% "probit"
   cat("\nModel note: visiting process uses a visit-count/frailty-compensation component.\n")
-  cat("Observation process uses logistic regression with a logit link.\n")
+  cat(sprintf("Observation process uses a Generalized Linear Model (GLM) with a %s link.\n", link_lbl))
+  cat("Standard errors: model-based (visiting, observation) and clustered sandwich (outcome).\n")
   cat("Use summary() for all process estimates, or\n")
   cat("summary(x, specify = \"visiting\" / \"observation\" / \"outcome\") for one layer.\n")
   invisible(x)
@@ -127,38 +129,50 @@ summary.EHRJoint <- function(object, level = 0.95, digits = 4,
                               c("visiting", "observation", "outcome"))
   width   <- 60
 
+  vis   <- object$visiting_process
+  obs   <- object$observation_process
+  out   <- object$longitudinal_outcome
+  link_lbl <- obs$link %||% "probit"
+
   cat("\nEHRJoint Model -- Summary\n")
   cat(strrep("=", width), "\n")
   if (specify != "all")
     cat(sprintf("Layer requested: %s\n", specify))
-  cat("\nNote: Standard errors are not available for this method.\n")
-  cat("Consider bootstrap for inference.\n")
   cat("\nModel note: visiting process uses a visit-count/frailty-compensation component.\n")
-  cat("Observation process uses logistic regression with a logit link.\n")
+  cat(sprintf("Observation process uses a Generalized Linear Model (GLM) with a %s link.\n", link_lbl))
+  cat("Standard errors: model-based (visiting, observation) and clustered sandwich (outcome).\n")
 
   if ("visiting" %in% layers) {
     .print_section("Visiting Process -- Fixed Effect (gamma)",
-                   .CIMEHR_coef_table(object$gamma_hat, se = NULL, level),
+                   .CIMEHR_coef_table(vis$gamma_hat, se = vis$se_gamma, level),
                    digits, width)
-    if (!is.null(object$sigma_sq_hat))
-      cat(sprintf("\n  Frailty variance: %.4f\n", object$sigma_sq_hat))
+    if (!is.null(out$sigma_sq))
+      cat(sprintf("\n  Frailty variance: %.4f\n", out$sigma_sq))
+    if (isFALSE(vis$converged))
+      cat("  Warning: Stage 1 score solver did not converge.\n")
   }
 
   if ("observation" %in% layers) {
     .print_section("Observation Process -- Fixed Effect (alpha)",
-                   .CIMEHR_coef_table(object$alpha_hat, se = NULL, level),
+                   .CIMEHR_coef_table(obs$alpha_hat, se = obs$se_alpha, level),
                    digits, width)
   }
 
   if ("outcome" %in% layers) {
     .print_section("Longitudinal Outcome -- Fixed Effect (beta)",
-                   .CIMEHR_coef_table(object$beta_hat, se = NULL, level),
+                   .CIMEHR_coef_table(out$beta_hat, se = out$se_beta, level),
                    digits, width)
-    if (!is.null(object$theta_hat) && !all(is.na(object$theta_hat))) {
+    if (!is.null(out$theta_hat) && !all(is.na(out$theta_hat))) {
       .print_section("Longitudinal Outcome -- Random Link (theta)",
-                     .CIMEHR_coef_table(object$theta_hat, se = NULL, level),
+                     .CIMEHR_coef_table(out$theta_hat, se = out$se_theta, level),
                      digits, width)
     }
+    if (isFALSE(out$use_B))
+      cat("\n  Note: Estimated frailty variance below sigma_sq_floor;\n",
+          "  outcome model fitted without frailty-compensation block.\n", sep = "")
+    if (!is.null(out$cond_LHS) && out$cond_LHS > 1e10)
+      cat(sprintf("\n  Warning: Stage 3 LHS condition number = %.3g; estimates may be unstable.\n",
+                  out$cond_LHS))
   }
 
   cat("\n")
@@ -400,12 +414,11 @@ print.Joint_modeling_visiting_and_longitudinal_Liang <- function(x, digits = 4, 
   cat("\nJMVL (Liang) -- Outcome Fixed Effect (beta)\n")
   cat(strrep("=", 50), "\n")
 
-  tbl <- .CIMEHR_coef_table(x$beta_hat, se = NULL, level = level)
+  tbl <- .CIMEHR_coef_table(x$beta_hat, se = x$se_beta, level = level)
   print(round(tbl, digits))
 
-  cat("\nNote: Standard errors are not available for",
-      "Joint_modeling_visiting_and_longitudinal_Liang.\n")
-  cat("Consider bootstrap for inference.\n")
+  cat("\nStandard errors: model-based (visiting) and clustered sandwich (outcome).\n")
+  cat("The outcome sandwich is conditional on the Stage 1 nuisance estimates.\n")
   cat("Use summary() for all process estimates, or\n")
   cat("summary(x, specify = \"visiting\" / \"outcome\") for one layer.\n")
   invisible(x)
@@ -451,20 +464,25 @@ summary.Joint_modeling_visiting_and_longitudinal_Liang <- function(object, level
   cat(strrep("=", width), "\n")
   if (specify != "all")
     cat(sprintf("Layer requested: %s\n", specify))
-  cat("\nNote: Standard errors are not available for this method.\n")
-  cat("Consider bootstrap for inference.\n")
+  cat("\nStandard errors: model-based (visiting) and clustered sandwich (outcome).\n")
+  cat("The outcome sandwich is conditional on the Stage 1 nuisance estimates.\n")
 
   if ("visiting" %in% layers) {
     .print_section("Visiting Process -- Fixed Effect (gamma)",
-                   .CIMEHR_coef_table(object$gamma_hat, se = NULL, level),
+                   .CIMEHR_coef_table(object$gamma_hat, se = object$se_gamma, level),
                    digits, width)
     if (!is.null(object$sigma_sq_hat))
       cat(sprintf("\n  Frailty variance: %.4f\n", object$sigma_sq_hat))
   }
   if ("outcome" %in% layers) {
     .print_section("Longitudinal Outcome -- Fixed Effect (beta)",
-                   .CIMEHR_coef_table(object$beta_hat, se = NULL, level),
+                   .CIMEHR_coef_table(object$beta_hat, se = object$se_beta, level),
                    digits, width)
+    if (!is.null(object$theta_hat)) {
+      .print_section("Longitudinal Outcome -- Random Link (theta)",
+                     .CIMEHR_coef_table(object$theta_hat, se = object$se_theta, level),
+                     digits, width)
+    }
   }
 
   cat("\n")

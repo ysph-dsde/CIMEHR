@@ -276,12 +276,12 @@ A four-scenario Monte Carlo simulation study comparing CIMEHR against the IrregL
 
 ## Bootstrap inference
 
-Use `bootstrap()` for methods without analytic standard errors or as a robustness check for CIMEHR-family methods:
+`CIMEHR()`, `CIMEHR_timevarying_ou()`, `EHRJoint()`, and `Joint_modeling_visiting_and_longitudinal_Liang()` already return analytic standard errors (sandwich or model-based). `bootstrap()` is recommended for methods without analytic standard errors (`CIMEHR_timevarying_integral()`, `Inverse_intensity_rate_ratio_weighting()`, `Inverse_intensity_rate_ratio_balancing()`), and as an optional robustness check or to propagate Stage 1 nuisance uncertainty for the methods that do:
 
 ```{r, eval = FALSE}
 fit_iirr <- Inverse_intensity_rate_ratio_weighting(
   sim_ehr_data,
-  outcome = "log_HbA1c,
+  outcome = "log_HbA1c",
   visit_covs = c("Age", "Gender", "Marital", "Black", "Hispanic", "NSES")
 )
 bs <- bootstrap(fit_iirr, data = sim_ehr_data, B = 200, seed = 1)

@@ -227,14 +227,26 @@ coef_stage <- extract_coefficient
 }
 
 .extract_stage_EHRJoint <- function(object, stage) {
-  if (stage == "visiting") return(list(estimate = object$gamma_hat, se = NULL))
-  if (stage == "observation") return(list(estimate = object$alpha_hat, se = NULL))
-  if (stage == "outcome") return(list(estimate = c(object$beta_hat, object$theta_hat), se = NULL))
+  if (stage == "visiting") {
+    vis <- object$visiting_process
+    return(list(estimate = vis$gamma_hat, se = vis$se_gamma))
+  }
+  if (stage == "observation") {
+    obs <- object$observation_process
+    return(list(estimate = obs$alpha_hat, se = obs$se_alpha))
+  }
+  if (stage == "outcome") {
+    out <- object$longitudinal_outcome
+    est <- c(out$beta_hat, out$theta_hat)
+    se  <- c(out$se_beta,  out$se_theta)
+    return(list(estimate = est, se = se))
+  }
+  NULL
 }
 
 .extract_stage_JMVL <- function(object, stage) {
-  if (stage == "visiting") return(list(estimate = object$gamma_hat, se = NULL))
-  if (stage == "outcome") return(list(estimate = object$beta_hat, se = NULL))
+  if (stage == "visiting") return(list(estimate = object$gamma_hat, se = object$se_gamma))
+  if (stage == "outcome")  return(list(estimate = object$beta_hat,  se = object$se_beta))
   NULL
 }
 

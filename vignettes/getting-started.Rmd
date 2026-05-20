@@ -257,6 +257,8 @@ summary(fit_iirr_bal)
 
 ### 5.3 Liang--Lu--Ying joint visiting/outcome model
 
+`Joint_modeling_visiting_and_longitudinal_Liang()` fits a joint model for the visiting process and the longitudinal outcome, returning model-based standard errors for the visiting stage and a clustered sandwich estimator for the outcome stage (conditional on the Stage 1 nuisance estimates).
+
 ```{r liang}
 fit_liang <- Joint_modeling_visiting_and_longitudinal_Liang(
   ehr500,
@@ -270,7 +272,7 @@ summary(fit_liang)
 
 ### 5.4 EHRJoint
 
-`EHRJoint()` is a joint benchmark method. Its summary output notes that its observation process uses a logistic regression with a logit link.
+`EHRJoint()` is a joint benchmark method. Its observation process uses a Generalized Linear Model (GLM) with a probit link by default (set `obs_link = "logit"` to switch). The fitted object returns model-based standard errors for the visiting and observation stages and a clustered sandwich estimator for the outcome stage.
 
 ```{r ehrjoint}
 fit_ej <- EHRJoint(
@@ -415,7 +417,7 @@ The four scenarios cross two focal-covariate types (continuous NSES vs. binary G
 
 ## 9. Bootstrap inference
 
-Several methods do not provide closed-form standard errors. `bootstrap()` resamples subjects with replacement and refits the selected method.
+`CIMEHR()`, `CIMEHR_timevarying_ou()`, `EHRJoint()`, and `Joint_modeling_visiting_and_longitudinal_Liang()` already return analytic standard errors (sandwich or model-based). `bootstrap()` is recommended for the methods that do not (`CIMEHR_timevarying_integral()`, `Inverse_intensity_rate_ratio_weighting()`, `Inverse_intensity_rate_ratio_balancing()`), and as an optional robustness check or for propagating Stage 1 nuisance uncertainty for the methods that do. The bootstrap resamples subjects with replacement and refits the selected method on each replicate.
 
 ```{r bootstrap, eval = FALSE}
 bs <- bootstrap(

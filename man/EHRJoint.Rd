@@ -2,7 +2,8 @@
 % Please edit documentation in R/EHRJoint.R
 \name{EHRJoint}
 \alias{EHRJoint}
-\title{Joint Estimation for Electronic Health Record (EHR) Longitudinal Processes (EHRJoint)}
+\title{Joint Estimation for Electronic Health Record (EHR) Longitudinal
+Processes (EHRJoint)}
 \usage{
 EHRJoint(
   data,
@@ -10,40 +11,190 @@ EHRJoint(
   time = "time",
   outcome = "Y",
   obs_indicator = "R",
-  visit_covs = NULL,
-  long_covs = NULL,
-  random_covs = NULL
+  visit_covs = c("Z", "X"),
+  long_covs = c("Z", "X"),
+  random_covs = "Z",
+  obs_link = c("probit", "logit"),
+  sigma_sq_floor = 1e-06
 )
 }
 \arguments{
-\item{data}{A \code{data.frame} containing longitudinal records.}
+\item{data}{A \code{data.frame} in long (panel) format with one row per
+subject-time combination. Must contain columns for subject identifier,
+visit time, outcome, observation indicator, and all specified
+covariates. Rows with \code{NA} in the time column are treated as
+placeholder rows for zero-visit subjects.}
 
-\item{id}{Character string. Subject identifier column name.
-Default is \code{"id"}.}
+\item{id}{Character string giving the name of the subject identifier
+column. Default is \code{"id"}.}
 
-\item{time}{Character string. Time column name. Default is \code{"time"}.}
+\item{time}{Character string giving the name of the visit-time column.
+Default is \code{"time"}.}
 
-\item{outcome}{Character string. Outcome column name. Default is \code{"Y"}.}
+\item{outcome}{Character string giving the name of the outcome column.
+Default is \code{"Y"}.}
 
-\item{obs_indicator}{Character string. Observation indicator column name.
-Default is \code{"R"}.}
+\item{obs_indicator}{Character string giving the name of the binary
+observation indicator column (\code{1} = outcome observed, \code{0} =
+outcome missing at visit). Default is \code{"R"}.}
 
-\item{visit_covs}{Character vector of covariate names for the visiting
-model. Default is \code{NULL}.}
+\item{visit_covs}{Character vector of covariate column names entering both
+the visiting-process intensity and the observation-process GLM. Default
+is \code{c("Z", "X")}.}
 
-\item{long_covs}{Character vector of covariate names for the longitudinal
-outcome model. Default is \code{NULL}.}
+\item{long_covs}{Character vector of covariate column names for the
+fixed-effect part of the longitudinal outcome model. Default is
+\code{c("Z", "X")}.}
 
-\item{random_covs}{Character string or vector of covariate names that
-interact with the latent factor. Default is \code{NULL}.}
+\item{random_covs}{Character vector of covariate column names that
+interact with the latent factor in the outcome model (frailty
+compensation). An intercept column is prepended automatically. Default
+is \code{"Z"}.}
+
+\item{obs_link}{Character string giving the link function for the
+observation-process GLM. One of \code{"probit"} (default, matching the
+common data-generating process) or \code{"logit"}.}
+
+\item{sigma_sq_floor}{Positive numeric scalar; numerical threshold below
+which the estimated frailty variance is treated as zero. When the
+estimate falls below this floor, the frailty-compensation covariates
+are dropped and the outcome model reduces to the no-correction
+submodel. Default is \code{1e-6}.}
 }
 \value{
-An object of class \code{"EHRJoint"} containing component-wise
-coefficient estimates.
+An object of class \code{"EHRJoint"}, a named list with three
+components, each itself a named list:
+
+\describe{
+\item{\code{visiting_process}}{A list with elements:
+\describe{
+\item{\code{gamma_hat}}{Named numeric vector of visiting-process
+regression coefficients.}
+\item{\code{se_gamma}}{Named numeric vector of model-based standard
+errors for \code{gamma_hat}, from the inverse observed
+information matrix.}
+\item{\code{vcov_gamma}}{Numeric matrix; the model-based
+variance-covariance matrix for \code{gamma_hat}.}
+\item{\code{converged}}{Logical; \code{TRUE} if
+\code{\link[nleqslv]{nleqslv}} returned a successful termination
+code.}
+}
+}
+\item{\code{observation_process}}{A list with elements:
+\describe{
+\item{\code{alpha_hat}}{Named numeric vector of observation-process
+GLM coefficients (including intercept).}
+\item{\code{se_alpha}}{Named numeric vector of model-based standard
+errors for \code{alpha_hat}.}
+\item{\code{vcov_alpha}}{Numeric matrix; the model-based
+variance-covariance matrix for \code{alpha_hat}.}
+\item{\code{link}}{Character string; the link function used
+(\code{"probit"} or \code{"logit"}).}
+}
+}
+\item{\code{longitudinal_outcome}}{A list with elements:
+\describe{
+\item{\code{beta_hat}}{Named numeric vector of outcome fixed-effect
+coefficients.}
+\item{\code{theta_hat}}{Named numeric vector of latent-link
+coefficients (the part of the augmented coefficient vector
+multiplying the frailty-compensation covariates). All \code{NA}
+when the frailty variance is below \code{sigma_sq_floor}.}
+\item{\code{se_beta}}{Named numeric vector of clustered sandwich
+standard errors for \code{beta_hat}.}
+\item{\code{se_theta}}{Named numeric vector of clustered sandwich
+standard errors for \code{theta_hat}. All \code{NA} when the
+frailty variance is below \code{sigma_sq_floor}.}
+\item{\code{vcov_joint}}{Numeric matrix; the full clustered
+sandwich variance-covariance matrix for the augmented coefficient
+vector \code{c(beta_hat, theta_hat)}.}
+\item{\code{Lambda_C}}{Numeric scalar; Breslow estimate of the
+cumulative baseline visiting hazard over the full follow-up
+window.}
+\item{\code{sigma_sq}}{Numeric scalar; method-of-moments estimate
+of the frailty variance \eqn{\sigma^2}, truncated below at zero.}
+\item{\code{sigma_sq_raw}}{Numeric scalar; the untruncated
+method-of-moments estimate of the frailty variance.}
+\item{\code{use_B}}{Logical; \code{TRUE} if the frailty-compensation
+covariates were retained in the outcome model
+(\code{sigma_sq > sigma_sq_floor}), \code{FALSE} otherwise.}
+\item{\code{cond_LHS}}{Numeric scalar; the L2 condition number of
+the Stage 3 estimating-equation left-hand-side matrix. Values
+larger than \code{1e10} trigger a warning and a pseudoinverse
+fallback.}
+}
+}
+\item{\code{call}}{The matched call.}
+}
 }
 \description{
-Fit a joint workflow for visiting, observation, and outcome processes for
-irregularly observed longitudinal data.
+Fits the three-stage joint estimator of Du, Shi, and Mukherjee (2025) for
+irregularly observed longitudinal Electronic Health Record (EHR) data with
+informative visiting and informative observation processes. Stage 1
+estimates the visiting-process intensity by solving an Andersen-Gill
+partial-likelihood score equation. Stage 2 fits the observation indicator
+via a probit (default) or logistic Generalized Linear Model (GLM). Stage 3
+estimates the longitudinal outcome coefficients from a Liang-type
+risk-set-centred estimating equation, augmented with a frailty-compensation
+covariate constructed from the Stage 1 estimates. Analytic standard errors
+are provided for all three stages: model-based for the visiting-process
+partial likelihood and for the observation-process GLM, and a clustered
+sandwich estimator for the outcome stage.
+}
+\details{
+The estimator proceeds in three stages.
+
+\strong{Stage 1 - Visiting Process.} The visit intensity is
+\deqn{\lambda_i(t) = \eta_i \exp(\gamma^\top V_i)\,\lambda_0(t),}
+where \eqn{\eta_i} is a shared frailty. The coefficient vector
+\eqn{\gamma} is estimated by solving the Andersen-Gill partial-likelihood
+score equation
+\deqn{\sum_i \int [V_i - \bar V(\gamma; t)]\,dN_i(t) = 0,}
+where \eqn{\bar V(\gamma; t)} is the risk-set-weighted mean of \eqn{V}.
+Only visit rows enter the score; placeholder rows for zero-visit subjects
+are excluded. Standard errors are obtained from the inverse of the
+observed information matrix.
+
+\strong{Stage 2 - Observation Process.} The observation indicator is
+modelled by
+\deqn{P(R_{ij} = 1 \mid V_i) = g^{-1}(\alpha^\top V_i^*),}
+where \eqn{V_i^* = (1, V_i)} and \eqn{g} is the probit (default) or
+logistic link. The coefficient vector \eqn{\alpha} is estimated by
+\code{\link[stats]{glm}} and the model-based variance-covariance matrix
+is returned.
+
+\strong{Stage 3 - Longitudinal Outcome.} An empirical Bayes estimator of
+the latent loading \eqn{B_i} is constructed as
+\deqn{\hat B_i = \frac{1 + n_i \hat\sigma^2}{1 +
+  \hat\Lambda_i \hat\sigma^2} - 1,}
+where \eqn{n_i} is the visit count and
+\eqn{\hat\Lambda_i = \exp(\hat\gamma^\top V_i) \hat\Lambda_0(C)}.
+The outcome model
+\deqn{Y_i(t) = \beta^\top X_i(t) + \theta^\top \hat B_i Q_i^*(t) +
+  \varepsilon_i(t)}
+is estimated by solving the risk-set-centred estimating equation
+\deqn{\sum_{i,j} (M_{ij} - \bar M)(Y_{ij} - M_{ij}^\top \beta^*) = 0,}
+with \eqn{M_{ij} = (X_{ij}, \hat B_i Q_{ij}^*)} and the centering
+weighted by \eqn{n_i \hat w_i} where \eqn{\hat w_i} is the predicted
+observation probability. The equation is linear in \eqn{\beta^*} and is
+solved directly by \code{\link[base]{solve}}, with a Moore-Penrose
+pseudoinverse fallback (via \code{\link[MASS]{ginv}}) on singular systems.
+A clustered sandwich estimator
+\deqn{\hat V = B^{-1} \Bigl(\sum_i A_i A_i^\top\Bigr) B^{-\top},
+  \quad B = H^\top M,\
+  A_i = \sum_j H_{ij}(Y_{ij} - M_{ij}^\top \hat\beta^*)}
+is returned. This variance is conditional on the Stage 1 nuisance
+estimates and does not propagate uncertainty from
+\eqn{(\hat\gamma, \hat\sigma^2, \hat\Lambda_0)}.
+
+If the estimated frailty variance \eqn{\hat\sigma^2} falls below
+\code{sigma_sq_floor}, the frailty-compensation block is dropped and the
+outcome model reduces to the no-correction submodel with only
+\code{long_covs}; \code{theta_hat} and \code{se_theta} are then returned
+as \code{NA}.
+}
+\note{
+This function requires the \pkg{nleqslv} and \pkg{MASS} packages.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
@@ -53,11 +204,20 @@ fit <- EHRJoint(
   long_covs   = "Age",
   random_covs = "Age"
 )
+print(fit)
 
 }
 \references{
-Jiacong Du, Xu Shi, and Bhramar Mukherjee (2025). A new statistical approach for joint
-modeling of longitudinal outcomes measured in electronic health records with clinically
-informative presence and observation processes. arXiv preprint arXiv:2410.13113.
-\doi{10.48550/arXiv.2410.13113}. \url{https://arxiv.org/abs/2410.13113}.
+Du, J., Shi, X., and Mukherjee, B. (2025). A new statistical approach for
+joint modeling of longitudinal outcomes measured in electronic health
+records with clinically informative presence and observation processes.
+arXiv:2410.13113. \doi{10.48550/arXiv.2410.13113}.
+}
+\seealso{
+\code{\link{Joint_modeling_visiting_and_longitudinal_Liang}} for a related
+joint model without an observation-process component;
+\code{\link{CIMEHR}} for the three-stage CIMEHR estimator with a full
+shared latent structure;
+\code{\link{bootstrap}} for bootstrap supplementation of the analytic
+standard errors.
 }
