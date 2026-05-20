@@ -21,6 +21,17 @@
 ##     Sigma_b=diag(0.5, 0.8). Per-replicate seed: base_seed + 1e6 + sim
 ##     with base_seed = 20260508.
 ##
+## Outcome scale:
+##   The simulator generates Y on the linear scale used by the collaborator's
+##   beta spec. The fitted methods operate on log_HbA1c, where
+##       log_HbA1c = log(5.6) + 0.05 * Y.
+##   Because the transform is linear in Y with slope 0.05, true beta on the
+##   log_HbA1c scale is 0.05 * collaborator's beta on the Y scale. The
+##   bias / coverage tables below report the log_HbA1c-scale truth so that
+##   estimates and truths are on the same scale.
+##   (Collaborator's beta_Z = -0.500 -> reported true_value = -0.025;
+##    Collaborator's beta_X = +0.500 -> reported true_value = +0.025.)
+##
 ## Methods compared:
 ##   - CIMEHR                                            (this package)
 ##   - Joint_modeling_visiting_and_longitudinal_Liang    (this package, as CIMEHR_Liang)
@@ -37,7 +48,9 @@
 ##   beta on each of: Age, Gender, Marital, Black, Hispanic, NSES.
 ##   The intercept is excluded. True beta is focal-dependent: the focal
 ##   covariate carries the collaborator's beta_Z=-0.5; Age carries
-##   beta_X=0.5; the other four carry their background betas.
+##   beta_X=0.5; the other four carry their background betas. All values
+##   are rescaled by 0.05 to put them on the log_HbA1c scale before
+##   comparison with the fitted estimates.
 ##
 ## Usage:
 ##   Rscript simulations/simulation_study.R
@@ -64,6 +77,11 @@ N_CORES   <- 1L
 OUT_FILE  <- "simulations/sim_results.rds"
 TIME_END  <- 120
 BASE_SEED <- 20260508L
+
+# Outcome-scale transform: log_HbA1c = log(5.6) + 0.05 * Y.
+# True outcome coefficients on the log_HbA1c scale are LOG_HBA1C_SLOPE
+# times the collaborator's Y-scale values.
+LOG_HBA1C_SLOPE <- 0.05
 
 ALL_SCENARIOS <- c(
   "continuous_phi0",     "continuous_phi0.001",
@@ -166,6 +184,16 @@ BACKGROUND_BETA <- c(
 PARAM_NAMES <- c("Age", "Gender", "Marital", "Black", "Hispanic", "NSES")
 ALL_COVARS  <- PARAM_NAMES
 
+# Build the full per-covariate true-parameter vectors for a given focal Z.
+# Age always plays the role of X; the focal covariate (NSES or Gender)
+# plays the role of Z; remaining covariates take the BACKGROUND_* values.
+# `gamma` and `alpha` stay on the original (Y) scale because the visiting
+# and observation processes generate their own latent structure on that
+# scale; `beta` is rescaled by LOG_HBA1C_SLOPE because the fitted methods
+# operate on log_HbA1c rather than Y. We return both the rescaled `beta`
+# (for bias/coverage evaluation against the fitted estimates) and the
+# original `beta_Y_scale` (for passing to `sim_data_gen()`, which generates
+# on the Y scale).
 build_true_params <- function(focal) {
   background_others <- setdiff(names(BACKGROUND_GAMMA), focal)
 
@@ -183,18 +211,22 @@ build_true_params <- function(focal) {
     BACKGROUND_ALPHA[background_others]
   )
 
-  beta <- c(
+  # beta on the Y scale (collaborator's spec) ...
+  beta_Y <- c(
     intercept = BETA_INTERCEPT,
     Age = BETA_X,
     stats::setNames(BETA_Z, focal),
     BACKGROUND_BETA[background_others]
   )
+  # ... rescaled to the log_HbA1c outcome scale used by the fitted methods.
+  beta <- LOG_HBA1C_SLOPE * beta_Y
 
-  gamma <- c(gamma["intercept"], gamma[PARAM_NAMES])
-  alpha <- c(alpha["intercept"], alpha[PARAM_NAMES])
-  beta  <- c(beta["intercept"],  beta[PARAM_NAMES])
+  gamma  <- c(gamma["intercept"],  gamma[PARAM_NAMES])
+  alpha  <- c(alpha["intercept"],  alpha[PARAM_NAMES])
+  beta_Y <- c(beta_Y["intercept"], beta_Y[PARAM_NAMES])
+  beta   <- c(beta["intercept"],   beta[PARAM_NAMES])
 
-  list(gamma = gamma, alpha = alpha, beta = beta)
+  list(gamma = gamma, alpha = alpha, beta = beta, beta_Y_scale = beta_Y)
 }
 
 
@@ -386,10 +418,15 @@ make_scenario_params <- function(focal) {
 
   tp <- build_true_params(focal)
 
+  # sim_data_gen() needs beta on the Y scale (the scale it actually
+  # generates), not the log_HbA1c-scale `beta` returned in `tp$beta`. Use
+  # `tp$beta_Y_scale` for the simulator and reserve `tp$beta` for bias /
+  # coverage comparison against the fitted methods (which operate on
+  # log_HbA1c).
   list(
     gamma   = tp$gamma,
     alpha   = tp$alpha,
-    beta    = tp$beta,
+    beta    = tp$beta_Y_scale,
     obs_random_covs     = focal,
     outcome_random_covs = focal,
     delta   = c(intercept = DELTA_INTERCEPT,
@@ -718,9 +755,13 @@ metrics <- metrics[
 cat(strrep("=", 80), "\n", sep = "")
 cat("SIMULATION RESULTS\n")
 cat(sprintf("  Replications: %d | Subjects per rep: %d\n", N_SIM, N_SUBJ))
-cat("  True beta varies by scenario: the focal covariate gets the collaborator's\n")
-cat("  Z value; Age always gets the X value; the four remaining covariates\n")
-cat("  keep their background values. See per-scenario blocks below.\n")
+cat("  Outcome scale: log_HbA1c = log(5.6) + 0.05 * Y.\n")
+cat(sprintf("  True beta is reported on the log_HbA1c scale (= %.2f * Y-scale beta).\n",
+            LOG_HBA1C_SLOPE))
+cat("  Focal covariate gets the collaborator's Z value; Age always gets the\n")
+cat("  X value; the four remaining covariates keep their background values.\n")
+cat(sprintf("  Example: collaborator's beta_Z = %+.3f -> true_value = %+.4f.\n",
+            BETA_Z, LOG_HBA1C_SLOPE * BETA_Z))
 cat(strrep("=", 80), "\n\n", sep = "")
 
 for (scen in SELECTED_SCENARIOS) {
@@ -741,7 +782,7 @@ for (scen in SELECTED_SCENARIOS) {
     is_focal <- p == spec$focal
 
     cat(sprintf(
-      "  beta_%s (true = %+.3f)%s\n\n",
+      "  beta_%s (true = %+.4f)%s\n\n",
       p,
       true_betas[[p]],
       if (is_focal) "  [FOCAL]" else ""
@@ -783,28 +824,30 @@ true_params_by_scenario <- lapply(SELECTED_SCENARIOS, function(s) {
   tp   <- build_true_params(spec$focal)
 
   list(
-    focal      = spec$focal,
-    phi        = spec$phi,
-    gamma      = tp$gamma,
-    alpha      = tp$alpha,
-    beta       = tp$beta,
-    delta      = c(
+    focal          = spec$focal,
+    phi            = spec$phi,
+    gamma          = tp$gamma,
+    alpha          = tp$alpha,
+    beta           = tp$beta,           # log_HbA1c scale (used for bias / coverage)
+    beta_Y_scale   = tp$beta_Y_scale,   # original Y scale (collaborator's spec)
+    delta          = c(
       intercept = DELTA_INTERCEPT,
       stats::setNames(DELTA_Z, spec$focal)
     ),
-    sigma_q    = c(
+    sigma_q        = c(
       intercept = SIGMA_Q_INTERCEPT,
       stats::setNames(SIGMA_Q_Z, spec$focal)
     ),
-    theta      = c(
+    theta          = c(
       intercept = THETA_INTERCEPT,
       stats::setNames(THETA_Z, spec$focal)
     ),
-    Sigma_b    = SIGMA_B,
-    sigma_zeta = SIGMA_ZETA,
-    sigma_y    = SIGMA_Y,
-    beta_t     = BETA_T,
-    time_end   = TIME_END
+    Sigma_b        = SIGMA_B,
+    sigma_zeta     = SIGMA_ZETA,
+    sigma_y        = SIGMA_Y,
+    beta_t         = BETA_T,
+    time_end       = TIME_END,
+    log_hba1c_slope = LOG_HBA1C_SLOPE
   )
 })
 
@@ -815,12 +858,13 @@ saveRDS(
     sim_df  = sim_df,
     metrics = metrics,
     settings = list(
-      n_sim     = N_SIM,
-      n_subj    = N_SUBJ,
-      base_seed = BASE_SEED,
-      time_end  = TIME_END,
-      scenarios = SELECTED_SCENARIOS,
-      methods   = SELECTED_METHODS,
+      n_sim           = N_SIM,
+      n_subj          = N_SUBJ,
+      base_seed       = BASE_SEED,
+      time_end        = TIME_END,
+      log_hba1c_slope = LOG_HBA1C_SLOPE,
+      scenarios       = SELECTED_SCENARIOS,
+      methods         = SELECTED_METHODS,
       anchors = list(
         gamma_Z = GAMMA_Z,
         gamma_X = GAMMA_X,
