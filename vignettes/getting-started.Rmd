@@ -405,7 +405,7 @@ If a method fails, `method_comparisons()` keeps going by default, stores the err
 
 ## 8. Comparing CIMEHR with IrregLong benchmarks
 
-The companion package **IrregLong** (Pullenayegum, 2026) provides reference implementations of `Liang()` and `iiwgee()` (an IIW-GEE pipeline). The script `simulations/simulation_study.R` runs a four-scenario Monte Carlo study comparing CIMEHR against both the package's own wrappers and the IrregLong reference implementations. The default configuration is N_SIM = 1000 replications per scenario, each with a fresh dataset of n = 2000 participants:
+The companion package **IrregLong** (Pullenayegum, 2026) provides reference implementations of `Liang()` and `iiwgee()` (an inverse-intensity-weighted Generalized Estimating Equations (IIW-GEE) pipeline). The script `simulations/simulation_study.R` runs an eight-scenario Monte Carlo study comparing CIMEHR against both the package's own wrappers and the IrregLong reference implementations. The default configuration is N_SIM = 1000 replications per scenario, each with a fresh dataset of n = 2000 participants:
 
 ```{r simulation-example}
 # From the package root:
@@ -413,7 +413,7 @@ The companion package **IrregLong** (Pullenayegum, 2026) provides reference impl
 # Rscript simulations/simulation_study.R --cores 8 --nsim 200
 ```
 
-The four scenarios cross two focal-covariate types (continuous NSES vs. binary Gender) with two values of the OU serial-correlation parameter `phi` (0 and 0.3). For each scenario the script reports the mean estimate, true value, empirical bias, empirical SE, mean analytic SE, SE ratio, RMSE, and 95% CI coverage per method, separately for each of the six covariate coefficients.
+The eight scenarios cross two focal-covariate types (continuous NSES vs. binary Gender) with four values of the OU serial-correlation parameter `phi` (0, 0.001, 0.1, 0.3). Data-generating parameters follow the collaborator-specified setting (focal covariate gets Z values; Age gets X values; the four other covariates retain their canonical background magnitudes). The script reports, per scenario and method, the empirical bias, empirical SE, mean analytic SE, SE ratio, RMSE, and 95% CI coverage, separately for each of the six covariate coefficients.
 
 ## 9. Bootstrap inference
 

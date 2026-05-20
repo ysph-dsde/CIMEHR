@@ -271,7 +271,7 @@ cmp_subset$tables$outcome
 
 For real, non-simulated data, the comparison tables omit true-value, bias, and RMSE columns unless you explicitly pass a `true_values` list. If a method fails, `method_comparisons()` keeps going by default, stores the error in `cmp_all$errors`, and prints `NA` rows for that method.
 
-A four-scenario Monte Carlo simulation study comparing CIMEHR against the IrregLong benchmarks is provided in `simulations/simulation_study.R`. The script runs N_SIM = 1000 replications per scenario, each with a fresh dataset of n = 2000 participants, and reports bias, empirical SE, mean SE, RMSE, and 95% CI coverage.
+An eight-scenario Monte Carlo simulation study comparing CIMEHR against the IrregLong benchmarks is provided in `simulations/simulation_study.R`. The script crosses two focal-covariate types (continuous NSES vs. binary Gender) with four values of the OU serial-correlation parameter `phi` (0, 0.001, 0.1, 0.3), runs N_SIM = 1000 replications per scenario, each with a fresh dataset of n = 2000 participants, and reports bias, empirical SE, mean SE, RMSE, and 95% CI coverage.
 
 
 ## Bootstrap inference

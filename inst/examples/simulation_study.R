@@ -1,34 +1,49 @@
 ## ---- simulations/simulation_study.R ------------------------------------------
 ## Monte Carlo simulation study evaluating bias, empirical SE, mean SE,
-## SE ratio, RMSE, and 95% CI coverage for five methods on simulated EHR
-## data. The design crosses two Z types (continuous = NSES, binary = Gender)
-## with two values of the OU serial-correlation parameter (phi = 0, 0.3),
-## producing four scenarios. Each scenario runs N_SIM Monte Carlo
-## replications; each replication generates a fresh dataset of N_SUBJ
-## participants and fits all methods.
+## SE ratio, RMSE, and 95% CI coverage for four methods on simulated
+## Electronic Health Record (EHR) data. The design crosses two Z types
+## (continuous = NSES, binary = Gender) with four values of the
+## Ornstein-Uhlenbeck (OU) serial-correlation parameter (phi = 0, 0.001,
+## 0.1, 0.3), producing eight scenarios. Each scenario runs N_SIM Monte
+## Carlo replications; each replication generates a dataset of N_SUBJ
+## participants and fits all selected methods.
+##
+## Data-generating parameters follow the collaborator-specified setting:
+##   - The focal covariate (Z) takes the collaborator's Z values
+##     (gamma_Z=0.3, alpha_Z=-0.6, beta_Z=-0.5, delta_Z=-0.3,
+##     sigma_q_Z=0.2, theta_Z=0.0).
+##   - Age plays the role of X with the collaborator's X values
+##     (gamma_X=0.5, alpha_X=-0.3, beta_X=0.5).
+##   - The four other covariates (whichever of NSES/Gender is not focal,
+##     plus Marital, Black, Hispanic) retain their canonical "background"
+##     values from the existing cohort calibration.
+##   - Scalars: sigma_zeta=0.5, sigma_y=0.7, time.end=120, beta_t=0.01,
+##     Sigma_b=diag(0.5, 0.8). Per-replicate seed: base_seed + 1e6 + sim
+##     with base_seed = 20260508.
 ##
 ## Methods compared:
 ##   - CIMEHR                                            (this package)
-##   - Joint_modeling_visiting_and_longitudinal_Liang    (this package)
-##   - IrregLong::Liang                                  (IrregLong)
-##   - Inverse_intensity_rate_ratio_weighting            (this package)
-##   - IrregLong::iiwgee                                 (IrregLong)
+##   - Joint_modeling_visiting_and_longitudinal_Liang    (this package, as CIMEHR_Liang)
+##   - Inverse_intensity_rate_ratio_weighting            (this package, as CIMEHR_IIRR)
+##   - IrregLong::iiwgee                                 (external comparator, as IrregLong_iiwgee)
 ##
 ## SE / coverage availability:
-##   - CIMEHR              : sandwich SE -> coverage available
-##   - CIMEHR_Liang        : sandwich SE -> coverage available
-##   - IrregLong::iiwgee   : sandwich SE -> coverage available
-##   - All others          : no analytic SE -> coverage reported as ---
+##   - CIMEHR             : analytic SE -> coverage available
+##   - CIMEHR_Liang       : analytic SE -> coverage available
+##   - CIMEHR_IIRR        : no analytic SE -> coverage reported as ---
+##   - IrregLong_iiwgee   : analytic SE from GEE summary -> coverage available
 ##
 ## Tracked parameters:
 ##   beta on each of: Age, Gender, Marital, Black, Hispanic, NSES.
-##   The intercept is excluded.
+##   The intercept is excluded. True beta is focal-dependent: the focal
+##   covariate carries the collaborator's beta_Z=-0.5; Age carries
+##   beta_X=0.5; the other four carry their background betas.
 ##
 ## Usage:
-##   Rscript simulations/simulation_study.R                   # all four scenarios
+##   Rscript simulations/simulation_study.R
 ##   Rscript simulations/simulation_study.R --cores 8 --nsim 100
 ##   Rscript simulations/simulation_study.R --scenarios continuous_phi0,binary_phi0.3
-##   Rscript simulations/simulation_study.R --methods CIMEHR,IrregLong_iiwgee
+##   Rscript simulations/simulation_study.R --methods CIMEHR,CIMEHR_Liang,CIMEHR_IIRR,IrregLong_iiwgee
 ## ---------------------------------------------------------------------------
 
 # ============================================================================
@@ -38,9 +53,8 @@
 suppressPackageStartupMessages({
   library(CIMEHR)
   library(IrregLong)
-  library(survival)   # Surv, frailty, cluster
-  library(geepack)    # iiwgee dependency
-  library(data.table) # IrregLong dependency
+  library(survival)
+  library(geepack)
 })
 
 args      <- commandArgs(trailingOnly = TRUE)
@@ -48,30 +62,37 @@ N_SIM     <- 1000L
 N_SUBJ    <- 2000L
 N_CORES   <- 1L
 OUT_FILE  <- "simulations/sim_results.rds"
-TIME_END  <- 60
+TIME_END  <- 120
+BASE_SEED <- 20260508L
 
-ALL_SCENARIOS <- c("continuous_phi0", "continuous_phi0.3",
-                   "binary_phi0",     "binary_phi0.3")
-ALL_METHODS   <- c("CIMEHR", "CIMEHR_Liang", "IrregLong_Liang",
-                   "CIMEHR_IIRR", "IrregLong_iiwgee")
+ALL_SCENARIOS <- c(
+  "continuous_phi0",     "continuous_phi0.001",
+  "continuous_phi0.1",   "continuous_phi0.3",
+  "binary_phi0",         "binary_phi0.001",
+  "binary_phi0.1",       "binary_phi0.3"
+)
+
+ALL_METHODS <- c("CIMEHR", "CIMEHR_Liang", "CIMEHR_IIRR", "IrregLong_iiwgee")
 
 SELECTED_SCENARIOS <- ALL_SCENARIOS
 SELECTED_METHODS   <- ALL_METHODS
 
 parse_arg <- function(flag) {
   i <- match(flag, args)
-  if (is.na(i)) NULL else args[i + 1L]
+  if (is.na(i) || i == length(args)) NULL else args[i + 1L]
 }
 
 if (!is.null(parse_arg("--cores"))) N_CORES  <- as.integer(parse_arg("--cores"))
 if (!is.null(parse_arg("--nsim")))  N_SIM    <- as.integer(parse_arg("--nsim"))
 if (!is.null(parse_arg("--n")))     N_SUBJ   <- as.integer(parse_arg("--n"))
 if (!is.null(parse_arg("--out")))   OUT_FILE <- parse_arg("--out")
+
 if (!is.null(parse_arg("--scenarios"))) {
   SELECTED_SCENARIOS <- strsplit(parse_arg("--scenarios"), ",", fixed = TRUE)[[1]]
   bad <- setdiff(SELECTED_SCENARIOS, ALL_SCENARIOS)
   if (length(bad) > 0L) stop("Unknown scenario(s): ", paste(bad, collapse = ", "))
 }
+
 if (!is.null(parse_arg("--methods"))) {
   SELECTED_METHODS <- strsplit(parse_arg("--methods"), ",", fixed = TRUE)[[1]]
   bad <- setdiff(SELECTED_METHODS, ALL_METHODS)
@@ -81,11 +102,12 @@ if (!is.null(parse_arg("--methods"))) {
 cat(sprintf("Simulation study: %d replications, n = %d, cores = %d\n",
             N_SIM, N_SUBJ, N_CORES))
 cat(sprintf("Scenarios: %s\n", paste(SELECTED_SCENARIOS, collapse = ", ")))
-cat(sprintf("Methods:   %s\n", paste(SELECTED_METHODS,   collapse = ", ")))
+cat(sprintf("Methods:   %s\n", paste(SELECTED_METHODS, collapse = ", ")))
 cat(sprintf("Output:    %s\n\n", OUT_FILE))
 
+
 # ============================================================================
-# 1. Data-generating parameters (true values for bias / coverage)
+# 1. Data-generating parameters
 # ============================================================================
 
 EHR_COVS <- list(
@@ -99,51 +121,138 @@ EHR_COVS <- list(
                   mean = 0, sd = 1, standardize = FALSE)
 )
 
-# True coefficients used by sim_data_gen() in every replication
-TRUE_GAMMA <- c(intercept = -2.0, Age = 0.10, Gender = -0.10, Marital = -0.05,
-                Black = 0.15, Hispanic = -0.05, NSES = 0.12)
-TRUE_ALPHA <- c(intercept = 0.5,  Age = 0.10, Gender = -0.10, Marital = 0.00,
-                Black = 0.05, Hispanic = -0.05, NSES = 0.20)
-TRUE_BETA  <- c(intercept = -2.0, Age = 0.05, Gender = 0.10, Marital = -0.03,
-                Black = 0.15, Hispanic = 0.05, NSES = -0.25)
-TRUE_DELTA   <- c(intercept = -0.3, NSES = -0.5)
-TRUE_SIGMA_Q <- c(intercept =  0.3, NSES =  0.2)
-TRUE_THETA   <- c(intercept =  0.5, NSES =  0.30)
-TRUE_SIGMA_B <- matrix(c(1, 0, 0, 2), 2, 2)
+GAMMA_Z   <- 0.3;   GAMMA_X   <- 0.5
+ALPHA_Z   <- -0.6;  ALPHA_X   <- -0.3
+BETA_Z    <- -0.5;  BETA_X    <- 0.5
+DELTA_Z   <- -0.3
+SIGMA_Q_Z <- 0.2
+THETA_Z   <- 0.0
+
+GAMMA_INTERCEPT   <- -2.8
+ALPHA_INTERCEPT   <-  0.2
+BETA_INTERCEPT    <- -2.0
+DELTA_INTERCEPT   <- -0.3
+SIGMA_Q_INTERCEPT <-  0.5
+THETA_INTERCEPT   <-  0.4
+SIGMA_ZETA        <-  0.5
+SIGMA_Y           <-  0.7
+BETA_T            <-  0.01
+SIGMA_B           <- matrix(c(0.5, 0.0, 0.0, 0.8), 2, 2)
+
+BACKGROUND_GAMMA <- c(
+  Gender   = -0.10,
+  Marital  = -0.05,
+  Black    =  0.15,
+  Hispanic = -0.05,
+  NSES     =  0.12
+)
+
+BACKGROUND_ALPHA <- c(
+  Gender   = -0.10,
+  Marital  =  0.00,
+  Black    =  0.05,
+  Hispanic = -0.05,
+  NSES     =  0.20
+)
+
+BACKGROUND_BETA <- c(
+  Gender   =  0.10,
+  Marital  = -0.03,
+  Black    =  0.15,
+  Hispanic =  0.05,
+  NSES     = -0.25
+)
 
 PARAM_NAMES <- c("Age", "Gender", "Marital", "Black", "Hispanic", "NSES")
-ALL_COVARS  <- PARAM_NAMES                  # all six are model covariates
+ALL_COVARS  <- PARAM_NAMES
+
+build_true_params <- function(focal) {
+  background_others <- setdiff(names(BACKGROUND_GAMMA), focal)
+
+  gamma <- c(
+    intercept = GAMMA_INTERCEPT,
+    Age = GAMMA_X,
+    stats::setNames(GAMMA_Z, focal),
+    BACKGROUND_GAMMA[background_others]
+  )
+
+  alpha <- c(
+    intercept = ALPHA_INTERCEPT,
+    Age = ALPHA_X,
+    stats::setNames(ALPHA_Z, focal),
+    BACKGROUND_ALPHA[background_others]
+  )
+
+  beta <- c(
+    intercept = BETA_INTERCEPT,
+    Age = BETA_X,
+    stats::setNames(BETA_Z, focal),
+    BACKGROUND_BETA[background_others]
+  )
+
+  gamma <- c(gamma["intercept"], gamma[PARAM_NAMES])
+  alpha <- c(alpha["intercept"], alpha[PARAM_NAMES])
+  beta  <- c(beta["intercept"],  beta[PARAM_NAMES])
+
+  list(gamma = gamma, alpha = alpha, beta = beta)
+}
 
 
 # ============================================================================
 # 2. Method definitions
 # ============================================================================
-# Each method function takes a data.frame and returns a named list:
-#   $beta    - named numeric vector of outcome coefficient estimates
-#   $se      - named numeric vector of SE (NULL if unavailable)
-#   $ci_low  - named numeric vector of CI lower bound (NULL if unavailable)
-#   $ci_high - named numeric vector of CI upper bound (NULL if unavailable)
-#   $extra   - optional list of additional estimates (e.g., gamma)
 
 z_crit <- stats::qnorm(0.975)
 
-# Helper: Surv-based formula for IrregLong
-make_irreg_formula <- function(rhs_terms, lhs = "Surv(time.lag, time, event)",
-                               include_frailty = FALSE,
-                               include_cluster = FALSE) {
-  rhs <- paste(rhs_terms, collapse = " + ")
-  if (include_frailty) rhs <- paste0(rhs, " + frailty(id)")
-  if (include_cluster) rhs <- paste0(rhs, " + cluster(id)")
-  stats::as.formula(paste(lhs, "~", rhs))
+prep_irreglong_iiwgee <- function(dat) {
+  obs <- dat[!is.na(dat$R) & dat$R == 1L, , drop = FALSE]
+  obs <- obs[order(obs$id, obs$time), , drop = FALSE]
+
+  # Keep subjects with at least two observed visits.
+  n_obs <- ave(obs$time, obs$id, FUN = length)
+  obs <- obs[n_obs >= 2L, , drop = FALSE]
+
+  # Remap to dense integer IDs while preserving repeated rows per subject.
+  obs$id <- as.integer(factor(obs$id, levels = unique(obs$id)))
+  rownames(obs) <- NULL
+
+  obs$event <- 1L
+
+  maxfu <- data.frame(
+    id    = sort(unique(obs$id)),
+    maxfu = TIME_END
+  )
+
+  list(obs = obs, maxfu = maxfu)
 }
 
-# Build observed-data view for IrregLong (one row per visit with R == 1)
-prep_irreglong <- function(data) {
-  obs <- data[!is.na(data$R) & data$R == 1L, , drop = FALSE]
-  obs <- obs[order(obs$id, obs$time), , drop = FALSE]
-  obs$event <- 1L
-  maxfu <- data.frame(id = unique(obs$id), maxfu = TIME_END)
-  list(obs = obs, maxfu = maxfu)
+extract_geeglm_coef <- function(fit, params = PARAM_NAMES) {
+  s <- summary(fit)
+  coef_tab <- s$coefficients
+
+  keep_rows <- intersect(params, rownames(coef_tab))
+
+  estimate_col <- if ("Estimate" %in% colnames(coef_tab)) {
+    "Estimate"
+  } else {
+    colnames(coef_tab)[1L]
+  }
+
+  se_col <- intersect(
+    c("Std.err", "Std. Error", "Robust S.E.", "Robust SE", "Naive S.E."),
+    colnames(coef_tab)
+  )
+
+  if (length(se_col) == 0L) {
+    stop("Could not identify standard-error column in IrregLong::iiwgee GEE summary.")
+  }
+
+  se_col <- se_col[1L]
+
+  beta <- stats::setNames(coef_tab[keep_rows, estimate_col], keep_rows)
+  se   <- stats::setNames(coef_tab[keep_rows, se_col], keep_rows)
+
+  list(beta = beta, se = se)
 }
 
 methods <- list(
@@ -158,18 +267,23 @@ methods <- list(
       covars_obs_fixed_XO           = ALL_COVARS,
       covars_obs_random_link_ZO     = focal
     )
+
     beta <- fit$longitudinal_outcome$beta_Y
     se   <- fit$longitudinal_outcome$se_beta_naive
+
     keep <- intersect(PARAM_NAMES, names(beta))
     beta <- beta[keep]
     se   <- se[keep]
+
     list(
       beta    = beta,
       se      = se,
       ci_low  = beta - z_crit * se,
       ci_high = beta + z_crit * se,
-      extra   = list(gamma = fit$visiting_process$gamma_V,
-                     sigma2_zeta = fit$visiting_process$sigma2_zeta)
+      extra   = list(
+        gamma = fit$visiting_process$gamma_V,
+        sigma2_zeta = fit$visiting_process$sigma2_zeta
+      )
     )
   },
 
@@ -181,79 +295,75 @@ methods <- list(
       long_covs   = ALL_COVARS,
       random_covs = focal
     )
+
     beta <- fit$beta_hat
     keep <- intersect(PARAM_NAMES, names(beta))
     beta <- beta[keep]
     se   <- fit$se_beta[keep]
-    z    <- stats::qnorm(0.975)
-    list(beta = beta, se = se,
-         ci_low  = beta - z * se,
-         ci_high = beta + z * se)
-  },
 
-  IrregLong_Liang = function(dat, focal) {
-    prep <- prep_irreglong(dat)
-    # IrregLong::Liang sets row.names from `id` internally and emits a
-    # benign "non-unique row.names" warning when subjects have multiple
-    # visits. The estimates are unaffected; suppress to keep stdout clean.
-    fit <- suppressWarnings(IrregLong::Liang(
-      data       = prep$obs,
-      Yname      = "log_HbA1c",
-      Xnames     = ALL_COVARS,
-      Wnames     = focal,
-      Znames     = ALL_COVARS,
-      formulaobs = make_irreg_formula(ALL_COVARS, include_frailty = TRUE),
-      id         = "id",
-      time       = "time",
-      invariant  = c("id", ALL_COVARS),
-      lagvars    = "time",
-      lagfirst   = 0,
-      maxfu      = prep$maxfu,
-      baseline   = 0
-    ))
-    b   <- as.numeric(fit)
-    nm  <- names(fit)
-    if (is.null(nm)) nm <- ALL_COVARS[seq_along(b)]
-    names(b) <- nm
-    keep <- intersect(PARAM_NAMES, names(b))
-    list(beta = b[keep], se = NULL, ci_low = NULL, ci_high = NULL)
+    list(
+      beta    = beta,
+      se      = se,
+      ci_low  = beta - z_crit * se,
+      ci_high = beta + z_crit * se
+    )
   },
 
   CIMEHR_IIRR = function(dat, focal) {
-    out_form <- stats::reformulate(c(ALL_COVARS, "time"), response = "log_HbA1c")
+    out_form <- stats::reformulate(
+      c(ALL_COVARS, "time"),
+      response = "log_HbA1c"
+    )
+
     fit <- Inverse_intensity_rate_ratio_weighting(
       data       = dat,
       visit_covs = ALL_COVARS,
       formula    = out_form
     )
+
     beta <- fit$beta_hat
     keep <- intersect(PARAM_NAMES, names(beta))
-    list(beta = beta[keep], se = NULL, ci_low = NULL, ci_high = NULL)
+
+    list(
+      beta    = beta[keep],
+      se      = NULL,
+      ci_low  = NULL,
+      ci_high = NULL
+    )
   },
 
   IrregLong_iiwgee = function(dat, focal) {
-    prep        <- prep_irreglong(dat)
-    out_form    <- stats::reformulate(c(ALL_COVARS, "time"), response = "log_HbA1c")
-    visit_form  <- make_irreg_formula(ALL_COVARS, include_cluster = TRUE)
-    # See note above on IrregLong row.names warning.
-    fit <- suppressWarnings(IrregLong::iiwgee(
-      formulagee = out_form,
-      formulaph  = visit_form,
-      data       = prep$obs,
-      id         = "id",
-      time       = "time",
-      event      = "event",
-      invariant  = c("id", ALL_COVARS),
-      lagvars    = "time",
-      lagfirst   = 0,
-      maxfu      = prep$maxfu,
-      first      = TRUE
-    ))
-    s    <- summary(fit$geefit)
-    coef_tab <- s$coefficients
-    keep_rows <- intersect(PARAM_NAMES, rownames(coef_tab))
-    beta <- setNames(coef_tab[keep_rows, "Estimate"], keep_rows)
-    se   <- setNames(coef_tab[keep_rows, "Std.err"],  keep_rows)
+    prep <- prep_irreglong_iiwgee(dat)
+
+    out_form <- stats::reformulate(
+      c(ALL_COVARS, "time"),
+      response = "log_HbA1c"
+    )
+
+    visit_form <- survival::Surv(time.lag, time, event) ~
+      Age + Gender + Marital + Black + Hispanic + NSES + cluster(id)
+
+    fit <- suppressWarnings(
+      IrregLong::iiwgee(
+        formulagee = out_form,
+        formulaph  = visit_form,
+        data       = prep$obs,
+        id         = "id",
+        time       = "time",
+        event      = "event",
+        invariant  = c("id", ALL_COVARS),
+        lagvars    = "time",
+        lagfirst   = 0,
+        maxfu      = prep$maxfu,
+        first      = TRUE
+      )
+    )
+
+    coef_out <- extract_geeglm_coef(fit$geefit, PARAM_NAMES)
+
+    beta <- coef_out$beta
+    se   <- coef_out$se
+
     list(
       beta    = beta,
       se      = se,
@@ -263,129 +373,167 @@ methods <- list(
   }
 )
 
+
 # ============================================================================
 # 3. Single-replication worker
 # ============================================================================
 
-# Generate one dataset and fit selected methods. Returns a list with:
-#   $sim_id  - replicate id
-#   $results - per-method list of $beta / $se / $ci_low / $ci_high / $error
 make_scenario_params <- function(focal) {
   if (!focal %in% ALL_COVARS) {
     stop("`focal` must be one of: ", paste(ALL_COVARS, collapse = ", "),
          call. = FALSE)
   }
+
+  tp <- build_true_params(focal)
+
   list(
+    gamma   = tp$gamma,
+    alpha   = tp$alpha,
+    beta    = tp$beta,
     obs_random_covs     = focal,
     outcome_random_covs = focal,
-    delta   = c(intercept = -0.3, stats::setNames(-0.5,  focal)),
-    sigma_q = c(intercept =  0.3, stats::setNames( 0.2,  focal)),
-    theta   = c(intercept =  0.5, stats::setNames( 0.30, focal)),
-    Sigma_b = matrix(c(1, 0, 0, 2), 2, 2)
+    delta   = c(intercept = DELTA_INTERCEPT,
+                stats::setNames(DELTA_Z, focal)),
+    sigma_q = c(intercept = SIGMA_Q_INTERCEPT,
+                stats::setNames(SIGMA_Q_Z, focal)),
+    theta   = c(intercept = THETA_INTERCEPT,
+                stats::setNames(THETA_Z, focal)),
+    Sigma_b = SIGMA_B
   )
 }
 
-# Generate one dataset and fit selected methods. Returns a list with:
-#   $sim_id  - replicate id
-#   $results - per-method list of $beta / $se / $ci_low / $ci_high / $error
 run_one_rep <- function(sim_id, Z_type, phi, focal) {
   sp <- make_scenario_params(focal)
+
+  rep_seed <- BASE_SEED + 1000000L + sim_id
 
   sim <- suppressMessages(
     sim_data_gen(
       n          = N_SUBJ,
       time.start = 0,
       time.end   = TIME_END,
-      seed       = sim_id,
+      seed       = rep_seed,
       covariates = EHR_COVS,
-      gamma      = TRUE_GAMMA,
-      sigma_zeta = 1.0,
-      alpha      = TRUE_ALPHA,
+      gamma      = sp$gamma,
+      sigma_zeta = SIGMA_ZETA,
+      alpha      = sp$alpha,
       obs_random_covs = sp$obs_random_covs,
       delta      = sp$delta,
       sigma_q    = sp$sigma_q,
       phi        = phi,
-      beta       = TRUE_BETA,
-      beta_t     = 0.01,
+      beta       = sp$beta,
+      beta_t     = BETA_T,
       outcome_random_covs = sp$outcome_random_covs,
       theta      = sp$theta,
       Sigma_b    = sp$Sigma_b,
-      sigma_y    = 1,
+      sigma_y    = SIGMA_Y,
       verbose    = FALSE
     )
   )
+
   dat <- sim$long_data
   rownames(dat) <- NULL
 
-  # Add raw and log-scale HbA1c columns to match the bundled `sim_ehr_data`.
-  # `Y` is the standardized linear outcome; the back-transform mirrors
-  # `data-raw/sim_ehr_data.R`. Methods in this script reference `log_HbA1c`.
   dat$HbA1c     <- exp(log(5.6) + 0.05 * dat$Y)
   dat$log_HbA1c <- log(dat$HbA1c)
 
   rep_results <- list()
+
   for (m in SELECTED_METHODS) {
     rep_results[[m]] <- tryCatch(
       methods[[m]](dat, focal = focal),
       error = function(e) {
-        list(beta = NULL, se = NULL, ci_low = NULL, ci_high = NULL,
-             error = conditionMessage(e))
+        list(
+          beta    = NULL,
+          se      = NULL,
+          ci_low  = NULL,
+          ci_high = NULL,
+          error   = conditionMessage(e)
+        )
       }
     )
   }
+
   list(sim_id = sim_id, results = rep_results)
 }
 
+
 # ============================================================================
-# 4. Run all selected scenarios
+# 4. Run selected scenarios
 # ============================================================================
 
-# Scenario string -> (Z_type, phi, focal) lookup. The focal covariate is used
-# in both the data-generating model and the fitted models: NSES for the
-# continuous-Z scenarios and Gender for the binary-Z scenarios.
 scenario_spec <- function(s) {
-  switch(s,
-         "continuous_phi0"   = list(Z_type = "continuous", phi = 0,   focal = "NSES"),
-         "continuous_phi0.3" = list(Z_type = "continuous", phi = 0.3, focal = "NSES"),
-         "binary_phi0"       = list(Z_type = "binary",     phi = 0,   focal = "Gender"),
-         "binary_phi0.3"     = list(Z_type = "binary",     phi = 0.3, focal = "Gender"),
-         stop("Unknown scenario: ", s)
+  switch(
+    s,
+    "continuous_phi0"     = list(Z_type = "continuous", phi = 0,     focal = "NSES"),
+    "continuous_phi0.001" = list(Z_type = "continuous", phi = 0.001, focal = "NSES"),
+    "continuous_phi0.1"   = list(Z_type = "continuous", phi = 0.1,   focal = "NSES"),
+    "continuous_phi0.3"   = list(Z_type = "continuous", phi = 0.3,   focal = "NSES"),
+    "binary_phi0"         = list(Z_type = "binary",     phi = 0,     focal = "Gender"),
+    "binary_phi0.001"     = list(Z_type = "binary",     phi = 0.001, focal = "Gender"),
+    "binary_phi0.1"       = list(Z_type = "binary",     phi = 0.1,   focal = "Gender"),
+    "binary_phi0.3"       = list(Z_type = "binary",     phi = 0.3,   focal = "Gender"),
+    stop("Unknown scenario: ", s)
   )
 }
 
 run_scenario <- function(scenario_label) {
   spec <- scenario_spec(scenario_label)
-  cat(sprintf("\nRunning scenario: %s (Z_type = %s, phi = %.1f) ...\n",
-              scenario_label, spec$Z_type, spec$phi))
+
+  cat(sprintf(
+    "\nRunning scenario: %s (Z_type = %s, phi = %.3f) ...\n",
+    scenario_label, spec$Z_type, spec$phi
+  ))
 
   if (N_CORES > 1L && requireNamespace("parallel", quietly = TRUE)) {
     cat(sprintf("  Using %d cores\n", N_CORES))
+
     reps <- parallel::mclapply(
       seq_len(N_SIM),
-      function(i) run_one_rep(i, Z_type = spec$Z_type, phi = spec$phi, focal = spec$focal),
-      mc.cores = N_CORES, mc.set.seed = TRUE
+      function(i) {
+        run_one_rep(
+          sim_id = i,
+          Z_type = spec$Z_type,
+          phi    = spec$phi,
+          focal  = spec$focal
+        )
+      },
+      mc.cores = N_CORES,
+      mc.set.seed = TRUE
     )
+
   } else {
     reps <- vector("list", N_SIM)
+
     for (i in seq_len(N_SIM)) {
       cat(sprintf("  Replicate %d / %d\r", i, N_SIM))
       flush.console()
-      reps[[i]] <- run_one_rep(i, Z_type = spec$Z_type, phi = spec$phi, focal = spec$focal)
+
+      reps[[i]] <- run_one_rep(
+        sim_id = i,
+        Z_type = spec$Z_type,
+        phi    = spec$phi,
+        focal  = spec$focal
+      )
     }
+
     cat(sprintf("  Replicate %d / %d -- done\n", N_SIM, N_SIM))
   }
+
   list(scenario = scenario_label, spec = spec, reps = reps)
 }
 
 cat("Starting simulations ...\n")
 t0 <- Sys.time()
+
 all_scenario_runs <- lapply(SELECTED_SCENARIOS, run_scenario)
+
 elapsed <- as.numeric(difftime(Sys.time(), t0, units = "mins"))
 cat(sprintf("\nAll scenarios done in %.1f minutes.\n\n", elapsed))
 
 
 # ============================================================================
-# 5. Assemble results into a tidy data.frame
+# 5. Assemble results
 # ============================================================================
 
 assemble <- function(scenario_run) {
@@ -393,11 +541,14 @@ assemble <- function(scenario_run) {
   Z_type <- scenario_run$spec$Z_type
   phi    <- scenario_run$spec$phi
   focal  <- scenario_run$spec$focal
+
   rows <- list()
+
   for (rep in scenario_run$reps) {
     for (m in SELECTED_METHODS) {
       res <- rep$results[[m]]
       failed <- is.null(res$beta)
+
       for (p in PARAM_NAMES) {
         rows[[length(rows) + 1L]] <- data.frame(
           scenario = scen,
@@ -407,26 +558,60 @@ assemble <- function(scenario_run) {
           sim_id   = rep$sim_id,
           method   = m,
           param    = p,
-          est      = if (!failed && p %in% names(res$beta))    res$beta[[p]]    else NA_real_,
-          se       = if (!failed && !is.null(res$se)     && p %in% names(res$se))     res$se[[p]]     else NA_real_,
-          ci_low   = if (!failed && !is.null(res$ci_low) && p %in% names(res$ci_low)) res$ci_low[[p]] else NA_real_,
-          ci_high  = if (!failed && !is.null(res$ci_high)&& p %in% names(res$ci_high))res$ci_high[[p]]else NA_real_,
+          est      = if (!failed && p %in% names(res$beta)) {
+            res$beta[[p]]
+          } else {
+            NA_real_
+          },
+          se       = if (!failed && !is.null(res$se) && p %in% names(res$se)) {
+            res$se[[p]]
+          } else {
+            NA_real_
+          },
+          ci_low   = if (!failed && !is.null(res$ci_low) && p %in% names(res$ci_low)) {
+            res$ci_low[[p]]
+          } else {
+            NA_real_
+          },
+          ci_high  = if (!failed && !is.null(res$ci_high) && p %in% names(res$ci_high)) {
+            res$ci_high[[p]]
+          } else {
+            NA_real_
+          },
           failed   = failed,
           stringsAsFactors = FALSE
         )
       }
     }
   }
+
   do.call(rbind, rows)
 }
 
 sim_df <- do.call(rbind, lapply(all_scenario_runs, assemble))
 rownames(sim_df) <- NULL
-sim_df$true_value <- TRUE_BETA[sim_df$param]
+
+.true_beta_by_scenario <- function(scen) {
+  spec <- scenario_spec(scen)
+  build_true_params(spec$focal)$beta
+}
+
+.true_beta_lookup <- lapply(unique(sim_df$scenario), function(s) {
+  tb <- .true_beta_by_scenario(s)
+  stats::setNames(as.numeric(tb[PARAM_NAMES]), PARAM_NAMES)
+})
+
+names(.true_beta_lookup) <- unique(sim_df$scenario)
+
+sim_df$true_value <- vapply(
+  seq_len(nrow(sim_df)),
+  function(i) .true_beta_lookup[[sim_df$scenario[i]]][[sim_df$param[i]]],
+  numeric(1)
+)
 
 
 # ============================================================================
-# 6. Compute performance metrics per (scenario, method, param)
+# 6. Compute performance metrics
 # ============================================================================
 
 compute_metrics <- function(df) {
@@ -436,57 +621,94 @@ compute_metrics <- function(df) {
 
   if (n_ok == 0L) {
     return(data.frame(
-      n_reps = 0L, n_fail = n_fail,
-      bias = NA_real_, emp_se = NA_real_, mean_se = NA_real_,
-      se_ratio = NA_real_, rmse = NA_real_, coverage = NA_real_
+      n_reps   = 0L,
+      n_fail   = n_fail,
+      bias     = NA_real_,
+      emp_se   = NA_real_,
+      mean_se  = NA_real_,
+      se_ratio = NA_real_,
+      rmse     = NA_real_,
+      coverage = NA_real_
     ))
   }
 
-  true     <- df$true_value[1L]
-  bias     <- mean(df$est) - true
-  emp_se   <- stats::sd(df$est)
-  rmse     <- sqrt(mean((df$est - true)^2))
+  true   <- df$true_value[1L]
+  bias   <- mean(df$est) - true
+  emp_se <- stats::sd(df$est)
+  rmse   <- sqrt(mean((df$est - true)^2))
 
   has_se   <- !is.na(df$se)
   mean_se  <- if (any(has_se)) mean(df$se[has_se]) else NA_real_
   se_ratio <- if (!is.na(mean_se) && emp_se > 0) mean_se / emp_se else NA_real_
 
-  has_ci   <- !is.na(df$ci_low) & !is.na(df$ci_high)
+  has_ci <- !is.na(df$ci_low) & !is.na(df$ci_high)
   coverage <- if (any(has_ci)) {
     mean(df$ci_low[has_ci] <= true & true <= df$ci_high[has_ci])
-  } else NA_real_
+  } else {
+    NA_real_
+  }
 
   data.frame(
-    n_reps = n_ok, n_fail = n_fail,
-    bias = bias, emp_se = emp_se, mean_se = mean_se,
-    se_ratio = se_ratio, rmse = rmse, coverage = coverage
+    n_reps   = n_ok,
+    n_fail   = n_fail,
+    bias     = bias,
+    emp_se   = emp_se,
+    mean_se  = mean_se,
+    se_ratio = se_ratio,
+    rmse     = rmse,
+    coverage = coverage
   )
 }
 
 metrics_keys <- paste(sim_df$scenario, sim_df$method, sim_df$param, sep = "||")
-metrics <- do.call(rbind, lapply(split(sim_df, metrics_keys), compute_metrics))
+
+metrics <- do.call(
+  rbind,
+  lapply(split(sim_df, metrics_keys), compute_metrics)
+)
+
 keys <- strsplit(rownames(metrics), "\\|\\|")
 metrics$scenario <- vapply(keys, `[`, character(1), 1)
 metrics$method   <- vapply(keys, `[`, character(1), 2)
 metrics$param    <- vapply(keys, `[`, character(1), 3)
 rownames(metrics) <- NULL
 
-# Attach Z_type, phi, focal columns for convenience
-spec_lookup <- do.call(rbind, lapply(SELECTED_SCENARIOS, function(s) {
-  sp <- scenario_spec(s)
-  data.frame(scenario = s, Z_type = sp$Z_type, phi = sp$phi,
-             focal = sp$focal, stringsAsFactors = FALSE)
-}))
-metrics <- merge(metrics, spec_lookup, by = "scenario", all.x = TRUE,
-                 sort = FALSE)
+spec_lookup <- do.call(
+  rbind,
+  lapply(SELECTED_SCENARIOS, function(s) {
+    sp <- scenario_spec(s)
+    data.frame(
+      scenario = s,
+      Z_type   = sp$Z_type,
+      phi      = sp$phi,
+      focal    = sp$focal,
+      stringsAsFactors = FALSE
+    )
+  })
+)
 
-metrics <- metrics[, c("scenario", "Z_type", "phi", "focal",
-                       "method", "param", "n_reps", "n_fail",
-                       "bias", "emp_se", "mean_se",
-                       "se_ratio", "rmse", "coverage")]
-metrics <- metrics[order(match(metrics$scenario, SELECTED_SCENARIOS),
-                         match(metrics$method,   SELECTED_METHODS),
-                         match(metrics$param,    PARAM_NAMES)), ]
+metrics <- merge(
+  metrics,
+  spec_lookup,
+  by = "scenario",
+  all.x = TRUE,
+  sort = FALSE
+)
+
+metrics <- metrics[, c(
+  "scenario", "Z_type", "phi", "focal",
+  "method", "param", "n_reps", "n_fail",
+  "bias", "emp_se", "mean_se",
+  "se_ratio", "rmse", "coverage"
+)]
+
+metrics <- metrics[
+  order(
+    match(metrics$scenario, SELECTED_SCENARIOS),
+    match(metrics$method, SELECTED_METHODS),
+    match(metrics$param, PARAM_NAMES)
+  ),
+]
 
 
 # ============================================================================
@@ -496,24 +718,34 @@ metrics <- metrics[order(match(metrics$scenario, SELECTED_SCENARIOS),
 cat(strrep("=", 80), "\n", sep = "")
 cat("SIMULATION RESULTS\n")
 cat(sprintf("  Replications: %d | Subjects per rep: %d\n", N_SIM, N_SUBJ))
-cat("  True beta:\n")
-for (p in PARAM_NAMES) {
-  cat(sprintf("    %-9s = %+.3f\n", p, TRUE_BETA[[p]]))
-}
+cat("  True beta varies by scenario: the focal covariate gets the collaborator's\n")
+cat("  Z value; Age always gets the X value; the four remaining covariates\n")
+cat("  keep their background values. See per-scenario blocks below.\n")
 cat(strrep("=", 80), "\n\n", sep = "")
 
 for (scen in SELECTED_SCENARIOS) {
   spec <- scenario_spec(scen)
-  cat(sprintf("--- %s (Z_type = %s, phi = %.1f, focal = %s) ---\n\n",
-              scen, spec$Z_type, spec$phi, spec$focal))
-  scen_rows <- metrics[metrics$scenario == scen, , drop = FALSE]
+
+  cat(sprintf(
+    "--- %s (Z_type = %s, phi = %.3f, focal = %s) ---\n\n",
+    scen, spec$Z_type, spec$phi, spec$focal
+  ))
+
+  scen_rows  <- metrics[metrics$scenario == scen, , drop = FALSE]
+  true_betas <- .true_beta_lookup[[scen]]
 
   for (p in PARAM_NAMES) {
     sub <- scen_rows[scen_rows$param == p, , drop = FALSE]
     if (nrow(sub) == 0L) next
-    is_focal <- (p == spec$focal)
-    cat(sprintf("  beta_%s (true = %+.3f)%s\n\n", p, TRUE_BETA[[p]],
-                if (is_focal) "  [FOCAL]" else ""))
+
+    is_focal <- p == spec$focal
+
+    cat(sprintf(
+      "  beta_%s (true = %+.3f)%s\n\n",
+      p,
+      true_betas[[p]],
+      if (is_focal) "  [FOCAL]" else ""
+    ))
 
     print_df <- data.frame(
       Method   = sub$method,
@@ -526,17 +758,18 @@ for (scen in SELECTED_SCENARIOS) {
       RMSE     = sprintf("%.4f", sub$rmse),
       Cov.95   = ifelse(is.na(sub$coverage), "---", sprintf("%.3f", sub$coverage))
     )
+
     print(print_df, row.names = FALSE, right = FALSE)
     cat("\n")
   }
 }
 
 cat("Notes:\n")
-cat("  - SE.Ratio = Mean.SE / Emp.SE (should be near 1.0 if SE is well-calibrated).\n")
-cat("  - Cov.95   = empirical coverage of the 95% CI (should be near 0.950).\n")
-cat("  - Mean.SE / SE.Ratio / Cov.95 are reported as --- for methods without\n")
-cat("    analytic standard errors (Joint_modeling_..._Liang, IIRR-weighting,\n")
-cat("    IrregLong::Liang). Bootstrap inference would be needed for those.\n\n")
+cat("  - SE.Ratio = Mean.SE / Emp.SE; values near 1.0 suggest calibrated SEs.\n")
+cat("  - Cov.95   = empirical coverage of the 95% CI; values near 0.950 are expected.\n")
+cat("  - Mean.SE / SE.Ratio / Cov.95 are reported as --- for CIMEHR_IIRR,\n")
+cat("    because analytic standard errors are not returned by that method.\n")
+cat("    Bootstrap inference would be needed for uncertainty quantification.\n\n")
 
 
 # ============================================================================
@@ -545,20 +778,71 @@ cat("    IrregLong::Liang). Bootstrap inference would be needed for those.\n\n")
 
 dir.create(dirname(OUT_FILE), recursive = TRUE, showWarnings = FALSE)
 
+true_params_by_scenario <- lapply(SELECTED_SCENARIOS, function(s) {
+  spec <- scenario_spec(s)
+  tp   <- build_true_params(spec$focal)
+
+  list(
+    focal      = spec$focal,
+    phi        = spec$phi,
+    gamma      = tp$gamma,
+    alpha      = tp$alpha,
+    beta       = tp$beta,
+    delta      = c(
+      intercept = DELTA_INTERCEPT,
+      stats::setNames(DELTA_Z, spec$focal)
+    ),
+    sigma_q    = c(
+      intercept = SIGMA_Q_INTERCEPT,
+      stats::setNames(SIGMA_Q_Z, spec$focal)
+    ),
+    theta      = c(
+      intercept = THETA_INTERCEPT,
+      stats::setNames(THETA_Z, spec$focal)
+    ),
+    Sigma_b    = SIGMA_B,
+    sigma_zeta = SIGMA_ZETA,
+    sigma_y    = SIGMA_Y,
+    beta_t     = BETA_T,
+    time_end   = TIME_END
+  )
+})
+
+names(true_params_by_scenario) <- SELECTED_SCENARIOS
+
 saveRDS(
   list(
-    sim_df      = sim_df,
-    metrics     = metrics,
+    sim_df  = sim_df,
+    metrics = metrics,
     settings = list(
-      n_sim       = N_SIM,
-      n_subj      = N_SUBJ,
-      scenarios   = SELECTED_SCENARIOS,
-      methods     = SELECTED_METHODS,
-      true_gamma  = TRUE_GAMMA,
-      true_alpha  = TRUE_ALPHA,
-      true_beta   = TRUE_BETA,
-      true_delta_template = TRUE_DELTA,
-      true_theta_template = TRUE_THETA
+      n_sim     = N_SIM,
+      n_subj    = N_SUBJ,
+      base_seed = BASE_SEED,
+      time_end  = TIME_END,
+      scenarios = SELECTED_SCENARIOS,
+      methods   = SELECTED_METHODS,
+      anchors = list(
+        gamma_Z = GAMMA_Z,
+        gamma_X = GAMMA_X,
+        gamma_intercept = GAMMA_INTERCEPT,
+        alpha_Z = ALPHA_Z,
+        alpha_X = ALPHA_X,
+        alpha_intercept = ALPHA_INTERCEPT,
+        beta_Z = BETA_Z,
+        beta_X = BETA_X,
+        beta_intercept = BETA_INTERCEPT,
+        delta_Z = DELTA_Z,
+        sigma_q_Z = SIGMA_Q_Z,
+        theta_Z = THETA_Z,
+        sigma_zeta = SIGMA_ZETA,
+        sigma_y = SIGMA_Y,
+        Sigma_b = SIGMA_B,
+        beta_t = BETA_T
+      ),
+      background_gamma = BACKGROUND_GAMMA,
+      background_alpha = BACKGROUND_ALPHA,
+      background_beta  = BACKGROUND_BETA,
+      true_params_by_scenario = true_params_by_scenario
     ),
     elapsed_min = elapsed
   ),
