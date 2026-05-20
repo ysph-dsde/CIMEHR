@@ -114,9 +114,7 @@ To simulate new data with custom covariate sets, see `?sim_data_gen`. The functi
 
 ## Method comparison
 
-This table shows a comprehensive comparison of statistical methods for longitudinal EHR data. Methods are differentiated by whether they account for informative visiting (IP) and informative observation (IO), the specific scope of the shared latent structure linking these processes to the outcome, and the adjustment mechanism applied. Symbols: ✓ = Explicitly handled/modeled; ✗ = Ignored or not handled. 
-
-**Abbreviations**: LMM, linear mixed model; VA/OA, visit/observation-adjusted; JMVL, joint modeling of visiting and longitudinal data; IIRR, inverse intensity rate ratio; MAR, missing at random; MI, multiple imputation; LI, linear increment.
+This table shows a comprehensive comparison of statistical methods for longitudinal EHR data. Methods are differentiated by whether they account for informative visiting (IP) and informative observation (IO), the specific scope of the shared latent structure linking these processes to the outcome, and the adjustment mechanism applied. Symbols: ✓ = Explicitly handled/modeled; ✗ = Ignored or not handled. Abbreviations: LMM, linear mixed model; VA/OA, visit/observation-adjusted; JMVL, joint modeling of visiting and longitudinal data; IIRR, inverse intensity rate ratio; MAR, missing at random; MI, multiple imputation; LI, linear increment.
 
 ### Outcome-only
 
@@ -271,19 +269,19 @@ print(cmp_subset)
 cmp_subset$tables$outcome
 ```
 
-For real, non-simulated data, the comparison tables omit true-value, bias, and RMSE columns unless you explicitly pass a `true_values` list. If a method fails, `method_comparisons()` keeps going by default, stores the error in `cmp_all$errors`, and prints `NA` rows for that method.
+For real, non-simulated data, the comparison tables omit true-value, bias, and RMSE columns unless you explicitly pass a `true_values` list. If a method fails, `method_comparisons()` keeps going by default, stores the error in `cmp_subset$errors`, and prints `NA` rows for that method.
 
-An eight-scenario Monte Carlo simulation study comparing CIMEHR against the IrregLong benchmarks is provided in `simulations/simulation_study.R`. The script crosses two focal-covariate types (continuous NSES vs. binary Gender) with four values of the OU serial-correlation parameter `phi` (0, 0.001, 0.1, 0.3), runs N_SIM = 1000 replications per scenario, each with a fresh dataset of n = 2000 participants, and reports bias, empirical SE, mean SE, RMSE, and 95% CI coverage.
+A four-scenario Monte Carlo simulation study comparing CIMEHR against the IrregLong benchmarks is provided in `simulations/simulation_study.R`. The script runs N_SIM = 1000 replications per scenario, each with a fresh dataset of n = 2000 participants, and reports bias, empirical SE, mean SE, RMSE, and 95% CI coverage.
 
 
 ## Bootstrap inference
 
-`CIMEHR()`, `CIMEHR_timevarying_ou()`, `EHRJoint()`, and `Joint_modeling_visiting_and_longitudinal_Liang()` already return analytic standard errors (sandwich or model-based). `bootstrap()` is recommended for methods without analytic standard errors (`CIMEHR_timevarying_integral()`, `Inverse_intensity_rate_ratio_weighting()`, `Inverse_intensity_rate_ratio_balancing()`), and as an optional robustness check or to propagate Stage 1 nuisance uncertainty for the methods that do:
+Use `bootstrap()` for methods without analytic standard errors or as a robustness check for CIMEHR-family methods:
 
 ```{r, eval = FALSE}
 fit_iirr <- Inverse_intensity_rate_ratio_weighting(
   sim_ehr_data,
-  outcome = "log_HbA1c",
+  outcome = "log_HbA1c,
   visit_covs = c("Age", "Gender", "Marital", "Black", "Hispanic", "NSES")
 )
 bs <- bootstrap(fit_iirr, data = sim_ehr_data, B = 200, seed = 1)
@@ -330,7 +328,7 @@ Gasparini, A., Abrams, K. R., Barrett, J. K., Major, R. W., Sweeting, M. J., Bru
 
 Goldstein, B. A., Bhavsar, N. A., Phelan, M., and Pencina, M. J. (2016). Controlling for informed presence bias due to the number of health encounters in an electronic health record. *American Journal of Epidemiology*, 184, 847--855.
 
-Laird, N. M. and Ware, J. H. (1982). Random-effects models for longitudinal data. *Biometrics*, 963--974.
+Laird, N. M. and Ware, J. H. (1982). Random-effects models for longitudinal data. *Biometrics*, 38, 963--974.
 
 Liang, Y., Lu, W., and Ying, Z. (2009). Joint modeling and analysis of longitudinal data with informative observation times. *Biometrics*, 65, 377--384.
 
