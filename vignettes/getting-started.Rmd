@@ -376,7 +376,7 @@ available_comparison_methods()
 
 The full call below fits five methods at once on the 500-subject subset. It takes a minute or two to run; if you are building the vignette and want to skip the runtime, change `eval = TRUE` to `eval = FALSE` in the chunk header.
 
-```{r method-comparisons, eval = FALSE}
+```{r method-comparisons}
 cmp_subset <- method_comparisons(
   data    = ehr500,
   methods = c("Summary_stat", "Linear_mixed_model",
