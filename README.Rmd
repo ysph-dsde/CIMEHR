@@ -111,7 +111,9 @@ To simulate new data with custom covariate sets, see `?sim_data_gen`. The functi
 
 ## Method comparison
 
-This section compares the statistical methods for longitudinal EHR data implemented in (or referenced by) the package. Methods are differentiated by whether they account for informative visiting (IP) and informative observation (IO), the specific scope of the shared latent structure linking these processes to the outcome, and the adjustment mechanism applied. Symbols: ✓ = explicitly handled or modeled; ✗ = ignored or not handled. Abbreviations: LMM, linear mixed model; VA/OA, visit/observation-adjusted; JMVL, joint modeling of visiting and longitudinal data; IIRR, inverse intensity rate ratio; MAR, missing at random; MI, multiple imputation; LI, linear increment.
+This section compares the statistical methods for longitudinal EHR data implemented in (or referenced by) the package. Methods are differentiated by whether they account for informative visiting (IP) and informative observation (IO), the specific scope of the shared latent structure linking these processes to the outcome, and the adjustment mechanism applied. Symbols: ✓ = explicitly handled or modeled; ✗ = ignored or not handled. 
+
+**Abbreviations**: LMM, linear mixed model; VA/OA, visit/observation-adjusted; JMVL, joint modeling of visiting and longitudinal data; IIRR, inverse intensity rate ratio; MAR, missing at random; MI, multiple imputation; LI, linear increment.
 
 ### Methods implemented in CIMEHR
 
