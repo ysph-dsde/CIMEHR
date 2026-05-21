@@ -34,15 +34,16 @@
 ##
 ## Methods compared:
 ##   - CIMEHR                                            (this package)
-##   - Joint_modeling_visiting_and_longitudinal_Liang    (this package, as CIMEHR_Liang)
-##   - Inverse_intensity_rate_ratio_weighting            (this package, as CIMEHR_IIRR)
-##   - IrregLong::iiwgee                                 (external comparator, as IrregLong_iiwgee)
+##   - Joint_modeling_visiting_and_longitudinal_Liang    (this package)
+##   - Inverse_intensity_rate_ratio_weighting            (this package)
+##   - IrregLong::iiwgee                                 (external comparator,
+##                                                        labelled IrregLong_iiwgee)
 ##
 ## SE / coverage availability:
-##   - CIMEHR             : analytic SE -> coverage available
-##   - CIMEHR_Liang       : analytic SE -> coverage available
-##   - CIMEHR_IIRR        : no analytic SE -> coverage reported as ---
-##   - IrregLong_iiwgee   : analytic SE from GEE summary -> coverage available
+##   - CIMEHR                                          : analytic SE -> coverage available
+##   - Joint_modeling_visiting_and_longitudinal_Liang  : analytic SE -> coverage available
+##   - Inverse_intensity_rate_ratio_weighting          : no analytic SE -> coverage reported as ---
+##   - IrregLong_iiwgee                                : analytic SE from GEE summary -> coverage available
 ##
 ## Tracked parameters:
 ##   beta on each of: Age, Gender, Marital, Black, Hispanic, NSES.
@@ -56,7 +57,7 @@
 ##   Rscript simulations/simulation_study.R
 ##   Rscript simulations/simulation_study.R --cores 8 --nsim 100
 ##   Rscript simulations/simulation_study.R --scenarios continuous_phi0,binary_phi0.3
-##   Rscript simulations/simulation_study.R --methods CIMEHR,CIMEHR_Liang,CIMEHR_IIRR,IrregLong_iiwgee
+##   Rscript simulations/simulation_study.R --methods CIMEHR,Joint_modeling_visiting_and_longitudinal_Liang,Inverse_intensity_rate_ratio_weighting,IrregLong_iiwgee
 ## ---------------------------------------------------------------------------
 
 # ============================================================================
@@ -90,7 +91,7 @@ ALL_SCENARIOS <- c(
   "binary_phi0.1",       "binary_phi0.3"
 )
 
-ALL_METHODS <- c("CIMEHR", "CIMEHR_Liang", "CIMEHR_IIRR", "IrregLong_iiwgee")
+ALL_METHODS <- c("CIMEHR", "Joint_modeling_visiting_and_longitudinal_Liang", "Inverse_intensity_rate_ratio_weighting", "IrregLong_iiwgee")
 
 SELECTED_SCENARIOS <- ALL_SCENARIOS
 SELECTED_METHODS   <- ALL_METHODS
@@ -319,7 +320,7 @@ methods <- list(
     )
   },
 
-  CIMEHR_Liang = function(dat, focal) {
+  Joint_modeling_visiting_and_longitudinal_Liang = function(dat, focal) {
     fit <- Joint_modeling_visiting_and_longitudinal_Liang(
       data        = dat,
       outcome     = "log_HbA1c",
@@ -341,7 +342,7 @@ methods <- list(
     )
   },
 
-  CIMEHR_IIRR = function(dat, focal) {
+  Inverse_intensity_rate_ratio_weighting = function(dat, focal) {
     out_form <- stats::reformulate(
       c(ALL_COVARS, "time"),
       response = "log_HbA1c"
@@ -808,7 +809,7 @@ for (scen in SELECTED_SCENARIOS) {
 cat("Notes:\n")
 cat("  - SE.Ratio = Mean.SE / Emp.SE; values near 1.0 suggest calibrated SEs.\n")
 cat("  - Cov.95   = empirical coverage of the 95% CI; values near 0.950 are expected.\n")
-cat("  - Mean.SE / SE.Ratio / Cov.95 are reported as --- for CIMEHR_IIRR,\n")
+cat("  - Mean.SE / SE.Ratio / Cov.95 are reported as --- for Inverse_intensity_rate_ratio_weighting,\n")
 cat("    because analytic standard errors are not returned by that method.\n")
 cat("    Bootstrap inference would be needed for uncertainty quantification.\n\n")
 

@@ -68,24 +68,21 @@ long_dat <- wide_dat %>%
 
 ## Example dataset
 
-The package includes `sim_ehr_data`, a long-format simulated EHR cohort of 2000 patients designed to look like an outpatient HbA1c extract. The bundled dataset contains the columns below; latent quantities used internally by `sim_data_gen()` (the shared factor U, frailty eta, and per-process random effects) are not included, since they are not observable in real EHR data.
+The package includes `sim_ehr_data`, a long-format simulated EHR cohort of 2000 patients designed to look like an outpatient HbA1c extract. The bundled dataset is one replicate from the package's Monte Carlo simulation framework (see [Simulation study](#simulation-study)), specifically the `continuous_phi0` scenario (focal Z = NSES, phi = 0). The columns are listed below; latent quantities used internally by `sim_data_gen()` (the shared factor U, frailty eta, and per-process random effects) are not included, since they are not observable in real EHR data.
 
 | Column      | Type        | Description                                                  |
 |:------------|:------------|:-------------------------------------------------------------|
 | `id`        | integer     | Subject identifier                                           |
 | `Age`       | continuous  | Standardized age (z-score from a uniform [18, 99] draw)      |
-| `Age_raw`   | continuous  | Age in years (the raw Uniform[18, 99] draw); for descriptive use only |
 | `Gender`    | binary      | 1 = male, 0 = female                                         |
 | `Marital`   | binary      | 1 = married, 0 = not                                         |
 | `Black`     | binary      | 1 = Black race, 0 = otherwise                                |
 | `Hispanic`  | binary      | 1 = Hispanic ethnicity, 0 = otherwise                        |
 | `NSES`      | continuous  | Standardized neighborhood median household income            |
-| `time`      | continuous  | Visit time on [0, 60]; `NA` for subjects with no visits      |
+| `time`      | continuous  | Visit time on [0, 120]; `NA` for subjects with no visits     |
 | `R`         | binary      | 1 if HbA1c was recorded at the visit, 0 otherwise            |
-| `Y`         | continuous  | Standardized linear outcome from the data-generating model   |
-| `HbA1c`     | continuous  | Raw HbA1c value (~ 4.0–9.0 range), `exp(log(5.6) + 0.05 * Y)`|
-| `log_HbA1c` | continuous  | Natural log of `HbA1c`; recommended for analysis             |
-| `C`         | continuous  | End-of-follow-up time (60 for all subjects)                  |
+| `log_HbA1c` | continuous  | Natural log of HbA1c; recommended outcome for analysis. `NA` when `R = 0` |
+| `C`         | continuous  | End-of-follow-up time (120 for all subjects)                 |
 
 ```{r, eval = FALSE}
 library(CIMEHR)
@@ -109,41 +106,60 @@ To simulate new data with custom covariate sets, see `?sim_data_gen`. The functi
 
 ## Method comparison
 
-This table shows a comprehensive comparison of statistical methods for longitudinal EHR data. Methods are differentiated by whether they account for informative visiting (IP) and informative observation (IO), the specific scope of the shared latent structure linking these processes to the outcome, and the adjustment mechanism applied. Symbols: ✓ = Explicitly handled/modeled; ✗ = Ignored or not handled. Abbreviations: LMM, linear mixed model; VA/OA, visit/observation-adjusted; JMVL, joint modeling of visiting and longitudinal data; IIRR, inverse intensity rate ratio; MAR, missing at random; MI, multiple imputation; LI, linear increment.
+This section compares the statistical methods for longitudinal EHR data implemented in (or referenced by) the package. Methods are differentiated by whether they account for informative visiting (IP) and informative observation (IO), the specific scope of the shared latent structure linking these processes to the outcome, and the adjustment mechanism applied. Symbols: ✓ = explicitly handled or modeled; ✗ = ignored or not handled. Abbreviations: LMM, linear mixed model; VA/OA, visit/observation-adjusted; JMVL, joint modeling of visiting and longitudinal data; IIRR, inverse intensity rate ratio; MAR, missing at random; MI, multiple imputation; LI, linear increment.
+
+### Methods implemented in CIMEHR
+
+The following methods have function implementations in the package:
+
+| Method | Function name |
+|:--|:--|
+| Summary statistics | `Summary_stat()` |
+| Standard LMM (Laird and Ware, 1982) | `Linear_mixed_model()` |
+| Liang (Liang et al., 2009) | `Joint_modeling_visiting_and_longitudinal_Liang()` |
+| IIRR-Weighting (Bůžková and Lumley, 2007) | `Inverse_intensity_rate_ratio_weighting()` |
+| IIRR-Balanced (Yiu and Su, 2025) | `Inverse_intensity_rate_ratio_balancing()` |
+| Pairwise Likelihood (Chen et al., 2015) | `Pairwise_likelihood()` |
+| Multiple Imputation (Rubin, 1987) | `Multiple_imputation_IP()` |
+| Linear Increment (Aalen and Gunnes, 2010) | `Linear_increment_IP()` |
+| EHRJoint (Du et al., 2025) | `EHRJoint()` |
+| Proposed (this package) | `CIMEHR()`, `CIMEHR_timevarying_integral()`, `CIMEHR_timevarying_ou()` |
+
+VA-LMM, OA-LMM, JMVL-G, and Adapted-Liang appear in the comparison tables below for context but are not implemented as separate functions; VA-LMM and OA-LMM are available through `Linear_mixed_model()` via the `visit_adjust` argument.
 
 ### Outcome-only
 
-| Method | Function Name within CIMEHR Package | IP | IO | Shared Latent | Adjustment Mechanism | Package |
-|:--|:--|:--:|:--:|:--|:--|:--|
-| Summary statistics |`Summary_stat()`| ✗ | ✗ | None | Reduces the longitudinal series to a single scalar (e.g., min, mean, median, max) for regression. | --- |
-| Standard LMM (Laird and Ware, 1982) |`Linear_mixed_model()`| ✗ | ✗ | None | Conditions on observed covariates (valid only under MAR). | lme4 |
-| VA-LMM (Goldstein et al., 2016) | | ✓ | ✗ | None | Includes *visit count* as a fixed covariate proxy. | lme4 |
-| OA-LMM | | ✗ | ✓ | None | Includes *observation count* as a fixed covariate proxy. | lme4 |
+| Method | IP | IO | Shared Latent | Adjustment Mechanism | Package |
+|:--|:--:|:--:|:--|:--|:--|
+| Summary statistics | ✗ | ✗ | None | Reduces the longitudinal series to a single scalar (e.g., min, mean, median, max) for regression. | --- |
+| Standard LMM (Laird and Ware, 1982) | ✗ | ✗ | None | Conditions on observed covariates (valid only under MAR). | lme4 |
+| VA-LMM (Goldstein et al., 2016) | ✓ | ✗ | None | Includes *visit count* as a fixed covariate proxy. | lme4 |
+| OA-LMM | ✗ | ✓ | None | Includes *observation count* as a fixed covariate proxy. | lme4 |
 
 ### IP-only
 
-| Method | Function Name within CIMEHR Package | IP | IO | Shared Latent | Adjustment Mechanism | Package |
-|:--|:--|:--:|:--:|:--|:--|:--|
-| Liang (Liang et al., 2009) |`Joint_modeling_visiting_and_longitudinal_Liang()`| ✓ | ✗ | Visiting & Outcome | Joint likelihood estimation via shared frailty linking visiting and outcome. | IrregLong |
-| JMVL-G (Gasparini et al., 2020) | | ✓ | ✗ | Visiting & Outcome | Joint likelihood modeling inter-visit times via shared random effects. | merlin |
-| IIRR-Weighting (Bůžková and Lumley, 2007) |`Inverse_intensity_rate_ratio_weighting()`| ✓ | ✗ | None | Inverse intensity weighting based on visiting intensity. | --- |
-| IIRR-Balanced (Yiu and Su, 2025) |`Inverse_intensity_rate_ratio_balancing()`| ✓ | ✗ | None | Inverse intensity weighting adjusted for covariate balance. | --- |
-| Pairwise Likelihood (Chen et al., 2015) |`Pairwise_likelihood()`| ✓ | ✗ | None | Constructs a likelihood from all within-subject pairs of observations; conditioning on observed visit times eliminates the visit intensity from the likelihood. | --- |
+| Method | IP | IO | Shared Latent | Adjustment Mechanism | Package |
+|:--|:--:|:--:|:--|:--|:--|
+| Liang (Liang et al., 2009) | ✓ | ✗ | Visiting & Outcome | Joint likelihood estimation via shared frailty linking visiting and outcome. | IrregLong |
+| JMVL-G (Gasparini et al., 2020) | ✓ | ✗ | Visiting & Outcome | Joint likelihood modeling inter-visit times via shared random effects. | merlin |
+| IIRR-Weighting (Bůžková and Lumley, 2007) | ✓ | ✗ | None | Inverse intensity weighting based on visiting intensity. | --- |
+| IIRR-Balanced (Yiu and Su, 2025) | ✓ | ✗ | None | Inverse intensity weighting adjusted for covariate balance. | --- |
+| Pairwise Likelihood (Chen et al., 2015) | ✓ | ✗ | None | Constructs a likelihood from all within-subject pairs of observations; conditioning on observed visit times eliminates the visit intensity from the likelihood. | --- |
 
 ### Imputation + IP-only
 
-| Method | Function Name within CIMEHR Package | IP | IO | Shared Latent | Adjustment Mechanism | Package |
-|:--|:--|:--:|:--:|:--|:--|:--|
-| Multiple Imputation (MI) (Rubin, 1987) |`Multiple_imputation_IP()`| ✓ | ✓ | Determined by IP-only | Multiple imputation based on posterior draws, followed by IP-only methods. | mice |
-| Linear Increment Methods (LI) (Aalen and Gunnes, 2010) |`Linear_increment_IP()`| ✓ | ✓ | Determined by IP-only | Deterministic linear interpolation between observed visits to impute missing values, followed by IP-only methods. | slim |
+| Method | IP | IO | Shared Latent | Adjustment Mechanism | Package |
+|:--|:--:|:--:|:--|:--|:--|
+| Multiple Imputation (MI) (Rubin, 1987) | ✓ | ✓ | Determined by IP-only | Multiple imputation based on posterior draws, followed by IP-only methods. | mice |
+| Linear Increment Methods (LI) (Aalen and Gunnes, 2010) | ✓ | ✓ | Determined by IP-only | Deterministic linear interpolation between observed visits to impute missing values, followed by IP-only methods. | slim |
 
 ### IP+IO
 
-| Method | Function Name within CIMEHR Package | IP | IO | Shared Latent | Adjustment Mechanism | Package |
-|:--|:--|:--:|:--:|:--|:--|:--|
-| Adapted-Liang (Liang et al., 2009) | | ✓ | ✓ | Visiting & Outcome | Joint model structure defined, but observation coefficients are constrained to zero. | --- |
-| EHRJoint (Du et al., 2025) |`EHRJoint`| ✓ | ✓ | Visiting & Outcome | Tripartite model; observation process modeled via covariates only (no latent link). | --- |
-| Proposed (this package) |`CIMEHR()`| ✓ | ✓ | All three processes | Tripartite model; full shared latent structure links Visiting, Observation, and Outcome. | CIMEHR |
+| Method | IP | IO | Shared Latent | Adjustment Mechanism | Package |
+|:--|:--:|:--:|:--|:--|:--|
+| Adapted-Liang (Liang et al., 2009) | ✓ | ✓ | Visiting & Outcome | Joint model structure defined, but observation coefficients are constrained to zero. | --- |
+| EHRJoint (Du et al., 2025) | ✓ | ✓ | Visiting & Outcome | Tripartite model; observation process modeled via covariates only (no latent link). | --- |
+| Proposed (this package) | ✓ | ✓ | All three processes | Tripartite model; full shared latent structure links Visiting, Observation, and Outcome. | CIMEHR |
 
 IP = informative visiting / informative presence adjustment; IO = informative observation adjustment.
 The "Proposed" row corresponds to `CIMEHR()`; `CIMEHR_timevarying_integral()` and `CIMEHR_timevarying_ou()` extend this framework with more flexible observation-process modeling.
@@ -266,7 +282,26 @@ cmp_subset$tables$outcome
 
 For real, non-simulated data, the comparison tables omit true-value, bias, and RMSE columns unless you explicitly pass a `true_values` list. If a method fails, `method_comparisons()` keeps going by default, stores the error in `cmp_subset$errors`, and prints `NA` rows for that method.
 
-A four-scenario Monte Carlo simulation study comparing CIMEHR against the IrregLong benchmarks is provided in `simulations/simulation_study.R`. The script runs N_SIM = 1000 replications per scenario, each with a fresh dataset of n = 2000 participants, and reports bias, empirical SE, mean SE, RMSE, and 95% CI coverage.
+## Simulation study
+
+A Monte Carlo simulation study is provided in `simulations/simulation_study.R`. The script crosses two focal-covariate types (continuous `NSES` and binary `Gender`) with four values of the Ornstein-Uhlenbeck serial-correlation parameter (`phi` $\in$ {0, 0.001, 0.1, 0.3}), producing eight scenarios. Each scenario runs `N_SIM = 1000` Monte Carlo replications; each replication generates a fresh dataset of `n = 2000` participants on the [0, 120] window via `sim_data_gen()` and fits four methods:
+
+- `CIMEHR()`
+- `Joint_modeling_visiting_and_longitudinal_Liang()`
+- `Inverse_intensity_rate_ratio_weighting()`
+- `IrregLong::iiwgee()` (external comparator)
+
+For each method × scenario × parameter (beta on each of Age, Gender, Marital, Black, Hispanic, NSES), the script reports bias, empirical SE, mean analytic SE, SE ratio, RMSE, and 95% CI coverage. Coverage is reported as `---` for `Inverse_intensity_rate_ratio_weighting()` because that method does not return analytic standard errors; bootstrap inference would be needed there.
+
+The bundled `sim_ehr_data` dataset is itself one replicate from this framework (the `continuous_phi0` scenario, `sim_id = 1`), so the data-generating spec used by the study and the spec of the bundled example dataset are identical aside from `phi` and the focal covariate.
+
+To run the study:
+
+```{bash, eval = FALSE}
+Rscript simulations/simulation_study.R
+Rscript simulations/simulation_study.R --cores 8 --nsim 100
+Rscript simulations/simulation_study.R --scenarios continuous_phi0,binary_phi0.3
+```
 
 
 ## Bootstrap inference
@@ -276,7 +311,7 @@ Use `bootstrap()` for methods without analytic standard errors or as a robustnes
 ```{r, eval = FALSE}
 fit_iirr <- Inverse_intensity_rate_ratio_weighting(
   sim_ehr_data,
-  outcome = "log_HbA1c,
+  outcome = "log_HbA1c",
   visit_covs = c("Age", "Gender", "Marital", "Black", "Hispanic", "NSES")
 )
 bs <- bootstrap(fit_iirr, data = sim_ehr_data, B = 200, seed = 1)
