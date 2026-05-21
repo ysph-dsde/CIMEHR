@@ -113,37 +113,37 @@ This table shows a comprehensive comparison of statistical methods for longitudi
 
 ### Outcome-only
 
-| Method | IP | IO | Shared Latent | Adjustment Mechanism | Package |
-|:--|:--:|:--:|:--|:--|:--|
-| Summary statistics | ✗ | ✗ | None | Reduces the longitudinal series to a single scalar (e.g., min, mean, median, max) for regression. | — |
-| Standard LMM (Laird and Ware, 1982) | ✗ | ✗ | None | Conditions on observed covariates (valid only under MAR). | lme4 |
-| VA-LMM (Goldstein et al., 2016) | ✓ | ✗ | None | Includes *visit count* as a fixed covariate proxy. | lme4 |
-| OA-LMM | ✗ | ✓ | None | Includes *observation count* as a fixed covariate proxy. | lme4 |
+| Method | Function Name within CIMEHR Package | IP | IO | Shared Latent | Adjustment Mechanism | Package |
+|:--|:--|:--:|:--:|:--|:--|:--|
+| Summary statistics |`Summary_stat()`| ✗ | ✗ | None | Reduces the longitudinal series to a single scalar (e.g., min, mean, median, max) for regression. | --- |
+| Standard LMM (Laird and Ware, 1982) |`Linear_mixed_model()`| ✗ | ✗ | None | Conditions on observed covariates (valid only under MAR). | lme4 |
+| VA-LMM (Goldstein et al., 2016) | | ✓ | ✗ | None | Includes *visit count* as a fixed covariate proxy. | lme4 |
+| OA-LMM | | ✗ | ✓ | None | Includes *observation count* as a fixed covariate proxy. | lme4 |
 
 ### IP-only
 
-| Method | IP | IO | Shared Latent | Adjustment Mechanism | Package |
-|:--|:--:|:--:|:--|:--|:--|
-| Liang (Liang et al., 2009) | ✓ | ✗ | Visiting & Outcome | Joint likelihood estimation via shared frailty linking visiting and outcome. | IrregLong |
-| JMVL-G (Gasparini et al., 2020) | ✓ | ✗ | Visiting & Outcome | Joint likelihood modeling inter-visit times via shared random effects. | merlin |
-| IIRR-Weighting (Bůžková and Lumley, 2007) | ✓ | ✗ | None | Inverse intensity weighting based on visiting intensity. | — |
-| IIRR-Balanced (Yiu and Su, 2025) | ✓ | ✗ | None | Inverse intensity weighting adjusted for covariate balance. | — |
-| Pairwise Likelihood (Chen et al., 2015) | ✓ | ✗ | None | Constructs a likelihood from all within-subject pairs of observations; conditioning on observed visit times eliminates the visit intensity from the likelihood. | — |
+| Method | Function Name within CIMEHR Package | IP | IO | Shared Latent | Adjustment Mechanism | Package |
+|:--|:--|:--:|:--:|:--|:--|:--|
+| Liang (Liang et al., 2009) |`Joint_modeling_visiting_and_longitudinal_Liang()`| ✓ | ✗ | Visiting & Outcome | Joint likelihood estimation via shared frailty linking visiting and outcome. | IrregLong |
+| JMVL-G (Gasparini et al., 2020) | | ✓ | ✗ | Visiting & Outcome | Joint likelihood modeling inter-visit times via shared random effects. | merlin |
+| IIRR-Weighting (Bůžková and Lumley, 2007) |`Inverse_intensity_rate_ratio_weighting()`| ✓ | ✗ | None | Inverse intensity weighting based on visiting intensity. | --- |
+| IIRR-Balanced (Yiu and Su, 2025) |`Inverse_intensity_rate_ratio_balancing()`| ✓ | ✗ | None | Inverse intensity weighting adjusted for covariate balance. | --- |
+| Pairwise Likelihood (Chen et al., 2015) |`Pairwise_likelihood()`| ✓ | ✗ | None | Constructs a likelihood from all within-subject pairs of observations; conditioning on observed visit times eliminates the visit intensity from the likelihood. | --- |
 
 ### Imputation + IP-only
 
-| Method | IP | IO | Shared Latent | Adjustment Mechanism | Package |
-|:--|:--:|:--:|:--|:--|:--|
-| Multiple Imputation (MI) (Rubin, 1987) | ✓ | ✓ | Determined by IP-only | Multiple imputation based on posterior draws, followed by IP-only methods. | mice |
-| Linear Increment Methods (LI) (Aalen and Gunnes, 2010) | ✓ | ✓ | Determined by IP-only | Deterministic linear interpolation between observed visits to impute missing values, followed by IP-only methods. | slim |
+| Method | Function Name within CIMEHR Package | IP | IO | Shared Latent | Adjustment Mechanism | Package |
+|:--|:--|:--:|:--:|:--|:--|:--|
+| Multiple Imputation (MI) (Rubin, 1987) |`Multiple_imputation_IP()`| ✓ | ✓ | Determined by IP-only | Multiple imputation based on posterior draws, followed by IP-only methods. | mice |
+| Linear Increment Methods (LI) (Aalen and Gunnes, 2010) |`Linear_increment_IP()`| ✓ | ✓ | Determined by IP-only | Deterministic linear interpolation between observed visits to impute missing values, followed by IP-only methods. | slim |
 
 ### IP+IO
 
-| Method | IP | IO | Shared Latent | Adjustment Mechanism | Package |
-|:--|:--:|:--:|:--|:--|:--|
-| Adapted-Liang (Liang et al., 2009) | ✓ | ✓ | Visiting & Outcome | Joint model structure defined, but observation coefficients are constrained to zero. | — |
-| EHRJoint (Du et al., 2025) | ✓ | ✓ | Visiting & Outcome | Tripartite model; observation process modeled via covariates only (no latent link). | — |
-| Proposed (this package) | ✓ | ✓ | All three processes | Tripartite model; full shared latent structure links Visiting, Observation, and Outcome. | CIMEHR |
+| Method | Function Name within CIMEHR Package | IP | IO | Shared Latent | Adjustment Mechanism | Package |
+|:--|:--|:--:|:--:|:--|:--|:--|
+| Adapted-Liang (Liang et al., 2009) | | ✓ | ✓ | Visiting & Outcome | Joint model structure defined, but observation coefficients are constrained to zero. | --- |
+| EHRJoint (Du et al., 2025) |`EHRJoint`| ✓ | ✓ | Visiting & Outcome | Tripartite model; observation process modeled via covariates only (no latent link). | --- |
+| Proposed (this package) |`CIMEHR()`| ✓ | ✓ | All three processes | Tripartite model; full shared latent structure links Visiting, Observation, and Outcome. | CIMEHR |
 
 IP = informative visiting / informative presence adjustment; IO = informative observation adjustment.
 The "Proposed" row corresponds to `CIMEHR()`; `CIMEHR_timevarying_integral()` and `CIMEHR_timevarying_ou()` extend this framework with more flexible observation-process modeling.
