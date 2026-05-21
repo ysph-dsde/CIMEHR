@@ -95,7 +95,7 @@ The package includes `sim_ehr_data`, a long-format simulated EHR cohort designed
 | Column      | Type        | Description                                                  |
 |:------------|:------------|:-------------------------------------------------------------|
 | `id`        | integer     | Subject identifier                                           |
-| `Age`       | continuous  | Standardized age (z-score from a uniform [18, 99] draw)      |
+| `Age`       | continuous  | Standardized age                                             |
 | `Gender`    | binary      | 1 = male, 0 = female                                         |
 | `Marital`   | binary      | 1 = married, 0 = not                                         |
 | `Black`     | binary      | 1 = Black race, 0 = otherwise                                |

@@ -22,7 +22,7 @@ Prints coefficients from the summary-statistic regression.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-fit <- Summary_stat(dat, formula = ~ Age)
+fit <- Summary_stat(dat, outcome = "log_HbA1c", formula = ~ Age)
 print(fit)
 
 }

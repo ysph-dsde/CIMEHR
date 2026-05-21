@@ -25,7 +25,11 @@ estimation (MLE) weights.
 }
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-fit <- Inverse_intensity_rate_ratio_balancing(dat, visit_covs = "Age")
+fit <- Inverse_intensity_rate_ratio_balancing(
+  dat,
+  outcome    = "log_HbA1c",
+  visit_covs = "Age"
+)
 print(fit)
 
 }

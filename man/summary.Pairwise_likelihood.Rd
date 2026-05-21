@@ -29,7 +29,9 @@ table with standard errors when available.
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30 &
                     sim_ehr_data$R == 1 & !is.na(sim_ehr_data$R), ]
-fit <- Pairwise_likelihood(dat, formula = Y ~ Age + time,
+fit <- Pairwise_likelihood(dat,
+                           formula = log_HbA1c ~ Age + time,
+                           y_col = "log_HbA1c",
                            pair_sample = 50, hessian = FALSE)
 summary(fit)
 

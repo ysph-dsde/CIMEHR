@@ -183,14 +183,14 @@
 #' standard errors.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 60, ]
 #' fit <- EHRJoint(
 #'   dat,
-#'   visit_covs  = "Age",
-#'   long_covs   = "Age",
-#'   random_covs = "Age"
+#'   outcome     = "log_HbA1c",
+#'   visit_covs  = c("Age", "NSES"),
+#'   long_covs   = c("Age", "NSES"),
+#'   random_covs = "NSES"
 #' )
-#' print(fit)
 #'
 #' @importFrom stats as.formula binomial coef glm plogis pnorm vcov
 #' @export

@@ -164,12 +164,12 @@
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- Multiple_imputation_IP(dat,
-#'                               outcome_formula = Y ~ Age + time,
+#'                               outcome    = "log_HbA1c",
+#'                               outcome_formula = log_HbA1c ~ Age + time,
 #'                               random_formula  = ~ 1 | id,
 #'                               ip_method  = "Linear_mixed_model",
 #'                               visit_covs = "Age",
 #'                               m = 1, maxit = 1)
-#' print(fit)
 #'
 #' @importFrom stats as.formula sd var
 #' @export

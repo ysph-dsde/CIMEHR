@@ -57,7 +57,8 @@ available_comparison_methods <- function() {
 #'   \code{Inverse_intensity_rate_ratio_balancing}, choose outcome estimates
 #'   from \code{"balancing"} or \code{"mle"} weights.
 #' @param default_formula Formula used for methods that require a formula when
-#'   one is not supplied in \code{method_args}; default is \code{Y ~ Age + time}.
+#'   one is not supplied in \code{method_args}; default is
+#'   \code{log_HbA1c ~ Age + time}.
 #' @param default_random_formula Random-effects formula used for
 #'   \code{Linear_mixed_model()} and imputation methods when one is not supplied;
 #'   default is \code{~ 1 | id}.
@@ -79,10 +80,11 @@ available_comparison_methods <- function() {
 #'               "Inverse_intensity_rate_ratio_weighting"),
 #'   method_args = list(
 #'     Summary_stat                           = list(formula = ~ Age),
-#'     Linear_mixed_model                     = list(fixed = Y ~ Age + time,
+#'     Linear_mixed_model                     = list(fixed = log_HbA1c ~ Age + time,
 #'                                                   random = ~ 1 | id,
 #'                                                   obs_indicator = "R"),
-#'     Inverse_intensity_rate_ratio_weighting = list(visit_covs = "Age")
+#'     Inverse_intensity_rate_ratio_weighting = list(outcome = "log_HbA1c",
+#'                                                   visit_covs = "Age")
 #'   ),
 #'   true_value_verbose = FALSE
 #' )
@@ -97,7 +99,7 @@ method_comparisons <- function(data,
                                true_values = NULL,
                                true_value_verbose = TRUE,
                                which_balancing = c("balancing", "mle"),
-                               default_formula = Y ~ Age + time,
+                               default_formula = log_HbA1c ~ Age + time,
                                default_random_formula = ~ 1 | id,
                                stop_on_error = FALSE,
                                ...) {

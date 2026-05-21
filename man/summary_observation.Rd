@@ -18,7 +18,7 @@ The input object, invisibly.
 Summarise the Observation Process of a Fitted Method
 }
 \examples{
-dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 fit <- CIMEHR(
   data                    = dat,
   y_col                   = "log_HbA1c",

@@ -37,9 +37,10 @@ and/or outcome.
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 fit <- EHRJoint(
   dat,
-  visit_covs  = "Age",
-  long_covs   = "Age",
-  random_covs = "Age"
+  outcome     = "log_HbA1c",
+  visit_covs  = c("Age", "NSES"),
+  long_covs   = c("Age", "NSES"),
+  random_covs = "NSES"
 )
 summary(fit)
 

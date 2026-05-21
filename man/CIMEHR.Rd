@@ -191,7 +191,7 @@ observation probability \eqn{\varpi_i(t)} and the visit intensity.
 A sandwich estimator provides standard errors for \eqn{\beta}.
 }
 \examples{
-dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 fit <- CIMEHR(
   data                    = dat,
   y_col                   = "log_HbA1c",
@@ -199,7 +199,6 @@ fit <- CIMEHR(
   covars_outcome_fixed_XY = "Age",
   covars_obs_fixed_XO     = "Age"
 )
-print(fit)
 
 }
 \references{

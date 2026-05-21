@@ -171,7 +171,7 @@
 #' \code{\link{sim_data_gen}} for simulating data compatible with this model.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- CIMEHR(
 #'   data                    = dat,
 #'   y_col                   = "log_HbA1c",
@@ -179,7 +179,6 @@
 #'   covars_outcome_fixed_XY = "Age",
 #'   covars_obs_fixed_XO     = "Age"
 #' )
-#' print(fit)
 #'
 #' @importFrom stats binomial coef dnorm glm nlminb plogis pnorm reformulate setNames
 #' @export

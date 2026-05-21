@@ -50,8 +50,7 @@
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Summary_stat(dat, formula = ~ Age)
-#' print(fit)
+#' fit <- Summary_stat(dat, outcome = "log_HbA1c", formula = ~ Age)
 #'
 #' @importFrom stats aggregate as.formula lm median
 #' @export

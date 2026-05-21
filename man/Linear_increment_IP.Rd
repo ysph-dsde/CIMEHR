@@ -169,11 +169,11 @@ of class \code{"Linear_increment_IP_result"}.
 \examples{
 dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 fit <- Linear_increment_IP(dat,
-                           outcome_formula = Y ~ Age + time,
+                           outcome    = "log_HbA1c",
+                           outcome_formula = log_HbA1c ~ Age + time,
                            random_formula  = ~ 1 | id,
                            ip_method  = "Linear_mixed_model",
                            visit_covs = "Age")
-print(fit)
 
 }
 \references{

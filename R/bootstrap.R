@@ -150,7 +150,9 @@
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = "Age")
+#' fit <- Inverse_intensity_rate_ratio_weighting(dat,
+#'                                                outcome    = "log_HbA1c",
+#'                                                visit_covs = "Age")
 #' bs  <- bootstrap(fit, data = dat, B = 3, seed = 1)
 #' print(bs)
 #'
@@ -322,14 +324,17 @@ bootstrap <- function(fit,
   switch(fit_class,
          CIMEHR        = ,
          CIMEHR_timevarying_integral     = ,
-         CIMEHR_timevarying_ou = c("covars_visit_XV", "covars_outcome_fixed_XY",
+         CIMEHR_timevarying_ou = c("y_col",
+                                   "covars_visit_XV", "covars_outcome_fixed_XY",
                                    "covars_outcome_random_link_ZY", "covars_obs_fixed_XO",
                                    "covars_obs_random_link_ZO"),
-         EHRJoint      = c("visit_covs", "long_covs", "random_covs",
+         EHRJoint      = c("outcome", "visit_covs", "long_covs", "random_covs",
                            "obs_link", "sigma_sq_floor"),
-         Joint_modeling_visiting_and_longitudinal_Liang = c("visit_covs", "long_covs", "random_covs"),
-         Inverse_intensity_rate_ratio_weighting = c("visit_covs", "formula"),
-         Inverse_intensity_rate_ratio_balancing = c("visit_covs", "balance_covs", "formula", "phi"),
+         Joint_modeling_visiting_and_longitudinal_Liang = c(
+           "outcome", "visit_covs", "long_covs", "random_covs"),
+         Inverse_intensity_rate_ratio_weighting = c("outcome", "visit_covs", "formula"),
+         Inverse_intensity_rate_ratio_balancing = c("outcome", "visit_covs",
+                                                    "balance_covs", "formula", "phi"),
          character(0)
   )
 }
@@ -513,13 +518,21 @@ bootstrap <- function(fit,
 
   cv <- function(name) covars[[name]]
 
+  # Forward `outcome` (or `y_col` for the CIMEHR family) from the original
+  # fit$call only when the user supplied it; otherwise the underlying
+  # function falls back to its own default ("Y").
+  add_if <- function(args, name, value) {
+    if (!is.null(value)) args[[name]] <- value
+    args
+  }
+
   switch(fit_class,
 
          # ------------------------------------------------------------------
          # CIMEHR family
          # ------------------------------------------------------------------
          CIMEHR = {
-           f <- CIMEHR(
+           cim_args <- list(
              boot_data,
              id_col                        = id,
              covars_visit_XV               = cv("covars_visit_XV"),
@@ -528,11 +541,13 @@ bootstrap <- function(fit,
              covars_obs_fixed_XO           = cv("covars_obs_fixed_XO"),
              covars_obs_random_link_ZO    = cv("covars_obs_random_link_ZO")
            )
+           cim_args <- add_if(cim_args, "y_col", cv("y_col"))
+           f <- do.call(CIMEHR, cim_args)
            .bootstrap_extract_coef(f, "CIMEHR", NULL)
          },
 
          CIMEHR_timevarying_integral = {
-           f <- CIMEHR_timevarying_integral(
+           cim_args <- list(
              boot_data,
              id_col                        = id,
              covars_visit_XV               = cv("covars_visit_XV"),
@@ -541,11 +556,13 @@ bootstrap <- function(fit,
              covars_obs_fixed_XO           = cv("covars_obs_fixed_XO"),
              covars_obs_random_link_ZO    = cv("covars_obs_random_link_ZO")
            )
+           cim_args <- add_if(cim_args, "y_col", cv("y_col"))
+           f <- do.call(CIMEHR_timevarying_integral, cim_args)
            .bootstrap_extract_coef(f, "CIMEHR_timevarying_integral", NULL)
          },
 
          CIMEHR_timevarying_ou = {
-           f <- CIMEHR_timevarying_ou(
+           cim_args <- list(
              boot_data,
              id_col                        = id,
              covars_visit_XV               = cv("covars_visit_XV"),
@@ -554,6 +571,8 @@ bootstrap <- function(fit,
              covars_obs_fixed_XO           = cv("covars_obs_fixed_XO"),
              covars_obs_random_link_ZO    = cv("covars_obs_random_link_ZO")
            )
+           cim_args <- add_if(cim_args, "y_col", cv("y_col"))
+           f <- do.call(CIMEHR_timevarying_ou, cim_args)
            .bootstrap_extract_coef(f, "CIMEHR_timevarying_ou", NULL)
          },
 
@@ -568,21 +587,23 @@ bootstrap <- function(fit,
              long_covs   = cv("long_covs"),
              random_covs = cv("random_covs")
            )
-           # Forward obs_link / sigma_sq_floor only if user supplied them
-           if (!is.null(cv("obs_link")))       ehr_args$obs_link       <- cv("obs_link")
-           if (!is.null(cv("sigma_sq_floor"))) ehr_args$sigma_sq_floor <- cv("sigma_sq_floor")
+           ehr_args <- add_if(ehr_args, "outcome",        cv("outcome"))
+           ehr_args <- add_if(ehr_args, "obs_link",       cv("obs_link"))
+           ehr_args <- add_if(ehr_args, "sigma_sq_floor", cv("sigma_sq_floor"))
            f <- do.call(EHRJoint, ehr_args)
            .bootstrap_extract_coef(f, "EHRJoint", NULL)
          },
 
          Joint_modeling_visiting_and_longitudinal_Liang = {
-           f <- Joint_modeling_visiting_and_longitudinal_Liang(
+           liang_args <- list(
              boot_data,
              id          = id,
              visit_covs  = cv("visit_covs"),
              long_covs   = cv("long_covs"),
              random_covs = cv("random_covs")
            )
+           liang_args <- add_if(liang_args, "outcome", cv("outcome"))
+           f <- do.call(Joint_modeling_visiting_and_longitudinal_Liang, liang_args)
            .bootstrap_extract_coef(f, "Joint_modeling_visiting_and_longitudinal_Liang", NULL)
          },
 
@@ -590,18 +611,20 @@ bootstrap <- function(fit,
          # IIRR methods
          # ------------------------------------------------------------------
          Inverse_intensity_rate_ratio_weighting = {
-           f <- Inverse_intensity_rate_ratio_weighting(
+           iirr_args <- list(
              boot_data,
              id         = id,
              visit_covs = cv("visit_covs"),
              formula    = cv("formula")
            )
+           iirr_args <- add_if(iirr_args, "outcome", cv("outcome"))
+           f <- do.call(Inverse_intensity_rate_ratio_weighting, iirr_args)
            .bootstrap_extract_coef(f, "Inverse_intensity_rate_ratio_weighting", NULL)
          },
 
          Inverse_intensity_rate_ratio_balancing = {
            phi_val <- cv("phi"); if (is.null(phi_val)) phi_val <- 0
-           f <- Inverse_intensity_rate_ratio_balancing(
+           iirr_args <- list(
              boot_data,
              id           = id,
              visit_covs   = cv("visit_covs"),
@@ -609,6 +632,8 @@ bootstrap <- function(fit,
              formula      = cv("formula"),
              phi          = phi_val
            )
+           iirr_args <- add_if(iirr_args, "outcome", cv("outcome"))
+           f <- do.call(Inverse_intensity_rate_ratio_balancing, iirr_args)
            .bootstrap_extract_coef(f, "Inverse_intensity_rate_ratio_balancing", NULL)
          },
 
@@ -644,7 +669,9 @@ NULL
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = "Age")
+#' fit <- Inverse_intensity_rate_ratio_weighting(dat,
+#'                                                outcome    = "log_HbA1c",
+#'                                                visit_covs = "Age")
 #' bs  <- bootstrap(fit, data = dat, B = 3, seed = 1)
 #' print(bs)
 #'
@@ -702,7 +729,9 @@ print.cimehr_bootstrap <- function(x, digits = 4, ...) {
 #'
 #' @examples
 #' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
-#' fit <- Inverse_intensity_rate_ratio_weighting(dat, visit_covs = "Age")
+#' fit <- Inverse_intensity_rate_ratio_weighting(dat,
+#'                                                outcome    = "log_HbA1c",
+#'                                                visit_covs = "Age")
 #' bs  <- bootstrap(fit, data = dat, B = 3, seed = 1)
 #' summary(bs)
 #'

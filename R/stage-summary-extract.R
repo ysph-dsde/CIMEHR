@@ -10,7 +10,7 @@
 #' @return The input object, invisibly.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- CIMEHR(
 #'   data                    = dat,
 #'   y_col                   = "log_HbA1c",
@@ -33,7 +33,7 @@ summary_visiting <- function(object, ...) {
 #' @return The input object, invisibly.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- CIMEHR(
 #'   data                    = dat,
 #'   y_col                   = "log_HbA1c",
@@ -56,7 +56,7 @@ summary_observation <- function(object, ...) {
 #' @return The input object, invisibly.
 #'
 #' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 50, ]
+#' dat <- sim_ehr_data[sim_ehr_data$id <= 30, ]
 #' fit <- CIMEHR(
 #'   data                    = dat,
 #'   y_col                   = "log_HbA1c",
