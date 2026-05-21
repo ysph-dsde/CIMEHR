@@ -3,7 +3,7 @@ Title: Gaussian clinicially informative visiting and observation processes in El
 Version: 0.1.0
 Authors@R: c(
   person(given = "Cheng-Han", family = "Yang",
-         email = "cheng-han.yang@yale.edu",
+         email = "chenghanyang728@gmail.com",
          role = c("aut", "cre"),
          comment = c(ORCID = "0000-0002-4161-3140")),
   person(given = "Yiren", family = "Hou",
