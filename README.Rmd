@@ -130,7 +130,7 @@ The following methods have function implementations in the package:
 | Multiple Imputation (Rubin, 1987) | `Multiple_imputation_IP()` |
 | Linear Increment (Aalen and Gunnes, 2010) | `Linear_increment_IP()` |
 | EHRJoint (Du et al., 2025) | `EHRJoint()` |
-| Proposed (this package) | `CIMEHR()`, `CIMEHR_timevarying_integral()`, `CIMEHR_timevarying_ou()` |
+| Proposed (Yang, Shi, and Mukherjee, 2026) | `CIMEHR()`, `CIMEHR_timevarying_integral()`, `CIMEHR_timevarying_ou()` |
 
 VA-LMM, OA-LMM, JMVL-G, and Adapted-Liang appear in the comparison tables below for context but are not implemented as separate functions; VA-LMM and OA-LMM are available through `Linear_mixed_model()` via the `visit_adjust` argument.
 
