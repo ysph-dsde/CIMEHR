@@ -73,7 +73,7 @@ long_dat <- wide_dat %>%
 
 ## Example dataset
 
-The package includes `sim_ehr_data`, a long-format simulated EHR cohort of 2000 patients designed to look like an outpatient HbA1c extract. The bundled dataset is one replicate from the package's Monte Carlo simulation framework (see [Simulation study](#simulation-study)), specifically the `continuous_phi0` scenario (focal Z = NSES, phi = 0). The columns are listed below; latent quantities used internally by `sim_data_gen()` (the shared factor U, frailty eta, and per-process random effects) are not included, since they are not observable in real EHR data.
+The package includes `sim_ehr_data`, a long-format simulated EHR cohort designed to look like an outpatient HbA1c extract. The bundled dataset is one replicate from the package's Monte Carlo simulation framework (see Section 8, [Simulation study](#simulation-study)), specifically the `continuous_phi0` scenario (focal Z = NSES, phi = 0). The columns are listed below. Latent quantities used internally by the data-generating process (the shared factor, the visiting frailty, and per-process random effects) are not included, since they are not observable in real EHR data.
 
 | Column      | Type        | Description                                                  |
 |:------------|:------------|:-------------------------------------------------------------|
@@ -84,10 +84,10 @@ The package includes `sim_ehr_data`, a long-format simulated EHR cohort of 2000 
 | `Black`     | binary      | 1 = Black race, 0 = otherwise                                |
 | `Hispanic`  | binary      | 1 = Hispanic ethnicity, 0 = otherwise                        |
 | `NSES`      | continuous  | Standardized neighborhood median household income            |
-| `time`      | continuous  | Visit time on [0, 120]; `NA` for subjects with no visits     |
+| `time`      | continuous  | Visit time on [0, 120] months; `NA` for subjects with no visits|
 | `R`         | binary      | 1 if HbA1c was recorded at the visit, 0 otherwise            |
 | `log_HbA1c` | continuous  | Natural log of HbA1c; recommended outcome for analysis. `NA` when `R = 0` |
-| `C`         | continuous  | End-of-follow-up time (120 for all subjects)                 |
+| `C`         | continuous  | End-of-follow-up time (120 months for all subjects)       |
 
 ```{r, eval = FALSE}
 library(CIMEHR)

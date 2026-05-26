@@ -23,20 +23,20 @@ devtools::install_github("ysph-dsde/CIMEHR")
 
 ## Data format
 
-Most functions in **CIMEHR** expect **long-format longitudinal data**, with one row per subject-visit or subject-time record. The CIMEHR estimators expect at least the following column roles, with default column names shown:
+The analysis functions expect **long-format data**, with one row per subject-visit or subject-time record. The CIMEHR estimators expect at least the following column roles, with default column names shown:
 
 | Column role             | Default name | Meaning                                                              |
 |:------------------------|:-------------|:---------------------------------------------------------------------|
-| Subject identifier      | `id`         | Unique patient/subject ID                                            |
+| Subject identifier      | `id`         | Unique subject identifier                                            |
 | Visit time              | `time`       | Visit time; `NA` indicates a row without a visit                     |
 | Outcome                 | `Y`          | Longitudinal outcome; usually `NA` when the outcome was not recorded |
 | Observation indicator   | `R`          | 1 if the outcome was recorded at the visit, 0 otherwise              |
 | Censoring/follow-up end | `C`          | End of follow-up for each subject                                    |
-| Covariates              | user-named   | Baseline or model covariates (e.g., `Age`, `Gender`, `Marital Status`)         |
+| Covariates              | user-named   | Baseline or model covariates                                         |
 
-The package methods are designed for long/panel data. Some benchmark methods use only observed rows internally, but the user-supplied dataset should still be organized in long form so visit timing, observation indicators, and outcomes are aligned.
+**A note on time units.** The methods do not assume a specific unit for `time` and `C` — months, weeks, days, or years all work, as long as a single unit is used consistently within a dataset. The choice affects only the interpretation of the slope on `time` in the longitudinal outcome model: that coefficient is the expected change in outcome per one unit of time. The bundled `sim_ehr_data` was generated with `time` and `C` in months over a 120-month (10-year) follow-up window, parameter values calibrated to match an outpatient HbA1c cadence. For your own data, choose the unit that gives a clinically meaningful slope (typically months or years for chronic-disease EHR cohorts) and document it alongside your analysis.
 
-The CIMEHR-family functions accept custom column names through `id_col`, `time_col`, `y_col`, `r_col`, and `censor_col`, so you do not need to rename your data before fitting. Other methods (e.g., `Linear_mixed_model`, `Pairwise_likelihood`) accept either argument names or formulas — see each function's help page.
+All package methods should be given long/panel data. The CIMEHR-family functions accept custom column names through `id_col`, `time_col`, `y_col`, `r_col`, and `censor_col`, so renaming your data is not required:
 
 ### Converting short/wide data to long data
 
@@ -68,7 +68,7 @@ long_dat <- wide_dat %>%
 
 ## Example dataset
 
-The package includes `sim_ehr_data`, a long-format simulated EHR cohort of 2000 patients designed to look like an outpatient HbA1c extract. The bundled dataset is one replicate from the package's Monte Carlo simulation framework (see [Simulation study](#simulation-study)), specifically the `continuous_phi0` scenario (focal Z = NSES, phi = 0). The columns are listed below; latent quantities used internally by `sim_data_gen()` (the shared factor U, frailty eta, and per-process random effects) are not included, since they are not observable in real EHR data.
+The package includes `sim_ehr_data`, a long-format simulated EHR cohort designed to look like an outpatient HbA1c extract. The bundled dataset is one replicate from the package's Monte Carlo simulation framework (see Section 8, [Simulation study](#simulation-study)), specifically the `continuous_phi0` scenario (focal Z = NSES, phi = 0). The columns are listed below. Latent quantities used internally by the data-generating process (the shared factor, the visiting frailty, and per-process random effects) are not included, since they are not observable in real EHR data.
 
 | Column      | Type        | Description                                                  |
 |:------------|:------------|:-------------------------------------------------------------|
@@ -79,10 +79,10 @@ The package includes `sim_ehr_data`, a long-format simulated EHR cohort of 2000 
 | `Black`     | binary      | 1 = Black race, 0 = otherwise                                |
 | `Hispanic`  | binary      | 1 = Hispanic ethnicity, 0 = otherwise                        |
 | `NSES`      | continuous  | Standardized neighborhood median household income            |
-| `time`      | continuous  | Visit time on [0, 120]; `NA` for subjects with no visits     |
+| `time`      | continuous  | Visit time on [0, 120] months; `NA` for subjects with no visits|
 | `R`         | binary      | 1 if HbA1c was recorded at the visit, 0 otherwise            |
 | `log_HbA1c` | continuous  | Natural log of HbA1c; recommended outcome for analysis. `NA` when `R = 0` |
-| `C`         | continuous  | End-of-follow-up time (120 for all subjects)                 |
+| `C`         | continuous  | End-of-follow-up time (120 months for all subjects)       |          |
 
 ```{r, eval = FALSE}
 library(CIMEHR)
