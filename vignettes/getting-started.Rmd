@@ -19,7 +19,15 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-Electronic Health Record (EHR) data are longitudinal but not collected by design. Patients visit at irregular times, and even when a visit occurs, an outcome or biomarker may not be measured. **CIMEHR** provides simple benchmark methods and semiparametric joint models for analyses affected by informative visiting and informative observation.
+Electronic Health Record (EHR) data are longitudinal where patients visit at irregular times, and even when a visit occurs, an outcome or biomarker may not be measured. **CIMEHR** (**C**linical **I**nformative **M**issingness for **E**lectronic **H**ealth **R**ecord data) provides methods for longitudinal EHR analyses where patients visit irregularly and outcomes may be selectively measured at visits. The primary methods jointly characterize three linked processes:
+
+1. the **visiting process**: when a patient has an EHR visit;
+2. the **observation process**: whether the outcome/biomarker is recorded at a visit;
+3. the **longitudinal outcome process**: the outcome trajectory among the target population.
+
+The main estimator is `CIMEHR()`. Two extensions, `CIMEHR_timevarying_integral()` and `CIMEHR_timevarying_ou()`, allow more flexible time-varying/serially correlated observation-process structures.
+
+Our R package**CIMEHR** provides simple benchmark methods and semiparametric joint models for analyses affected by informative visiting and informative observation.
 
 This vignette starts with the data format, then moves from simpler baseline methods to the more complex CIMEHR estimators. Examples are kept small (a 500-subject subset of the bundled dataset) so each chunk runs in a few seconds.
 
