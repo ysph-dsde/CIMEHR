@@ -1,15 +1,16 @@
 citHeader("Related work:")
 
-citEntry(
-  entry = "Misc",
+bibentry(
+  bibtype = "Misc",
   title = "Joint Modeling of Longitudinal EHR Data with Shared Random Effects for Informative Visiting and Observation Processes",
-  author = personList(
-    as.person("Cheng-Han Yang"),
-    as.person("Xu Shi"),
-    as.person("Bhramar Mukherjee")
+  author = c(
+    person(given = "Cheng-Han", family = "Yang"),
+    person(given = "Xu", family = "Shi"),
+    person(given = "Bhramar", family = "Mukherjee")
   ),
   year = "2026",
   note = "arXiv:2602.15374",
+  doi = "10.48550/arXiv.2602.15374",
   url = "https://arxiv.org/abs/2602.15374",
   textVersion = paste(
     "Yang, C.-H., Shi, X., and Mukherjee, B. (2026).",

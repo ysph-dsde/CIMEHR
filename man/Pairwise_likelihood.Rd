@@ -146,7 +146,7 @@ fit <- Pairwise_likelihood(dat,
 \references{
 Weining Shen, Suyu Liu, Yong Chen, and Jing Ning (2019). Regression analysis of
 longitudinal data with outcome-dependent sampling and informative censoring.
-\emph{Scandinavian Journal of Statistics}, 46(3), 831--847. \doi{doi/10.1111/sjos.12373}.
+\emph{Scandinavian Journal of Statistics}, 46(3), 831--847. \doi{10.1111/sjos.12373}.
 
 Yong Chen, Jing Ning, and Chunyan Cai (2015). Regression analysis of longitudinal data
 with irregular and informative observation times. \emph{Biostatistics},
