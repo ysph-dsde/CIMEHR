@@ -205,7 +205,10 @@ EHRJoint(data, ...)
       \code{optimizer = c("nlminb", "optim")}; for \code{"Liang"} also
       \code{sigma_floor = 1e-8}, \code{estimate_intercept = FALSE},
       \code{baseline_formula = ~1}. The imputation seed is
-      \code{fit_method}'s \code{seed}.}
+      \code{fit_method}'s \code{seed}. When calling \code{fit_method()}
+      directly, give the number of imputations as \code{controls = list(m = 5)}
+      or name the first argument (\code{method = "mi_lmm"}); otherwise R
+      matches \code{m} to \code{method}.}
     \item{\code{Linear_increment_IP}}{\code{li_covariance =
       c("randomwalk", "rate_independence")},
       \code{inference = c("conditional", "patient_bootstrap")},

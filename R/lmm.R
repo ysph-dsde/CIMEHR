@@ -1,5 +1,5 @@
 .lmm_outcome_inference_available <- function(V, coefficients, se = NULL,
-    df = Inf, converged = FALSE, identified = FALSE) {
+                                             df = Inf, converged = FALSE, identified = FALSE) {
   p <- length(coefficients)
   if (!isTRUE(converged) || !isTRUE(identified) || !p ||
       !is.numeric(coefficients) || any(!is.finite(coefficients)) ||
@@ -76,7 +76,7 @@
       next
     }
     if(name %in% names(d) && (any(!is.finite(d[[name]][active])) ||
-       any(abs(d[[name]][active]-value[active])>1e-8*pmax(1,abs(value[active])))))
+                              any(abs(d[[name]][active]-value[active])>1e-8*pmax(1,abs(value[active])))))
       stop('Declared trajectory does not reproduce observed random covariate: ',name,call.=FALSE)
     nm <- paste0('.lmm_path_',make.names(name))
     if(nm %in% names(d))stop('Reserved random-trajectory column already exists.',call.=FALSE)
@@ -93,13 +93,13 @@
     main <- path[match(trajectory,coef_names)]
     others <- setdiff(path,main)
     if(length(others)>1L || (length(others) &&
-       any(abs(d[[others]][active]-g[active]*d[[main]][active])>1e-8*pmax(1,abs(d[[main]][active])))))
+                             any(abs(d[[others]][active]-g[active]*d[[main]][active])>1e-8*pmax(1,abs(d[[main]][active])))))
       stop('Grouped covariance permits only the trajectory and its binary-group interaction.',call.=FALSE)
   }
   if(!intercept && !length(path))stop('The random design must contain a coefficient.',call.=FALSE)
   config <- list(covariate_paths=TRUE,path_columns=path,coefficient_names=coef_names,
-    intercept=intercept,covariance_group=group,trajectory=trajectory,
-    time_origin=origin,time_scale=scale)
+                 intercept=intercept,covariance_group=group,trajectory=trajectory,
+                 time_origin=origin,time_scale=scale)
   list(data=d,random_covs=unique(c(path,group)),config=config)
 }
 
@@ -126,14 +126,14 @@
     Z <- stats::model.matrix(ff,dd)
     spec <- stats::setNames(list(if(ncol(Z)==1L)nlme::pdDiag(ff) else nlme::pdSymm(ff)),id)
     label <- paste0(if(config$intercept)'random intercept' else 'no random intercept',
-      if(length(config$coefficient_names))paste0('; random covariate slopes: ',paste(config$coefficient_names,collapse=', ')) else '')
+                    if(length(config$coefficient_names))paste0('; random covariate slopes: ',paste(config$coefficient_names,collapse=', ')) else '')
     formula <- paste0('~ ',if(config$intercept)'1' else '0',
-      if(length(config$coefficient_names))paste0(' + ',paste(config$coefficient_names,collapse=' + ')) else '', ' | ',id)
+                      if(length(config$coefficient_names))paste0(' + ',paste(config$coefficient_names,collapse=' + ')) else '', ' | ',id)
   }
   rank <- qr(Z)$rank
   if(rank<ncol(Z))stop('The declared random design is rank deficient.',call.=FALSE)
   list(spec=spec,data=dd,parameterization=label,formula=formula,structurally_identified=TRUE,
-    random_design_rank=rank,random_design_columns=ncol(Z))
+       random_design_rank=rank,random_design_columns=ncol(Z))
 }
 
 .lmm_tv_prepare <- function(d, id, time, random_covs, structure, intercept) {
@@ -280,8 +280,8 @@
     V <- J %*% ap %*% t(J);dimnames(V)<-list(names(estimates),names(estimates))
   }
   table <- data.frame(parameter=names(estimates),estimate=unname(estimates),
-    se=sqrt(pmax(diag(V),0)),scale=ifelse(grepl("^cov_",names(estimates)),"covariance","variance"),
-    row.names=NULL,stringsAsFactors=FALSE)
+                      se=sqrt(pmax(diag(V),0)),scale=ifelse(grepl("^cov_",names(estimates)),"covariance","variance"),
+                      row.names=NULL,stringsAsFactors=FALSE)
   list(ok=isTRUE(valid),message=message,estimate=estimates,table=table,vcov=V,
        transformed_parameters=if(is.null(pars))numeric() else pars,
        apVar=if(is.matrix(ap))ap else NULL,
@@ -346,7 +346,7 @@
   long_covs <- unique(as.character(long_covs))
   random_covs <- unique(as.character(random_covs))
   prepared <- tryCatch(.lmm_tv_prepare(d, id, time, random_covs,
-    outcome_random_structure, outcome_random_intercept), error=function(e)e)
+                                       outcome_random_structure, outcome_random_intercept), error=function(e)e)
   if(inherits(prepared,"error"))return(failure(conditionMessage(prepared)))
   d <- prepared$data; random_covs <- prepared$random_covs
   required <- unique(c(id, time, outcome, obs_indicator, long_covs, random_covs))
@@ -636,6 +636,6 @@
   )
 }
 
-LMM <- function(data,...) fit_method('lmm',data,...)
+LMM <- function(data,...) fit_method(method='lmm',data=data,...)
 
 Linear_mixed_model <- LMM

@@ -1,4 +1,3 @@
-
 .jmvl_g_marker_check<-function(data,vars){d<-as.data.frame(data);m<-setdiff(unique(vars),names(d));if(length(m))stop("Missing columns: ",paste(m,collapse=", "),call.=FALSE);if(anyNA(d[[vars[1L]]]))stop("Subject id cannot be missing.",call.=FALSE);d}
 .jmvl_g_marker_inv<-function(A,tol=1e-8){z<-svd((as.matrix(A)+t(as.matrix(A)))/2);if(!length(z$d)||max(z$d)<=0)stop("Observed information is singular.",call.=FALSE);k<-z$d>tol*max(z$d);if(!all(k))stop("JMVL-G parameters are not locally identified (singular observed information).",call.=FALSE);z$v%*%(t(z$u)/z$d)}
 .jmvl_g_marker_logsumexp<-function(x){a<-max(x);a+log(sum(exp(x-a)))}
@@ -47,7 +46,7 @@
   }; H
 }
 .jmvl_g_marker_integrate_subjects <- function(m,exposure,linear_rate,k,rsum,r2,
-                                    su,sv,rho,se,order=31L,details=FALSE) {
+                                              su,sv,rho,se,order=31L,details=FALSE) {
 
   n<-length(m);c<-sv*rho/su;t2<-sv^2*(1-rho^2);e2<-se^2
   den<-e2+k*t2;kb<-k>0;yb<-numeric(n);yb[kb]<-rsum[kb]/k[kb]
@@ -82,7 +81,7 @@
     o<-as.character(order);if(is.null(gh<-rules[[o]])){gh<-tryCatch(.jmvl_g_marker_gh(order),error=function(e)NULL);if(!is.null(gh))rules[[o]]<<-gh<-list(z=gh$z,lw=log(gh$w))}
     ll<-if(!is.null(gh))jmvl_g_integrate_cpp(r,yi,m,exposure,lr,k,a$su,a$sv,a$rho,a$se,gh$z,gh$lw,details)
     if(is.null(ll))return(tryCatch(.jmvl_g_marker_integrate_subjects(m,exposure,drop(W%*%a$gamma),k,sums(r),sums(r^2),a$su,a$sv,a$rho,a$se,order,details),
-             error=function(e){if(details)stop(e);rep(-1e100,n)}))
+                                   error=function(e){if(details)stop(e);rep(-1e100,n)}))
     ll
   };list(evaluate=evaluate,unpack=unpack,n=n,p=p,q=q)
 }
@@ -131,9 +130,9 @@
   final_me<-max(abs(final_low$mean_u-final_high$mean_u)/pmax(1,abs(final_high$mean_u)),
                 abs(final_low$second_u-final_high$second_u)/pmax(1,abs(final_high$second_u)))
   final_ge<-max(abs(.jmvl_g_marker_subject_scores(function(x)ev$evaluate(x,ord),par)-
-                     .jmvl_g_marker_subject_scores(function(x)ev$evaluate(x,final_order),par)))
+                      .jmvl_g_marker_subject_scores(function(x)ev$evaluate(x,final_order),par)))
   history[[length(history)+1L]]<-data.frame(stage='final_parameter',order=ord,check_order=final_order,
-    loglik_max_error=final_qe,posterior_absolute_error=final_mae,posterior_relative_error=final_me,score_max_error=final_ge)
+                                            loglik_max_error=final_qe,posterior_absolute_error=final_mae,posterior_relative_error=final_me,score_max_error=final_ge)
   if(final_qe>tol||final_mae>tol||final_ge>score_tol){
     if(final_order>=81L)stop('Final-parameter quadrature certification failed at 81 nodes.')
     return(.jmvl_g_marker_certify_fit(ev,par,final_order,optimizer_control))
@@ -148,11 +147,11 @@
   if(scaled>1e-6||h_err>1e-4||se_step>5e-4||se_order>5e-4)stop('Numerical certification failed for score/Hessian/SE stability.')
   list(par=par,value=fn(par),H=H2,V=V2,order=final_order,optimizer_code=op$convergence,
        diagnostics=list(quadrature_checks=do.call(rbind,history),quadrature_loglik_tol=tol,quadrature_score_tol=score_tol,
-         scaled_score=scaled,hessian_relative_step_error=h_err,hessian_symmetry_error=max(abs(H2-t(H2))),
-         hessian_min_eigenvalue=min(eigen(H2,symmetric=TRUE,only.values=TRUE)$values),
-         beta_se_relative_step_error=se_step,beta_se_relative_order_error=se_order,numerically_certified=TRUE,
-         numerical_certification_scope='integration, stationarity, local positive definite information, and numerical SE stability; not statistical model validity',
-         gh_requested=as.integer(gh_order),gh_initial_used=max(21L,min(71L,as.integer(gh_order)))))
+                        scaled_score=scaled,hessian_relative_step_error=h_err,hessian_symmetry_error=max(abs(H2-t(H2))),
+                        hessian_min_eigenvalue=min(eigen(H2,symmetric=TRUE,only.values=TRUE)$values),
+                        beta_se_relative_step_error=se_step,beta_se_relative_order_error=se_order,numerically_certified=TRUE,
+                        numerical_certification_scope='integration, stationarity, local positive definite information, and numerical SE stability; not statistical model validity',
+                        gh_requested=as.integer(gh_order),gh_initial_used=max(21L,min(71L,as.integer(gh_order)))))
 }
 
 .fit_jmvl_g_marker<-function(
@@ -200,17 +199,17 @@
   dimnames(Vnatural)<-list(natural_names,natural_names)
   grad<-numeric(length(op$par));for(j in seq_along(grad)){h<-1e-5*(1+abs(op$par[j]));aa<-bb<-op$par;aa[j]<-aa[j]+h;bb[j]<-bb[j]-h;grad[j]<-(nll(aa)-nll(bb))/(2*h)}
   ans<-list(method_key="jmvl_g_marker",method="JMVL-G exponential gap-time, correlated Gaussian RE (certified adaptive quadrature)",estimand="conditional Gaussian longitudinal fixed effect",
-    coefficients=beta,vcov=Vb,se=setNames(sqrt(pmax(diag(Vb),0)),names(beta)),vcov_type="inverse observed marginal-likelihood information",
-    nuisance=list(gamma=setNames(a$gamma,colnames(W)),sd_process_re=a$su,sd_outcome_re=a$sv,correlation=a$rho,residual_sd=a$se,logLik=-op$value),
-    inference=list(vcov_all=Vnatural),converged=TRUE,
-    diagnostics=c(list(ok=TRUE,process=process,n_subjects=n,n_visit_events=sum(inwin),n_marker_events=sum(marker&inwin),n_process_events=sum(event),n_outcomes=length(y),zero_event_subjects=sum(m==0),
-      gh_order=cert$order,quadrature="analytic conditional Gaussian integration plus one-dimensional patient-adaptive Gauss-Hermite",gradient_max=max(abs(grad)),information_condition=kappa(H),optimizer_code=op$convergence,
-      censor_source=if(is.null(censor_col))"common maximum observed time"else censor_col), cert$diagnostics),
-    assumptions=c("Selected event gaps have constant exponential hazard conditional on the process random effect","Process and outcome random effects are bivariate Gaussian",
-      "Marker is the default process; choosing visit does not model additional marker-level MNAR missingness","Every subject, including zero-event subjects and empty windows (entry = censoring), contributes exposure over its risk window (entry, censoring]; a visit at the entry time is not an event or outcome row"),call=match.call())
+            coefficients=beta,vcov=Vb,se=setNames(sqrt(pmax(diag(Vb),0)),names(beta)),vcov_type="inverse observed marginal-likelihood information",
+            nuisance=list(gamma=setNames(a$gamma,colnames(W)),sd_process_re=a$su,sd_outcome_re=a$sv,correlation=a$rho,residual_sd=a$se,logLik=-op$value),
+            inference=list(vcov_all=Vnatural),converged=TRUE,
+            diagnostics=c(list(ok=TRUE,process=process,n_subjects=n,n_visit_events=sum(inwin),n_marker_events=sum(marker&inwin),n_process_events=sum(event),n_outcomes=length(y),zero_event_subjects=sum(m==0),
+                               gh_order=cert$order,quadrature="analytic conditional Gaussian integration plus one-dimensional patient-adaptive Gauss-Hermite",gradient_max=max(abs(grad)),information_condition=kappa(H),optimizer_code=op$convergence,
+                               censor_source=if(is.null(censor_col))"common maximum observed time"else censor_col), cert$diagnostics),
+            assumptions=c("Selected event gaps have constant exponential hazard conditional on the process random effect","Process and outcome random effects are bivariate Gaussian",
+                          "Marker is the default process; choosing visit does not model additional marker-level MNAR missingness","Every subject, including zero-event subjects and empty windows (entry = censoring), contributes exposure over its risk window (entry, censoring]; a visit at the entry time is not an event or outcome row"),call=match.call())
   class(ans)<-c("jmvl_g_marker");ans
 }
 
 JMVL_G <- function(data,process=c('marker','visit'),...) {
-  process<-match.arg(process);fit_method(if(process=='visit')'jmvl_g_visit' else 'jmvl_g_marker',data,...)
+  process<-match.arg(process);fit_method(method=if(process=='visit')'jmvl_g_visit' else 'jmvl_g_marker',data=data,...)
 }

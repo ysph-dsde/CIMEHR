@@ -1,4 +1,3 @@
-
 .liang_marker_stable_risk <- function(log_weight, values, times, entry, censor) {
   values <- as.matrix(values); n <- nrow(values)
   stopifnot(length(log_weight) == n, length(entry) == n, length(censor) == n)
@@ -58,7 +57,7 @@
   if (!length(times) || !n || !q || length(log_weight) != n || length(entry) != n ||
       length(censor) != n || anyNA(log_weight) || any(log_weight == Inf) ||
       any(!is.finite(values)) || (if (is.null(geometry)) any(!is.finite(times)) ||
-      anyNA(entry) || anyNA(censor) || any(entry > censor) else geometry$unusable))
+                                  anyNA(entry) || anyNA(censor) || any(entry > censor) else geometry$unusable))
     return(fallback())
   if (is.null(geometry)) geometry <- .liang_marker_stable_risk_geometry(times, entry, censor)
   ut <- geometry$ut; K <- geometry$K; at <- geometry$at
@@ -78,7 +77,7 @@
 }
 
 .liang_marker_stable_risk <- function(log_weight, values, times, entry, censor, geometry = NULL,
-                                        covariance = TRUE) {
+                                      covariance = TRUE) {
   z <- .liang_marker_stable_risk_states(log_weight, values, times, entry, censor, geometry)
   at <- z[["at"]]
   if (is.null(at)) return(z)
@@ -149,7 +148,7 @@
     information<-lw_indexed_cov_sum(R$covariance,dn,at,q)
     U<-lw_centered_group_sum(Ve,R$mean,if(states)atem else em,ei,n)
     value<-list(objective=lw_indexed_dot(dn,R$log_sum,at)-lw_indexed_sum(z,ei),
-      score=colSums(U),individual=U,information=information)
+                score=colSums(U),individual=U,information=information)
     cached_g<<-g;cached_value<<-value;cached_risk<<-list(z=z,risk=R,at=at)
     value
   }
@@ -174,7 +173,7 @@
 }
 
 .liang_marker_baseline_design <- function(time_values,time_col,estimate_intercept,baseline_formula,
-    prediction_terms=NULL) {
+                                          prediction_terms=NULL) {
   if(!is.logical(estimate_intercept)||length(estimate_intercept)!=1L||is.na(estimate_intercept))
     stop("estimate_intercept must be TRUE or FALSE.",call.=FALSE)
   if(!inherits(baseline_formula,"formula")||length(baseline_formula)!=2L)
@@ -182,8 +181,8 @@
   if(any(!all.vars(baseline_formula)%in%time_col))
     stop("baseline_formula may use only the specified time column: ",time_col,call.=FALSE)
   allowed<-c("+","-","*","/","^",":","(","I","c","poly","ns","bs",
-    "log","log1p","exp","expm1","sqrt","sin","cos","tan","abs",
-    "pmin","pmax")
+             "log","log1p","exp","expm1","sqrt","sin","cos","tan","abs",
+             "pmin","pmax")
   walk<-function(x,inside_transform=FALSE){
     if(!is.call(x))return(invisible(NULL))
     h<-x[[1L]]
@@ -212,11 +211,11 @@
     if(length(attr(tt,"term.labels"))||length(all.vars(formula_use)))
       stop("A nonconstant baseline_formula requires estimate_intercept=TRUE; it is not used in profile mode.",call.=FALSE)
     return(list(design=matrix(numeric(),length(time_values),0L),formula=text,terms=NULL,
-      assumption="The outcome time baseline is unspecified and removed by the centered profile estimating equation"))
+                assumption="The outcome time baseline is unspecified and removed by the centered profile estimating equation"))
   }
   dd<-setNames(data.frame(as.numeric(time_values)),time_col)
   mf<-stats::model.frame(if(is.null(prediction_terms))formula_use else prediction_terms,
-    data=dd,na.action=stats::na.pass)
+                         data=dd,na.action=stats::na.pass)
   fitted_terms<-attr(mf,"terms")
   F<-stats::model.matrix(fitted_terms,data=mf)
   if(nrow(F)!=length(time_values)||any(!is.finite(F)))
@@ -226,18 +225,18 @@
   colnames(F)<-nn
   list(design=F,formula=text,terms=fitted_terms,assumption=if(ncol(F)==1L)
     "Liang-time assumes a constant outcome baseline alpha(t)" else
-    paste0("Liang-time assumes alpha(t) lies in the supplied deterministic time basis: ",text))
+      paste0("Liang-time assumes alpha(t) lies in the supplied deterministic time basis: ",text))
 }
 
 .liang_marker_outcome_case_derivative <- function(Dsub,Dbar,Dc,coef,y,oi,om,tu,
-    log_weight,log_risk_sum,entry,censor) {
+                                                  log_weight,log_risk_sum,entry,censor) {
 
   n<-nrow(Dsub);p<-ncol(Dsub);K<-length(tu)
   residual<-y-drop(Dsub[oi,,drop=FALSE]%*%coef)
   direct<-lw_group_sum(Dc*residual,oi,n)
   residual_sum<-lw_group_sum(matrix(residual,ncol=1L),om,K)[,1L]
   z<-.liang_marker_stable_interval(tu,-log_risk_sum,
-    cbind(residual_sum,Dbar*residual_sum),entry,censor)
+                                   cbind(residual_sum,Dbar*residual_sum),entry,censor)
   mult<-exp(log_weight+z$log_sum)
   profile<-(-Dsub*z$mean[,1L]+z$mean[,1L+seq_len(p),drop=FALSE])*mult
   psi<-direct+profile
@@ -246,9 +245,9 @@
 }
 
 .liang_marker_stacked <- function(V, gamma, gs, bl, ei, et, entry, censor,
-    mu, m, sigma2, theta_identified, Q0, coef_all, design, Hi, psi,
-    y, oi, estimate_intercept, profile, joint_names, subject_ids,
-    retain_influence = FALSE, rate_risk = NULL) {
+                                  mu, m, sigma2, theta_identified, Q0, coef_all, design, Hi, psi,
+                                  y, oi, estimate_intercept, profile, joint_names, subject_ids,
+                                  retain_influence = FALSE, rate_risk = NULL) {
   n <- nrow(V); p <- length(coef_all)
   eta <- drop(V %*% gamma)
   tu <- bl$time; em <- match(et, tu); dn <- tabulate(em, length(tu))
@@ -296,7 +295,7 @@
       om <- match(ot, tuo)
       residual_time <- lw_group_sum(matrix(residual, ncol = 1L), om, length(tuo))[, 1L]
       z <- .liang_marker_stable_interval(tuo,
-        -profile$log_risk_sum, matrix(residual_time, ncol = 1L), entry, censor)
+                                         -profile$log_risk_sum, matrix(residual_time, ncol = 1L), entry, censor)
       center_residual <- z$mean[, 1L] * exp(profile$log_weight + z$log_sum)
       instrument_sum <- sum_subject(profile$instrument, oi)
       G_B <- derivative_design * (residual_subject - center_residual) - instrument_sum * theta_mean
@@ -334,16 +333,16 @@
   dimnames(gamma_covariance) <- list(colnames(V), colnames(V))
   scope <- if (theta_identified)
     "all-stage patient stacked sandwich: rate, profiled Breslow exposure, frailty moment, posterior frailty and outcome equation" else
-    "all-stage patient stacked sandwich conditional on the selected no-frailty branch; frailty-variance Wald inference unavailable"
+      "all-stage patient stacked sandwich conditional on the selected no-frailty branch; frailty-variance Wald inference unavailable"
   if (!estimate_intercept) scope <- paste0(scope, "; empirical instrument center and estimated centering weights differentiated")
   else scope <- paste0(scope, "; chosen outcome baseline basis treated as fixed")
   answer <- list(vcov_all = covariance, vcov_outcome = outcome_covariance,
-    vcov_gamma = gamma_covariance,
-    se_sigma2 = if (theta_identified) sqrt(max(covariance["sigma2", "sigma2"], 0)) else NA_real_,
-    regular = theta_identified, scope = scope,
-    raw_influence_sum_max = raw_sum, scaled_influence_sum_max = scaled_sum,
-    nuisance_estimation_propagated = TRUE,
-    conditional_active_branch_inference_available = TRUE)
+                 vcov_gamma = gamma_covariance,
+                 se_sigma2 = if (theta_identified) sqrt(max(covariance["sigma2", "sigma2"], 0)) else NA_real_,
+                 regular = theta_identified, scope = scope,
+                 raw_influence_sum_max = raw_sum, scaled_influence_sum_max = scaled_sum,
+                 nuisance_estimation_propagated = TRUE,
+                 conditional_active_branch_inference_available = TRUE)
   if (retain_influence) {
     if (!theta_identified) influence[, "sigma2"] <- NA_real_
     answer$influence_all <- influence
@@ -391,7 +390,7 @@
     .st<-tryCatch(drop(solve(.H,.pp$score)),error=function(e)NULL);if(is.null(.st))break
     .f<-1;.acc<-FALSE
     while(.f>=2^-20){.c<-.pg+.f*.st;.cv<-gamma_at(.c)$objective
-      if(is.finite(.cv)&&.cv<=.pp$objective+1e-12*(1+abs(.pp$objective))){.pg<-.c;.acc<-TRUE;break};.f<-.f/2}
+    if(is.finite(.cv)&&.cv<=.pp$objective+1e-12*(1+abs(.pp$objective))){.pg<-.c;.acc<-TRUE;break};.f<-.f/2}
     if(!.acc)break
   }
   og$par<-.pg;gs<-gamma_at(og$par)
@@ -400,7 +399,7 @@
   bl<-rate_engine$breslow(og$par)
 
   exposure<-.liang_marker_stable_interval(bl$time,bl$log_jump,
-    matrix(1,length(bl$time),1L),entry,censor)
+                                          matrix(1,length(bl$time),1L),entry,censor)
   logLambda<-exposure$log_sum;m<-tabulate(ei,nbins=n)
   mu<-exp(drop(V%*%og$par)+logLambda)
   den<-sum(mu^2);if(!is.finite(den)||den<=0)stop("Frailty variance moment is unidentified.",call.=FALSE)
@@ -418,7 +417,7 @@
     ix<-seq_len(ncol(F)+ncol(Xs))
     baseline_coef<-coef_all[seq_len(ncol(F))]
     joint_names<-c(colnames(F),paste0("beta:",colnames(Xs)),
-      if(theta_identified)paste0("theta:",colnames(Q0)))
+                   if(theta_identified)paste0("theta:",colnames(Q0)))
     profile<-NULL
     centered_rank<-NA_integer_
   } else {
@@ -433,19 +432,19 @@
     bread<-crossprod(Dc,design);Hi<-.liang_marker_inv(bread)
     coef_all<-drop(Hi%*%crossprod(Dc,y));names(coef_all)<-colnames(Dsub)
     influence<-.liang_marker_outcome_case_derivative(Dsub,Dbar,Dc,coef_all,y,oi,om,tuo,
-      lw,drisk$log_sum,entry,censor)
+                                                     lw,drisk$log_sum,entry,censor)
     psi<-influence$individual;ix<-seq_len(ncol(Xs));baseline_coef<-NULL
     profile<-c(influence,list(outcome_time=ot,time_grid=tuo,log_risk_sum=drisk$log_sum,
-      log_weight=lw,instrument=Dc))
+                              log_weight=lw,instrument=Dc))
     joint_names<-c(paste0("beta:",colnames(Xs)),
-      if(theta_identified)paste0("theta:",colnames(Q0)))
+                   if(theta_identified)paste0("theta:",colnames(Q0)))
     centered_rank<-qr(Dc)$rank
   }
   Vconditional<-Hi%*%crossprod(psi)%*%t(Hi)
   dimnames(Vconditional)<-list(joint_names,joint_names)
   stacked<-.liang_marker_stacked(V,og$par,gs,bl,ei,et,entry,censor,
-    mu,m,sigma2,theta_identified,Q0,coef_all,design,Hi,psi,y,oi,
-    estimate_intercept,profile,joint_names,ids,retain_influence,rate_engine$risk(og$par))
+                                 mu,m,sigma2,theta_identified,Q0,coef_all,design,Hi,psi,y,oi,
+                                 estimate_intercept,profile,joint_names,ids,retain_influence,rate_engine$risk(og$par))
   Va<-stacked$vcov_outcome
   dimnames(Va)<-list(names(coef_all),names(coef_all))
   beta<-coef_all[ix];Vb<-Va[ix,ix,drop=FALSE]
@@ -463,65 +462,65 @@
   dimnames(theta_vcov)<-list(names(theta),names(theta))
   all_parameters<-c(setNames(og$par,paste0("gamma:",visit_covs)),sigma2=sigma2,joint_coef)
   ans<-list(method_key="liang_marker",
-    method=if(estimate_intercept)"Liang-time estimator (Pullenayegum et al., 2023)" else "Liang centered/profile estimator",
-    estimand="marginal longitudinal covariate effect adjusted for informative visits",
-    coefficients=beta,vcov=Vb,se=setNames(sqrt(pmax(diag(Vb),0)),names(beta)),
-    vcov_all=stacked$vcov_all,vcov_type=scope,
-    variance_label=if(stacked$regular)"variance (stacked sandwich)" else
-      "variance (stacked; conditional on selected branch)",variance_scope=scope,
-    nuisance=list(gamma=setNames(og$par,visit_covs),gamma_se=gamma_se,
-      vcov_gamma=stacked$vcov_gamma,baseline_rate=bl,
-      frailty_variance=sigma2,frailty_variance_untruncated=raw_sigma2,se_sigma2=stacked$se_sigma2,
-      posterior_frailty_minus_one=B,theta=theta,vcov_theta=theta_vcov,
-      se_theta=setNames(sqrt(pmax(diag(theta_vcov),0)),names(theta)),
-      baseline_coefficients=baseline_coef,baseline_terms=baseline$terms),
-    inference=list(vcov_gamma_model_based=Vgamma_model,
-      vcov_all=stacked$vcov_all,full_parameters=all_parameters,
-      vcov_outcome_theta=Voutcome_theta,
-      vcov_outcome_theta_conditional=Vconditional,coefficients_outcome_all=joint_coef,
-      influence_all=stacked$influence_all,
-      effective_outcome_score=stacked$effective_outcome_score,
-      exposure_chain=stacked$exposure_chain,frailty_chain=stacked$frailty_chain,
-      regular=stacked$regular,scope=scope,
-      conditional_active_branch_inference_available=TRUE,
-      outcome_centering_profiled=!estimate_intercept,
-      conditional_influence=if(estimate_intercept)
-        "Subject score of the uncentered expanded independence-GEE design; upstream rate/frailty outputs held fixed" else
-        "Empirical subject-case derivative of the H'(Y-D b) profile equation; upstream rate/frailty outputs held fixed"),
-    converged=TRUE,
-    diagnostics=list(ok=TRUE,process=process,n_subjects=n,n_visit_events=sum(inwin),
-      n_marker_events=sum(marker,na.rm=TRUE),n_process_events=length(er),n_outcomes=length(or),
-      zero_event_subjects=sum(m==0),estimate_intercept=estimate_intercept,
-      mode=if(estimate_intercept)"Liang-time" else "centered/profile",
-      baseline_formula=baseline$formula,
-      censor_source=if(is.null(censor_col))"common maximum observed time"else censor_col,
-      gamma_score_max=max(abs(gs$score)),frailty_on_boundary=sigma2==0,
-      frailty_boundary=!theta_identified,regular=stacked$regular,covariance_regular=stacked$regular,
-      conditional_inference_valid=TRUE,inference_scope=scope,
-      nuisance_estimation_propagated=TRUE,
-      raw_influence_sum_max=stacked$raw_influence_sum_max,
-      scaled_influence_sum_max=stacked$scaled_influence_sum_max,
-      theta_identified=theta_identified,centered_design_rank=centered_rank,
-      outcome_design_rank=qr(design)$rank,
-      conditional_influence_sum_max=max(abs(colSums(psi)))),
-    assumptions=c("The selected process follows a proportional-rate gamma-frailty model",
-      "The conditional outcome mean is linear in posterior frailty and the specified random-effect design",
-      baseline$assumption,
-      "All-stage patient stacked covariance propagates rate, profiled Breslow exposure, frailty moment, posterior frailty and estimated centering weights",
-      "At an inactive frailty component inference conditions on the selected no-frailty branch; boundary-selection uncertainty is excluded",
-      "Any data-selected outcome baseline basis is treated as fixed for covariance estimation",
-      "Marker is the default process because recorded markers, not generic visits, determine observed Y"),call=match.call())
+            method=if(estimate_intercept)"Liang-time estimator (Pullenayegum et al., 2023)" else "Liang centered/profile estimator",
+            estimand="marginal longitudinal covariate effect adjusted for informative visits",
+            coefficients=beta,vcov=Vb,se=setNames(sqrt(pmax(diag(Vb),0)),names(beta)),
+            vcov_all=stacked$vcov_all,vcov_type=scope,
+            variance_label=if(stacked$regular)"variance (stacked sandwich)" else
+              "variance (stacked; conditional on selected branch)",variance_scope=scope,
+            nuisance=list(gamma=setNames(og$par,visit_covs),gamma_se=gamma_se,
+                          vcov_gamma=stacked$vcov_gamma,baseline_rate=bl,
+                          frailty_variance=sigma2,frailty_variance_untruncated=raw_sigma2,se_sigma2=stacked$se_sigma2,
+                          posterior_frailty_minus_one=B,theta=theta,vcov_theta=theta_vcov,
+                          se_theta=setNames(sqrt(pmax(diag(theta_vcov),0)),names(theta)),
+                          baseline_coefficients=baseline_coef,baseline_terms=baseline$terms),
+            inference=list(vcov_gamma_model_based=Vgamma_model,
+                           vcov_all=stacked$vcov_all,full_parameters=all_parameters,
+                           vcov_outcome_theta=Voutcome_theta,
+                           vcov_outcome_theta_conditional=Vconditional,coefficients_outcome_all=joint_coef,
+                           influence_all=stacked$influence_all,
+                           effective_outcome_score=stacked$effective_outcome_score,
+                           exposure_chain=stacked$exposure_chain,frailty_chain=stacked$frailty_chain,
+                           regular=stacked$regular,scope=scope,
+                           conditional_active_branch_inference_available=TRUE,
+                           outcome_centering_profiled=!estimate_intercept,
+                           conditional_influence=if(estimate_intercept)
+                             "Subject score of the uncentered expanded independence-GEE design; upstream rate/frailty outputs held fixed" else
+                               "Empirical subject-case derivative of the H'(Y-D b) profile equation; upstream rate/frailty outputs held fixed"),
+            converged=TRUE,
+            diagnostics=list(ok=TRUE,process=process,n_subjects=n,n_visit_events=sum(inwin),
+                             n_marker_events=sum(marker,na.rm=TRUE),n_process_events=length(er),n_outcomes=length(or),
+                             zero_event_subjects=sum(m==0),estimate_intercept=estimate_intercept,
+                             mode=if(estimate_intercept)"Liang-time" else "centered/profile",
+                             baseline_formula=baseline$formula,
+                             censor_source=if(is.null(censor_col))"common maximum observed time"else censor_col,
+                             gamma_score_max=max(abs(gs$score)),frailty_on_boundary=sigma2==0,
+                             frailty_boundary=!theta_identified,regular=stacked$regular,covariance_regular=stacked$regular,
+                             conditional_inference_valid=TRUE,inference_scope=scope,
+                             nuisance_estimation_propagated=TRUE,
+                             raw_influence_sum_max=stacked$raw_influence_sum_max,
+                             scaled_influence_sum_max=stacked$scaled_influence_sum_max,
+                             theta_identified=theta_identified,centered_design_rank=centered_rank,
+                             outcome_design_rank=qr(design)$rank,
+                             conditional_influence_sum_max=max(abs(colSums(psi)))),
+            assumptions=c("The selected process follows a proportional-rate gamma-frailty model",
+                          "The conditional outcome mean is linear in posterior frailty and the specified random-effect design",
+                          baseline$assumption,
+                          "All-stage patient stacked covariance propagates rate, profiled Breslow exposure, frailty moment, posterior frailty and estimated centering weights",
+                          "At an inactive frailty component inference conditions on the selected no-frailty branch; boundary-selection uncertainty is excluded",
+                          "Any data-selected outcome baseline basis is treated as fixed for covariance estimation",
+                          "Marker is the default process because recorded markers, not generic visits, determine observed Y"),call=match.call())
   baseline_prediction <- if(estimate_intercept)
     .liang_trajectory_parametric_summary(baseline$terms, baseline_coef) else
-    .liang_trajectory_increment_summary(ot, y-drop(design%*%coef_all),
-      drisk$log_sum, tuo)
+      .liang_trajectory_increment_summary(ot, y-drop(design%*%coef_all),
+                                          drisk$log_sum, tuo)
   ans$prediction <- .liang_trajectory_spec(baseline_prediction, d, id, time,
-    long_covs, beta, .liang_trajectory_window(d,time,censor_col,entry_col))
+                                           long_covs, beta, .liang_trajectory_window(d,time,censor_col,entry_col))
   class(ans)<-c("liang_marker");ans
 }
 
 Liang <- function(data,process=c('marker','visit'),...) {
-  process<-match.arg(process);fit_method(if(process=='visit')'liang_visit' else 'liang_marker',data,...)
+  process<-match.arg(process);fit_method(method=if(process=='visit')'liang_visit' else 'liang_marker',data=data,...)
 }
 
 Joint_modeling_visiting_and_longitudinal_Liang <- Liang

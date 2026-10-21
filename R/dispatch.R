@@ -69,10 +69,10 @@ available_comparison_methods <- function() .cimehr_method_registry
 }
 
 fit_method <- function(method,data,id='id',time='time',outcome='Y',obs_indicator='R',
-    visit_covs=NULL,long_covs=NULL,outcome_random_covs=NULL,obs_random_covs=outcome_random_covs,
-    censor_col=NULL,entry_col=NULL,obs_fixed_covs=visit_covs,cimehr_visit_covs=visit_covs,
-    outcome_fixed_structure=NULL,outcome_random_structure=NULL,outcome_random_intercept=TRUE,
-    focal=if(length(long_covs))long_covs[1L] else NULL,seed=1L,controls=list(),...) {
+                       visit_covs=NULL,long_covs=NULL,outcome_random_covs=NULL,obs_random_covs=outcome_random_covs,
+                       censor_col=NULL,entry_col=NULL,obs_fixed_covs=visit_covs,cimehr_visit_covs=visit_covs,
+                       outcome_fixed_structure=NULL,outcome_random_structure=NULL,outcome_random_intercept=TRUE,
+                       focal=if(length(long_covs))long_covs[1L] else NULL,seed=1L,controls=list(),...) {
   method<-.resolve_method(method)
   controls<-c(controls,list(...))
   if(length(controls) && (is.null(names(controls))||any(!nzchar(names(controls)))||anyDuplicated(names(controls))))
@@ -80,7 +80,7 @@ fit_method <- function(method,data,id='id',time='time',outcome='Y',obs_indicator
   if(any(names(controls)%in%c('data','d','id','id_col','time','time_col','outcome','y_col','obs_indicator','r_col','entry_col','censor_col')))
     stop('Specify data and structural columns through fit_method arguments, not controls.',call.=FALSE)
   merged_covs<-unique(c(visit_covs,long_covs,outcome_random_covs,obs_random_covs,obs_fixed_covs,cimehr_visit_covs,
-    unlist(controls[intersect(names(controls),c('visit_covs','long_covs','random_covs','outcome_random_covs','obs_random_covs','obs_fixed_covs'))],use.names=FALSE)))
+                        unlist(controls[intersect(names(controls),c('visit_covs','long_covs','random_covs','outcome_random_covs','obs_random_covs','obs_fixed_covs'))],use.names=FALSE)))
   .validate_data(data,id,time,outcome,obs_indicator,merged_covs,entry_col,censor_col)
   retain_curve_refit<-method%in%.curve_refit_methods()
   if(retain_curve_refit)curve_refit_data<-data
@@ -97,8 +97,8 @@ fit_method <- function(method,data,id='id',time='time',outcome='Y',obs_indicator
      'visit_covs'%in%names(controls))
     obs_fixed_covs<-controls[['visit_covs']]
   args<-.engine_call_args(native,data,id,time,outcome,obs_indicator,visit_covs,cimehr_visit_covs,
-    obs_fixed_covs,long_covs,outcome_random_covs,obs_random_covs,focal,seed,entry_col,censor_col,controls,
-    outcome_random_structure,outcome_random_intercept,outcome_fixed_structure)
+                          obs_fixed_covs,long_covs,outcome_random_covs,obs_random_covs,focal,seed,entry_col,censor_col,controls,
+                          outcome_random_structure,outcome_random_intercept,outcome_fixed_structure)
   warnings<-character();started<-proc.time()[['elapsed']]
   ans<-withCallingHandlers(do.call(native,args),warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart('muffleWarning')})
   elapsed<-proc.time()[['elapsed']]-started
@@ -133,10 +133,10 @@ method_comparisons <- function(data,methods=cimehr_methods('selected'),controls=
   }, error = function(e) e)
   out<-.cimehr_without_identification_signal(lapply(methods,function(m)tryCatch({
     if (!is.null(argument_error)) stop(argument_error)
-    fit_method(m,data,controls=controls[[as.character(m)]] %||%
-      controls[[.resolve_method(m)]] %||% list(),...)
+    fit_method(method=m,data=data,controls=controls[[as.character(m)]] %||%
+                 controls[[.resolve_method(m)]] %||% list(),...)
   },error=function(e)
-      structure(list(method=m,error=conditionMessage(e)),class='cimehr_failure'))))
+    structure(list(method=m,error=conditionMessage(e)),class='cimehr_failure'))))
   names(out)<-vapply(methods,function(m)available_comparison_methods()$label[match(.resolve_method(m),available_comparison_methods()$method)],character(1))
   out
 }

@@ -1,4 +1,3 @@
-
 .iirr_weighting_marker_stable_risk <- function(log_weight, values, times, entry, censor) {
   values <- as.matrix(values); n <- nrow(values)
   stopifnot(length(log_weight) == n, length(entry) == n, length(censor) == n)
@@ -37,7 +36,7 @@
 }
 
 .iirr_weighting_marker_subject_data <- function(d, id, time, outcome, obs_indicator, visit_covs,
-                               entry_col, censor_col, process) {
+                                                entry_col, censor_col, process) {
   ids <- unique(d[[id]]); si <- match(d[[id]], ids); first <- match(ids, d[[id]])
   V <- as.matrix(d[first, visit_covs, drop = FALSE]); storage.mode(V) <- "double"
   if (any(!is.finite(V))) stop("Visit-process covariates must be finite at baseline.", call. = FALSE)
@@ -101,13 +100,13 @@
 }
 
 .iirr_weighting_marker_gamma_parts <- function(gamma, V, event_id, event_t, entry, censor,
-                                subject_scores = FALSE, prepared = NULL) {
+                                               subject_scores = FALSE, prepared = NULL) {
   eta <- drop(V %*% gamma)
 
   if (any(!is.finite(eta)) || any(!is.finite(V)) ||
       !length(event_t) || anyNA(entry) || any(entry == Inf) || any(!is.finite(censor))) {
     return(.iirr_weighting_marker_gamma_parts_reference(gamma, V, event_id, event_t,
-                                         entry, censor, subject_scores))
+                                                        entry, censor, subject_scores))
   }
   if (is.null(prepared))
     prepared <- .iirr_weighting_marker_gamma_geometry(V, event_id, event_t, entry, censor)
@@ -115,7 +114,7 @@
 
   if (any(abs(eta) > 500) || any(abs(V) > 1e6) || isTRUE(G$balanced_constant_risk))
     return(.iirr_weighting_marker_gamma_parts_reference(gamma, V, event_id, event_t,
-      entry, censor, subject_scores, G))
+                                                        entry, censor, subject_scores, G))
   risk <- .iirr_weighting_marker_stable_risk(eta, V, G$risk_times, entry, censor)
   if (any(!is.finite(risk$log_sum)))
     stop("Empty risk set at an event time.", call. = FALSE)
@@ -124,7 +123,7 @@
   if (isTRUE(subject_scores)) {
 
     U <- U - .iirr_weighting_marker_stable_compensator(eta, V, G$risk_times, G$state_dn,
-      risk$log_sum, risk$mean, entry, censor)
+                                                       risk$log_sum, risk$mean, entry, censor)
   }
   list(objective = lw_indexed_dot(G$dn, risk$log_sum, G$risk_state) - lw_indexed_sum(eta, event_id),
        score = colSums(U), subject_score = U, information = information,
@@ -139,9 +138,9 @@
     return_subject_scores = FALSE) {
   process <- match.arg(process)
   d <- .iirr_weighting_marker_check(data, c(id, time, outcome, obs_indicator, visit_covs, long_covs,
-                          entry_col, censor_col))
+                                            entry_col, censor_col))
   S <- .iirr_weighting_marker_subject_data(d, id, time, outcome, obs_indicator, visit_covs,
-                         entry_col, censor_col, process)
+                                           entry_col, censor_col, process)
   if (!length(S$event_rows)) stop("Selected process has no events.", call. = FALSE)
   if (!length(S$outcome_rows)) stop("No recorded outcomes are available.", call. = FALSE)
   eid <- S$si[S$event_rows]; et <- d[[time]][S$event_rows]
@@ -159,8 +158,8 @@
     memo[[key]]
   }
   og <- stats::optim(rep(0, ncol(S$V)), function(g) parts(g)$objective,
-    gr = function(g) -parts(g)$score,
-    method = "BFGS", control = optimizer_control, hessian = TRUE)
+                     gr = function(g) -parts(g)$score,
+                     method = "BFGS", control = optimizer_control, hessian = TRUE)
 
   gpol <- og$par
   polish_iterations <- 0L
@@ -231,39 +230,39 @@
     method_key = "iirr_weighting_marker", method = "IIRR weighting (risk-set corrected)", estimand = "marginal longitudinal mean coefficient",
     coefficients = beta, vcov = Vbeta, se = setNames(sqrt(pmax(diag(Vbeta), 0)), names(beta)),
     vcov_type = paste0("stacked subject sandwich (Breslow-profiled proportional-rate ",
-      "nuisance + inverse-rate weighted outcome equation)"),
+                       "nuisance + inverse-rate weighted outcome equation)"),
     nuisance = list(gamma = setNames(og$par, visit_covs),
-      gamma_vcov = Vgamma,
-      gamma_se = setNames(sqrt(pmax(diag(Vgamma), 0)), visit_covs),
-      gamma_information = gp$information, gamma_hessian = og$hessian,
-      breslow_event_times = gp$event_times %||% sort(unique(et)),
-      breslow_increment = geometry$dn * exp(-gp$log_sum[gp$risk_state])),
+                    gamma_vcov = Vgamma,
+                    gamma_se = setNames(sqrt(pmax(diag(Vgamma), 0)), visit_covs),
+                    gamma_information = gp$information, gamma_hessian = og$hessian,
+                    breslow_event_times = gp$event_times %||% sort(unique(et)),
+                    breslow_increment = geometry$dn * exp(-gp$log_sum[gp$risk_state])),
     inference = list(bread = A, meat = meat, vcov_all = Vall,
-      subject_scores = if (isTRUE(return_subject_scores)) {
-        dimnames(psi) <- list(as.character(S$ids), theta_names); psi
-      } else NULL),
+                     subject_scores = if (isTRUE(return_subject_scores)) {
+                       dimnames(psi) <- list(as.character(S$ids), theta_names); psi
+                     } else NULL),
     converged = TRUE,
     diagnostics = list(ok = TRUE, process = process, n_subjects = length(S$ids),
-      n_visit_events = length(S$visit_rows), n_marker_events = length(S$marker_rows),
-      n_process_events = length(S$event_rows), n_outcomes = length(orow),
-      zero_event_subjects = sum(tabulate(eid, nbins = length(S$ids)) == 0L),
-      censor_source = S$censor_source, gamma_score_max = max(abs(gp$score)),
-      gamma_optimizer_code = og$convergence,
-      gamma_newton_polish_iterations = polish_iterations,
-      stacked_condition = kappa(A), outcome_rank = qr(X)$rank,
-      gamma_subject_score_sum_max = max(abs(colSums(psi[, seq_len(q), drop = FALSE]))),
-      outcome_subject_score_sum_max = max(abs(colSums(psi[, q + seq_len(p), drop = FALSE])))),
+                       n_visit_events = length(S$visit_rows), n_marker_events = length(S$marker_rows),
+                       n_process_events = length(S$event_rows), n_outcomes = length(orow),
+                       zero_event_subjects = sum(tabulate(eid, nbins = length(S$ids)) == 0L),
+                       censor_source = S$censor_source, gamma_score_max = max(abs(gp$score)),
+                       gamma_optimizer_code = og$convergence,
+                       gamma_newton_polish_iterations = polish_iterations,
+                       stacked_condition = kappa(A), outcome_rank = qr(X)$rank,
+                       gamma_subject_score_sum_max = max(abs(colSums(psi[, seq_len(q), drop = FALSE]))),
+                       outcome_subject_score_sum_max = max(abs(colSums(psi[, q + seq_len(p), drop = FALSE])))),
     assumptions = c("The selected event process follows a proportional-rate model conditional on visit covariates",
-      "Marker is the default process; visit-process weighting is valid only when visit events govern outcome observability",
-      "The longitudinal target is defined by the stated linear mean model; inverse-rate weighting removes the fitted rate ratio, not the unspecified baseline time rate",
-      "Censoring/entry are conditionally independent and all subjects, including zero-event subjects, are retained"),
+                    "Marker is the default process; visit-process weighting is valid only when visit events govern outcome observability",
+                    "The longitudinal target is defined by the stated linear mean model; inverse-rate weighting removes the fitted rate ratio, not the unspecified baseline time rate",
+                    "Censoring/entry are conditionally independent and all subjects, including zero-event subjects, are retained"),
     call = match.call())
   class(ans) <- c("iirr_weighting_marker")
   ans
 }
 
 IIRR <- function(data,process=c('marker','visit'),...) {
-  process<-match.arg(process);fit_method(if(process=='visit')'iirr_weighting_visit' else 'iirr_weighting_marker',data,...)
+  process<-match.arg(process);fit_method(method=if(process=='visit')'iirr_weighting_visit' else 'iirr_weighting_marker',data=data,...)
 }
 
 Inverse_intensity_rate_ratio_weighting <- IIRR

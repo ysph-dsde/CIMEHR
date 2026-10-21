@@ -185,5 +185,5 @@
 }
 
 Summary_stat <- function(data,stat=c('mean','median','min','max'),...) {
-  stat<-match.arg(stat);fit_method(c(min='summary_min',mean='summary_mean',median='summary_median',max='summary_max')[stat],data,...)
+  stat<-match.arg(stat);fit_method(method=c(min='summary_min',mean='summary_mean',median='summary_median',max='summary_max')[stat],data=data,...)
 }

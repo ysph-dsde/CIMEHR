@@ -1,28 +1,27 @@
-
 .ehrjoint_check<-function(data,vars){d<-as.data.frame(data);bad<-setdiff(unique(vars),names(d))
-  if(length(bad))stop("Missing columns: ",paste(bad,collapse=", "),call.=FALSE)
-  if(anyNA(d[[vars[1L]]]))stop("Subject id cannot be missing.",call.=FALSE);d}
+if(length(bad))stop("Missing columns: ",paste(bad,collapse=", "),call.=FALSE)
+if(anyNA(d[[vars[1L]]]))stop("Subject id cannot be missing.",call.=FALSE);d}
 .ehrjoint_equilibrate<-function(A){
   cs<-apply(abs(A),2L,max);cs[cs==0]<-1
   As<-sweep(A,2L,cs,"/");rs<-apply(abs(As),1L,max);rs[rs==0]<-1
   list(matrix=As/rs,column_scale=cs,row_scale=rs)
 }
 .ehrjoint_pinv<-function(A,tol=sqrt(.Machine$double.eps)){s<-svd(A);k<-s$d>tol*max(s$d,1)
-  if(!all(k)){
-    eq<-.ehrjoint_equilibrate(A);ss<-svd(eq$matrix)
-    if(length(ss$d)&&max(ss$d)>0&&all(ss$d>tol*max(ss$d)))
-      return(sweep((ss$v%*%(t(ss$u)/ss$d))/eq$column_scale,2L,eq$row_scale,"/"))
-  }
-  if(!any(k))stop("Rank-zero estimating equation.",call.=FALSE)
-  s$v[,k,drop=FALSE]%*%(t(s$u[,k,drop=FALSE])/s$d[k])}
+if(!all(k)){
+  eq<-.ehrjoint_equilibrate(A);ss<-svd(eq$matrix)
+  if(length(ss$d)&&max(ss$d)>0&&all(ss$d>tol*max(ss$d)))
+    return(sweep((ss$v%*%(t(ss$u)/ss$d))/eq$column_scale,2L,eq$row_scale,"/"))
+}
+if(!any(k))stop("Rank-zero estimating equation.",call.=FALSE)
+s$v[,k,drop=FALSE]%*%(t(s$u[,k,drop=FALSE])/s$d[k])}
 .ehrjoint_const<-function(d,id,vars){g<-NULL
-  for(v in vars){x<-d[[v]]
-    if(is.object(x)||!is.null(dim(x)))varies<-any(tapply(x,d[[id]],function(x)length(unique(x[!is.na(x)])))>1L,na.rm=TRUE)
-    else{if(is.null(g)){u<-unique(d[[id]]);s<-as.character(u);g<-match(s,unique(s))[match(d[[id]],u)]}
-      ok<-!is.na(x);xo<-x[ok];go<-g[ok];varies<-any(xo!=xo[match(go,go)])}
-    if(varies)stop("EHRJoint requires subject-level time-invariant covariate `",v,"`.",call.=FALSE)}}
+for(v in vars){x<-d[[v]]
+if(is.object(x)||!is.null(dim(x)))varies<-any(tapply(x,d[[id]],function(x)length(unique(x[!is.na(x)])))>1L,na.rm=TRUE)
+else{if(is.null(g)){u<-unique(d[[id]]);s<-as.character(u);g<-match(s,unique(s))[match(d[[id]],u)]}
+  ok<-!is.na(x);xo<-x[ok];go<-g[ok];varies<-any(xo!=xo[match(go,go)])}
+if(varies)stop("EHRJoint requires subject-level time-invariant covariate `",v,"`.",call.=FALSE)}}
 .ehrjoint_numeric<-function(d,vars){bad<-vars[!vapply(d[vars],is.numeric,logical(1))]
-  if(length(bad))stop("EHRJoint covariates must be numeric: ",paste(bad,collapse=", "),call.=FALSE)}
+if(length(bad))stop("EHRJoint covariates must be numeric: ",paste(bad,collapse=", "),call.=FALSE)}
 
 .ehrjoint_link_stats <- function(eta, link = c("logit", "probit")) {
   link <- match.arg(link)
@@ -57,21 +56,21 @@
   list(E=E,C=C,ev=ev,common_C=if(cC)C[1L]else NA_real_)}
 
 .ehrjoint_riskset<-function(E,C,times){ut<-sort(unique(times));K<-length(ut)
-  lo<-findInterval(E,ut)+1L;hi<-findInterval(C,ut);ok<-which(lo<=hi);entry<-any(lo[ok]>1L)
-  rsum<-function(w){M<-as.matrix(w);if(!ncol(M))return(matrix(0,K,0L))
-    out<-plm_ehr_rsum(M,lo,hi,K,entry)
-    if(is.null(dim(w)))drop(out)else out}
-  wsum<-function(x){M<-as.matrix(x);if(!ncol(M))return(matrix(0,length(lo),0L))
-    out<-plm_ehr_wsum(M,lo,hi)
-    if(!is.null(dimnames(M)))dimnames(out)<-list(if(!is.null(rownames(M)))c("",rownames(M))[hi+1L],colnames(M))
-    if(is.null(dim(x)))drop(out)else out}
-  list(ut=ut,K=K,rsum=rsum,wsum=wsum)}
+lo<-findInterval(E,ut)+1L;hi<-findInterval(C,ut);ok<-which(lo<=hi);entry<-any(lo[ok]>1L)
+rsum<-function(w){M<-as.matrix(w);if(!ncol(M))return(matrix(0,K,0L))
+out<-plm_ehr_rsum(M,lo,hi,K,entry)
+if(is.null(dim(w)))drop(out)else out}
+wsum<-function(x){M<-as.matrix(x);if(!ncol(M))return(matrix(0,length(lo),0L))
+out<-plm_ehr_wsum(M,lo,hi)
+if(!is.null(dimnames(M)))dimnames(out)<-list(if(!is.null(rownames(M)))c("",rownames(M))[hi+1L],colnames(M))
+if(is.null(dim(x)))drop(out)else out}
+list(ut=ut,K=K,rsum=rsum,wsum=wsum)}
 
 .ehrjoint_ag<-function(g,V,rs,dN,SV){e<-exp(drop(V%*%g));S0<-rs$rsum(e)
-  if(any(!(S0>0)))stop("Empty EHRJoint visiting risk set at a visit time.",call.=FALSE)
-  Vb<-rs$rsum(V*e)/S0;ng<-ncol(V);H<-matrix(0,ng,ng,dimnames=list(colnames(V),colnames(V)))
-  for(a in seq_len(ng))H[a,]<--colSums(dN*(rs$rsum(V*(e*V[,a]))/S0-Vb*Vb[,a]))
-  list(e=e,S0=S0,Vb=Vb,U=SV-colSums(dN*Vb),H=H)}
+if(any(!(S0>0)))stop("Empty EHRJoint visiting risk set at a visit time.",call.=FALSE)
+Vb<-rs$rsum(V*e)/S0;ng<-ncol(V);H<-matrix(0,ng,ng,dimnames=list(colnames(V),colnames(V)))
+for(a in seq_len(ng))H[a,]<--colSums(dN*(rs$rsum(V*(e*V[,a]))/S0-Vb*Vb[,a]))
+list(e=e,S0=S0,Vb=Vb,U=SV-colSums(dN*Vb),H=H)}
 
 .ehrjoint_gamma<-function(d,id,time,visit_covs,E,C,ev,tol=1e-12,accept_tol=1e-10,maxit=100L){
   .ehrjoint_const(d,id,visit_covs);.ehrjoint_numeric(d,visit_covs)
@@ -84,12 +83,12 @@
   dN<-tabulate(ek,nbins=rs$K);SV<-colSums(V*m);g<-setNames(numeric(ncol(V)),visit_covs)
   lim<-tol*max(1,M);it<-0L;tiny<-FALSE
   repeat{cur<-.ehrjoint_ag(g,V,rs,dN,SV);if(tiny||max(abs(cur$U))<=lim||it>=maxit)break;it<-it+1L
-    st<-tryCatch(solve(-cur$H,cur$U),error=function(e)NULL)
-    if(is.null(st)||any(!is.finite(st)))stop("Singular EHRJoint visiting information.",call.=FALSE)
-    for(h in 0:30){dl<-drop(V%*%st);rc<-rs$rsum(cur$e*expm1(dl))/cur$S0
-      gain<-if(all(is.finite(rc)&rc>-1))sum(m*dl)-sum(dN*log1p(rc))else -Inf
-      if(gain>=-1e-10)break;st<-st/2}
-    if(gain< -1e-10)break;g<-g+st;tiny<-max(abs(st))<=1e-14*(1+max(abs(g)))}
+  st<-tryCatch(solve(-cur$H,cur$U),error=function(e)NULL)
+  if(is.null(st)||any(!is.finite(st)))stop("Singular EHRJoint visiting information.",call.=FALSE)
+  for(h in 0:30){dl<-drop(V%*%st);rc<-rs$rsum(cur$e*expm1(dl))/cur$S0
+  gain<-if(all(is.finite(rc)&rc>-1))sum(m*dl)-sum(dN*log1p(rc))else -Inf
+  if(gain>=-1e-10)break;st<-st/2}
+  if(gain< -1e-10)break;g<-g+st;tiny<-max(abs(st))<=1e-14*(1+max(abs(g)))}
   sm<-max(abs(cur$U));dL<-dN/cur$S0;Vg<-.ehrjoint_pinv(-cur$H);dimnames(Vg)<-list(visit_covs,visit_covs)
   ok<-sm<=accept_tol*max(1,M)
   list(gamma=g,vcov=Vg,ids=ids,si=si,first=first,V=V,m=m,M=M,exp_gamma=cur$e,
@@ -112,7 +111,7 @@
   ag<-.ehrjoint_ag(gamma,V,rs,sp$dN,colSums(V*m));e<-ag$e;S0<-ag$S0;Vb<-ag$Vb
   dL<-sp$dN/S0;Lam<-rs$wsum(dL);nu<-e*Lam;Ai<-rs$wsum(Vb*dL)
   chain<-function(G){Gk<-rs$rsum(as.matrix(G))/S0
-    bys(Gk[sp$vis_k,,drop=FALSE],sp$vis_s)-e*rs$wsum(Gk*dL)}
+  bys(Gk[sp$vis_k,,drop=FALSE],sp$vis_s)-e*rs$wsum(Gk*dL)}
   evt<-bys(V[sp$vis_s,,drop=FALSE]-Vb[sp$vis_k,,drop=FALSE],sp$vis_s)
   F[ig]<-colSums(evt);J[ig,ig]<-ag$H
   Cmat[ig,]<-t(evt-e*(V*Lam-Ai))
@@ -179,7 +178,7 @@
   if(is.null(obs_fixed_covs))obs_fixed_covs<-visit_covs
   obs_link<-match.arg(obs_link)
   d<-.ehrjoint_check(data,c(id,time,outcome,obs_indicator,visit_covs,obs_fixed_covs,long_covs,random_covs,
-                        if(!is.null(censor_col))censor_col,entry_col))
+                            if(!is.null(censor_col))censor_col,entry_col))
   .ehrjoint_numeric(d,unique(c(visit_covs,obs_fixed_covs,long_covs,random_covs)))
   fu<-.ehrjoint_followup(d,id,time,censor_col,entry_col);common_C<-fu$common_C;ev<-fu$ev
   .ehrjoint_const(d,id,unique(c(obs_fixed_covs,long_covs,random_covs)))
@@ -194,7 +193,7 @@
     stop("EHRJoint requires a finite marker whenever an actual visit has R=1.",call.=FALSE)
 
   ogood<-ev&!is.na(d[[obs_indicator]])&d[[obs_indicator]]%in%c(0,1)&
-         stats::complete.cases(d[,obs_fixed_covs,drop=FALSE])
+    stats::complete.cases(d[,obs_fixed_covs,drop=FALSE])
   if(sum(ogood)<=length(obs_fixed_covs)+1L)stop("Too few visit rows for observation model.")
   oform<-stats::reformulate(if(length(obs_fixed_covs))obs_fixed_covs else "1",response=obs_indicator)
   oglm<-stats::glm(oform,data=d[ogood,,drop=FALSE],family=stats::binomial(link=obs_link))
@@ -219,7 +218,7 @@
   Dbar<-ga$rs$rsum(cbind(Xb,Bb)*cs)/ga$rs$rsum(cs)
   H<-D-Dbar[match(d[[time]],ga$rs$ut),,drop=FALSE]
   obs<-ev&!is.na(d[[obs_indicator]])&d[[obs_indicator]]==1&
-       is.finite(d[[outcome]])&stats::complete.cases(D)
+    is.finite(d[[outcome]])&stats::complete.cases(D)
   if(sum(obs)<=ncol(D))stop("Too few observed marker rows for EHRJoint.")
   A<-crossprod(H[obs,,drop=FALSE],D[obs,,drop=FALSE]);Ai<-.ehrjoint_pinv(A)
   cf<-as.vector(Ai%*%crossprod(H[obs,,drop=FALSE],d[[outcome]][obs]));names(cf)<-nm
@@ -303,10 +302,10 @@
   if(!is.finite(low))low <- min(c(0,d[[time]][ev]))
   ans$prediction <- list(
     baseline=list(type="increments",increments=data.frame(time=ga$rs$ut,dA=dA,dLambda=ga$dLambda),
-      normalization="Profiled observation-risk numerator and fitted visiting-baseline increments"),
+                  normalization="Profiled observation-risk numerator and fitted visiting-baseline increments"),
     reference=base[,long_covs,drop=FALSE],long_covs=long_covs,coefficients=beta,
     time_col=time,time_range=c(low,max(fu$C)))
   class(ans)<-c("ehrjoint");ans
 }
 
-EHRJoint <- function(data,...) fit_method('ehrjoint',data,...)
+EHRJoint <- function(data,...) fit_method(method='ehrjoint',data=data,...)

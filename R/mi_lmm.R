@@ -1,5 +1,5 @@
 .mi_lmm_impute_paths <- function(data,id,time,outcome,obs_indicator,
-    fixed_vars,m,maxit,seed,config) {
+                                 fixed_vars,m,maxit,seed,config) {
   impute_one <- function(dd,fv,rv,seed_value) {
     fv <- setdiff(fv,config$coefficient_names)
     if(!config$intercept) {
@@ -7,7 +7,7 @@
       fv <- unique(c(fv,'.mi_lmm_fixed_intercept'))
     }
     ans <- .mi_lmm_impute(dd,id,time,outcome,obs_indicator,fv,rv,m,maxit,seed_value,
-      pan_intercept=config$intercept,include_time_fixed=TRUE,initialize_predictor_matrix=FALSE)
+                          pan_intercept=config$intercept,include_time_fixed=TRUE,initialize_predictor_matrix=FALSE)
     if(!config$intercept)for(k in seq_along(ans))ans[[k]]$.mi_lmm_fixed_intercept <- NULL
     ans
   }
@@ -36,11 +36,11 @@
 }
 
 .mi_lmm_impute_structured <- function(data,id,time,outcome,obs_indicator,
-    fixed_vars,random_vars,m,maxit,seed,config=NULL) {
+                                      fixed_vars,random_vars,m,maxit,seed,config=NULL) {
   if(is.null(config))return(.mi_lmm_impute(data,id,time,outcome,obs_indicator,
-    fixed_vars,random_vars,m,maxit,seed))
+                                           fixed_vars,random_vars,m,maxit,seed))
   if(isTRUE(config$covariate_paths))return(.mi_lmm_impute_paths(data,id,time,outcome,
-    obs_indicator,fixed_vars,m,maxit,seed,config))
+                                                                obs_indicator,fixed_vars,m,maxit,seed,config))
   st <- config$static_covs; tv <- config$time_covs
   mixed <- length(st)==1L && config$intercept && setequal(tv,c("(Intercept)",st))
   if(mixed) {
@@ -52,9 +52,9 @@
       fv <- setdiff(fixed_vars,c(group,time))
       fv <- fv[vapply(sub[fv],function(x)length(unique(x[is.finite(x)]))>1L,logical(1))]
       .mi_lmm_impute(sub,id,time,outcome,obs_indicator,fv,
-        config$normalized_time,m,maxit,
-        as.integer((as.double(seed)+1009*(g-1L))%%2147483646),
-        pan_intercept=TRUE,include_time_fixed=FALSE)
+                     config$normalized_time,m,maxit,
+                     as.integer((as.double(seed)+1009*(g-1L))%%2147483646),
+                     pan_intercept=TRUE,include_time_fixed=FALSE)
     })
     ans <- lapply(seq_len(m),function(k) {
       z <- do.call(rbind,lapply(parts,`[[`,k))
@@ -72,9 +72,9 @@
     fv <- unique(c(fv,".mi_lmm_fixed_intercept"))
   }
   ans <- .mi_lmm_impute(data,id,time,outcome,obs_indicator,fv,
-    config$time_columns,m,maxit,seed,
-    pan_intercept=config$intercept,
-    include_time_fixed=!"(Intercept)" %in% tv)
+                        config$time_columns,m,maxit,seed,
+                        pan_intercept=config$intercept,
+                        include_time_fixed=!"(Intercept)" %in% tv)
   if(!config$intercept)for(k in seq_along(ans))ans[[k]]$.mi_lmm_fixed_intercept<-NULL
   ans
 }
@@ -90,8 +90,8 @@
   B <- if(length(payload)>1L)stats::cov(Q) else matrix(0,length(nm),length(nm))
   V <- W+(1+1/length(payload))*B;dimnames(V)<-list(nm,nm)
   table <- data.frame(parameter=nm,estimate=unname(estimate),
-    se=sqrt(pmax(diag(V),0)),scale=ifelse(grepl("^cov_",nm),"covariance","variance"),
-    row.names=NULL,stringsAsFactors=FALSE)
+                      se=sqrt(pmax(diag(V),0)),scale=ifelse(grepl("^cov_",nm),"covariance","variance"),
+                      row.names=NULL,stringsAsFactors=FALSE)
   list(table=table,vcov=V)
 }
 
@@ -130,7 +130,7 @@
       next
     }
     if(name %in% names(d) && (any(!is.finite(d[[name]][active])) ||
-       any(abs(d[[name]][active]-value[active])>1e-8*pmax(1,abs(value[active])))))
+                              any(abs(d[[name]][active]-value[active])>1e-8*pmax(1,abs(value[active])))))
       stop('Declared trajectory does not reproduce observed random covariate: ',name,call.=FALSE)
     nm <- paste0('.mi_lmm_path_',make.names(name))
     if(nm %in% names(d))stop('Reserved random-trajectory column already exists.',call.=FALSE)
@@ -147,13 +147,13 @@
     main <- path[match(trajectory,coef_names)]
     others <- setdiff(path,main)
     if(length(others)>1L || (length(others) &&
-       any(abs(d[[others]][active]-g[active]*d[[main]][active])>1e-8*pmax(1,abs(d[[main]][active])))))
+                             any(abs(d[[others]][active]-g[active]*d[[main]][active])>1e-8*pmax(1,abs(d[[main]][active])))))
       stop('Grouped covariance permits only the trajectory and its binary-group interaction.',call.=FALSE)
   }
   if(!intercept && !length(path))stop('The random design must contain a coefficient.',call.=FALSE)
   config <- list(covariate_paths=TRUE,path_columns=path,coefficient_names=coef_names,
-    intercept=intercept,covariance_group=group,trajectory=trajectory,
-    time_origin=origin,time_scale=scale)
+                 intercept=intercept,covariance_group=group,trajectory=trajectory,
+                 time_origin=origin,time_scale=scale)
   list(data=d,random_covs=unique(c(path,group)),config=config)
 }
 
@@ -180,14 +180,14 @@
     Z <- stats::model.matrix(ff,dd)
     spec <- stats::setNames(list(if(ncol(Z)==1L)nlme::pdDiag(ff) else nlme::pdSymm(ff)),id)
     label <- paste0(if(config$intercept)'random intercept' else 'no random intercept',
-      if(length(config$coefficient_names))paste0('; random covariate slopes: ',paste(config$coefficient_names,collapse=', ')) else '')
+                    if(length(config$coefficient_names))paste0('; random covariate slopes: ',paste(config$coefficient_names,collapse=', ')) else '')
     formula <- paste0('~ ',if(config$intercept)'1' else '0',
-      if(length(config$coefficient_names))paste0(' + ',paste(config$coefficient_names,collapse=' + ')) else '', ' | ',id)
+                      if(length(config$coefficient_names))paste0(' + ',paste(config$coefficient_names,collapse=' + ')) else '', ' | ',id)
   }
   rank <- qr(Z)$rank
   if(rank<ncol(Z))stop('The declared random design is rank deficient.',call.=FALSE)
   list(spec=spec,data=dd,parameterization=label,formula=formula,structurally_identified=TRUE,
-    random_design_rank=rank,random_design_columns=ncol(Z))
+       random_design_rank=rank,random_design_columns=ncol(Z))
 }
 
 .mi_lmm_tv_prepare <- function(d, id, time, random_covs, structure, intercept) {
@@ -334,8 +334,8 @@
     V <- J %*% ap %*% t(J);dimnames(V)<-list(names(estimates),names(estimates))
   }
   table <- data.frame(parameter=names(estimates),estimate=unname(estimates),
-    se=sqrt(pmax(diag(V),0)),scale=ifelse(grepl("^cov_",names(estimates)),"covariance","variance"),
-    row.names=NULL,stringsAsFactors=FALSE)
+                      se=sqrt(pmax(diag(V),0)),scale=ifelse(grepl("^cov_",names(estimates)),"covariance","variance"),
+                      row.names=NULL,stringsAsFactors=FALSE)
   list(ok=isTRUE(valid),message=message,estimate=estimates,table=table,vcov=V,
        transformed_parameters=if(is.null(pars))numeric() else pars,
        apVar=if(is.matrix(ap))ap else NULL,
@@ -380,8 +380,8 @@
 }
 
 .mi_lmm_impute <- function(data, id, time, outcome, obs_indicator,
-                        fixed_vars, random_vars, m, maxit, seed,
-                        pan_intercept=TRUE,include_time_fixed=TRUE,initialize_predictor_matrix=TRUE) {
+                           fixed_vars, random_vars, m, maxit, seed,
+                           pan_intercept=TRUE,include_time_fixed=TRUE,initialize_predictor_matrix=TRUE) {
   if (!requireNamespace("mice", quietly = TRUE) ||
       !requireNamespace("pan", quietly = TRUE))
     stop("MI-LMM, MI-Liang and MI-IIRR require CRAN packages 'mice' and 'pan'.", call. = FALSE)
@@ -533,7 +533,7 @@
 }
 
 .mi_lmm_one_lmm <- function(data, id, time, outcome, long_covs, random_covs,
-                         method, optimizer, random_config=NULL) {
+                            method, optimizer, random_config=NULL) {
   if (!requireNamespace("nlme", quietly = TRUE))
     stop("MI-LMM requires CRAN package 'nlme'.", call. = FALSE)
   keep <- is.finite(data[[time]]) & is.finite(data[[outcome]])
@@ -659,14 +659,14 @@
       length(maxit) != 1L || !is.finite(maxit) || maxit < 1 || maxit != as.integer(maxit))
     stop("`m` and `maxit` must be positive integers.", call. = FALSE)
   prepared <- .mi_lmm_tv_prepare(as.data.frame(data),id,time,random_covs,
-                              outcome_random_structure,outcome_random_intercept)
+                                 outcome_random_structure,outcome_random_intercept)
   random_covs <- prepared$random_covs
   d <- .mi_lmm_check(prepared$data, c(id, time, outcome, obs_indicator,
-                          visit_covs, long_covs, random_covs))
+                                      visit_covs, long_covs, random_covs))
   completed <- .mi_lmm_impute_structured(d, id, time, outcome, obs_indicator,
-                           fixed_vars = unique(c(visit_covs, long_covs)),
-                           random_vars = random_covs, m = m, maxit = maxit, seed = seed,
-                           config=prepared$config)
+                                         fixed_vars = unique(c(visit_covs, long_covs)),
+                                         random_vars = random_covs, m = m, maxit = maxit, seed = seed,
+                                         config=prepared$config)
   imp_random_used <- attr(completed, "imputation_random_used")
   imp_random_dropped <- attr(completed, "imputation_random_dropped")
   fits <- lapply(completed, .mi_lmm_one_lmm, id = id, time = time, outcome = outcome,
@@ -689,19 +689,19 @@
                     lmm_variance_vcov_delta=variance_pool$vcov),
     converged = conv,
     diagnostics = list(ok = isTRUE(conv && identified && all(is.finite(pooled$coef)) &&
-                                    all(is.finite(pooled$vcov))),
+                                     all(is.finite(pooled$vcov))),
                        identified = identified,
                        regular = all(vapply(fits, `[[`, logical(1), "covariance_regular")),
                        full_stage_regular = all(vapply(fits, `[[`, logical(1), "covariance_regular")),
                        outcome_inference_available = all(vapply(fits, function(z)
                          .lmm_outcome_inference_available(z$vcov, z$coef,
-                           df = z$fit$fixDF$X, converged = isTRUE(z$converged),
-                           identified = isTRUE(z$identified)), logical(1))) &&
+                                                          df = z$fit$fixDF$X, converged = isTRUE(z$converged),
+                                                          identified = isTRUE(z$identified)), logical(1))) &&
                          .lmm_outcome_inference_available(pooled$vcov, pooled$coef,
-                           df = pooled$rubin_df, converged = conv, identified = identified),
+                                                          df = pooled$rubin_df, converged = conv, identified = identified),
                        outcome_inference_scope = "Rubin pooled fixed-effect covariance; complete-data covariance-parameter apVar checked separately",
                        structurally_identified = all(vapply(fits, `[[`, logical(1),
-                                                             "structurally_identified")),
+                                                            "structurally_identified")),
                        apVar_ok = vapply(fits, `[[`, logical(1), "apVar_ok"),
                        apVar_message = vapply(fits, `[[`, character(1), "apVar_message"),
                        m_requested = as.integer(m), m_success = length(fits),
@@ -749,5 +749,5 @@
 }
 
 Multiple_imputation_IP <- function(data,ip_method=c('LMM','Liang','IIRR'),...) {
-  ip_method<-match.arg(ip_method);fit_method(c(LMM='mi_lmm',Liang='mi_liang',IIRR='mi_iirr')[ip_method],data,...)
+  ip_method<-match.arg(ip_method);fit_method(method=c(LMM='mi_lmm',Liang='mi_liang',IIRR='mi_iirr')[ip_method],data=data,...)
 }

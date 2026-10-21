@@ -33,7 +33,7 @@
       next
     }
     if(name %in% names(d) && (any(!is.finite(d[[name]][active])) ||
-       any(abs(d[[name]][active]-value[active])>1e-8*pmax(1,abs(value[active])))))
+                              any(abs(d[[name]][active]-value[active])>1e-8*pmax(1,abs(value[active])))))
       stop('Declared trajectory does not reproduce observed random covariate: ',name,call.=FALSE)
     nm <- paste0('.li_lmm_path_',make.names(name))
     if(nm %in% names(d))stop('Reserved random-trajectory column already exists.',call.=FALSE)
@@ -50,13 +50,13 @@
     main <- path[match(trajectory,coef_names)]
     others <- setdiff(path,main)
     if(length(others)>1L || (length(others) &&
-       any(abs(d[[others]][active]-g[active]*d[[main]][active])>1e-8*pmax(1,abs(d[[main]][active])))))
+                             any(abs(d[[others]][active]-g[active]*d[[main]][active])>1e-8*pmax(1,abs(d[[main]][active])))))
       stop('Grouped covariance permits only the trajectory and its binary-group interaction.',call.=FALSE)
   }
   if(!intercept && !length(path))stop('The random design must contain a coefficient.',call.=FALSE)
   config <- list(covariate_paths=TRUE,path_columns=path,coefficient_names=coef_names,
-    intercept=intercept,covariance_group=group,trajectory=trajectory,
-    time_origin=origin,time_scale=scale)
+                 intercept=intercept,covariance_group=group,trajectory=trajectory,
+                 time_origin=origin,time_scale=scale)
   list(data=d,random_covs=unique(c(path,group)),config=config)
 }
 
@@ -83,14 +83,14 @@
     Z <- stats::model.matrix(ff,dd)
     spec <- stats::setNames(list(if(ncol(Z)==1L)nlme::pdDiag(ff) else nlme::pdSymm(ff)),id)
     label <- paste0(if(config$intercept)'random intercept' else 'no random intercept',
-      if(length(config$coefficient_names))paste0('; random covariate slopes: ',paste(config$coefficient_names,collapse=', ')) else '')
+                    if(length(config$coefficient_names))paste0('; random covariate slopes: ',paste(config$coefficient_names,collapse=', ')) else '')
     formula <- paste0('~ ',if(config$intercept)'1' else '0',
-      if(length(config$coefficient_names))paste0(' + ',paste(config$coefficient_names,collapse=' + ')) else '', ' | ',id)
+                      if(length(config$coefficient_names))paste0(' + ',paste(config$coefficient_names,collapse=' + ')) else '', ' | ',id)
   }
   rank <- qr(Z)$rank
   if(rank<ncol(Z))stop('The declared random design is rank deficient.',call.=FALSE)
   list(spec=spec,data=dd,parameterization=label,formula=formula,structurally_identified=TRUE,
-    random_design_rank=rank,random_design_columns=ncol(Z))
+       random_design_rank=rank,random_design_columns=ncol(Z))
 }
 
 .li_lmm_tv_prepare <- function(d, id, time, random_covs, structure, intercept) {
@@ -238,8 +238,8 @@
     V <- J %*% ap %*% t(J);dimnames(V)<-list(names(estimates),names(estimates))
   }
   table <- data.frame(parameter=names(estimates),estimate=unname(estimates),
-    se=sqrt(pmax(diag(V),0)),scale=ifelse(grepl("^cov_",names(estimates)),"covariance","variance"),
-    row.names=NULL,stringsAsFactors=FALSE)
+                      se=sqrt(pmax(diag(V),0)),scale=ifelse(grepl("^cov_",names(estimates)),"covariance","variance"),
+                      row.names=NULL,stringsAsFactors=FALSE)
   list(ok=isTRUE(valid),message=message,estimate=estimates,table=table,vcov=V,
        transformed_parameters=if(is.null(pars))numeric() else pars,
        apVar=if(is.matrix(ap))ap else NULL,
@@ -262,7 +262,7 @@
 }
 
 .li_lmm_li_loop <- function(d, id, time, outcome, obs_indicator, li_covs,
-                    covariance) {
+                            covariance) {
 
   d$.li_lmm_row <- seq_len(nrow(d))
   o <- order(d[[id]], d[[time]], na.last = TRUE)
@@ -367,12 +367,12 @@
   us[as.integer(rownames(tmp)), ] <- tmp
   Ve <- Ai %*% crossprod(us) %*% t(Ai); dimnames(Ve) <- list(nm, nm)
   c(li, list(vcov_eta = Ve, eta_scores = us, eta_bread = A, ids = ids,
-       n_observed_increments = k, increment_design_rank = qr(W)$rank,
-       increment_design_columns = ncol(W), increment_condition = kappa(A),
-       formula = paste0("d", outcome, "/dt ~ ",
-                        paste(c(li_covs, paste0("lag_", outcome)), collapse = " + ")),
-       weighting = if (identical(covariance, "randomwalk"))
-         "WLS weight dt (Var increment proportional to dt)" else "equal-weight increment rates"))
+             n_observed_increments = k, increment_design_rank = qr(W)$rank,
+             increment_design_columns = ncol(W), increment_condition = kappa(A),
+             formula = paste0("d", outcome, "/dt ~ ",
+                              paste(c(li_covs, paste0("lag_", outcome)), collapse = " + ")),
+             weighting = if (identical(covariance, "randomwalk"))
+               "WLS weight dt (Var increment proportional to dt)" else "equal-weight increment rates"))
 }
 
 .li_lmm_random_spec <- function(dd, id, random_covs) {
@@ -447,7 +447,7 @@
 
 # full = FALSE returns fixed effects.
 .li_lmm_lmm <- function(d, id, time, outcome, long_covs, random_covs,
-                     method, optimizer, random_config=NULL, full = TRUE) {
+                        method, optimizer, random_config=NULL, full = TRUE) {
   if (!requireNamespace("nlme", quietly = TRUE)) stop("LI-LMM requires 'nlme'.", call. = FALSE)
   actual <- is.finite(d[[time]])
   .li_require_completed(d, id, time, outcome, "LI+LMM")
@@ -515,8 +515,8 @@
   had <- exists(".Random.seed", .GlobalEnv, inherits = FALSE)
   if (had) old <- get(".Random.seed", .GlobalEnv, inherits = FALSE)
   on.exit(if (had) assign(".Random.seed", old, .GlobalEnv) else if
-    (exists(".Random.seed", .GlobalEnv, inherits = FALSE))
-      rm(".Random.seed", envir = .GlobalEnv), add = TRUE)
+          (exists(".Random.seed", .GlobalEnv, inherits = FALSE))
+    rm(".Random.seed", envir = .GlobalEnv), add = TRUE)
   set.seed(as.integer(seed)); force(expr)
 }
 
@@ -542,19 +542,19 @@
     .li_require_design(db, id, unique(c(visit_covs, long_covs)), "LI+LMM",
                        rows = is.finite(db[[time]]))
     prepared <- .li_lmm_tv_prepare(db, id, time, random_covs,
-                                  outcome_random_structure, outcome_random_intercept)
+                                   outcome_random_structure, outcome_random_intercept)
     model <- .li_lmm_check(prepared$data,
-      c(id, time, outcome, obs_indicator, visit_covs, long_covs, prepared$random_covs))
+                           c(id, time, outcome, obs_indicator, visit_covs, long_covs, prepared$random_covs))
     .li_require_design(model, id, prepared$random_covs, "LI+LMM",
                        rows = is.finite(model[[time]]))
     modifiers <- if (is.null(outcome_random_structure)) character() else
       if (!is.null(outcome_random_structure$columns))
         unlist(lapply(outcome_random_structure$columns, function(x)
           as.character(x$modifier)), use.names = FALSE) else
-        c(outcome_random_structure$static_covs, outcome_random_structure$time_covs)
+            c(outcome_random_structure$static_covs, outcome_random_structure$time_covs)
     reverse_covs <- setdiff(unique(c(visit_covs, long_covs,
-      intersect(random_covs, names(db)), modifiers,
-      outcome_random_structure$covariance_group)), c("(Intercept)", "Intercept"))
+                                     intersect(random_covs, names(db)), modifiers,
+                                     outcome_random_structure$covariance_group)), c("(Intercept)", "Intercept"))
     li <- .li_lmm_li(model, id, time, outcome, obs_indicator, visit_covs, li_covariance, full)
     explicit_covs <- unique(c(visit_covs, long_covs, intersect(random_covs, names(db)),
                               outcome_random_structure$covariance_group))
@@ -592,7 +592,7 @@
         db <- resample()
         fit_pipeline(db, FALSE)$one$coef
       }, error = function(e) structure(list(message = conditionMessage(e)),
-                                      class = "li_lmm_failure"))
+                                       class = "li_lmm_failure"))
     }))
     nm <- names(one$coef)
     good <- vapply(bb, function(x) is.numeric(x) && length(x) == length(nm) &&
@@ -609,13 +609,13 @@
   conv <- isTRUE(one$converged)
   ans <- list(method_key = "li_lmm", method = "LI+LMM",
               estimand = paste0("Fixed-effect coefficient in the recursively LI-reconstructed Gaussian LMM",
-                if (selection$n_subjects_excluded > 0L)
-                  " in the retained cohort after excluding subjects without any observed outcome" else ""),
+                                if (selection$n_subjects_excluded > 0L)
+                                  " in the retained cohort after excluding subjects without any observed outcome" else ""),
               coefficients = one$coef, vcov = Vout,
               se = sqrt(pmax(diag(Vout), 0)),
               vcov_type = if (inference == "patient_bootstrap")
                 "patient-cluster bootstrap of the full LI+LMM procedure" else
-                "variance (plug-in): nlme model-based, conditional on LI reconstruction",
+                  "variance (plug-in): nlme model-based, conditional on LI reconstruction",
               nuisance = list(li_formula = li$formula, li_covariance = li_covariance,
                               increment_coefficients = li$eta,
                               increment_vcov = li$vcov_eta,
@@ -640,10 +640,10 @@
                                    one$vcov, one$coef, converged = conv,
                                    identified = isTRUE(one$identified)) &&
                                    .lmm_outcome_inference_available(Vout, one$coef,
-                                     converged = conv, identified = isTRUE(one$identified)),
+                                                                    converged = conv, identified = isTRUE(one$identified)),
                                  outcome_inference_scope = if (inference == "patient_bootstrap")
                                    "patient-cluster bootstrap of the full LI+LMM procedure; covariance-parameter apVar checked separately" else
-                                   "model-based fixed-effect covariance conditional on LI reconstruction; covariance-parameter apVar checked separately",
+                                     "model-based fixed-effect covariance conditional on LI reconstruction; covariance-parameter apVar checked separately",
                                  structurally_identified = one$structurally_identified,
                                  apVar_ok = one$apVar_ok,
                                  apVar_message = one$apVar_message,
@@ -654,22 +654,22 @@
                                  n_visits_excluded_unobserved = selection$n_visits_excluded,
                                  analysis_population = if (selection$n_subjects_excluded > 0L)
                                    "retained cohort after excluding subjects without any observed outcome" else
-                                   "input cohort; no subjects excluded",
+                                     "input cohort; no subjects excluded",
                                  bootstrap_population = "retained eligible subjects; conditional on cohort eligibility",
                                  n_subjects = length(unique(d[[id]])),
                                  n_visits = sum(is.finite(d[[time]])),
                                  zero_visit_subjects = length(setdiff(unique(d[[id]]),
-                                   unique(d[[id]][is.finite(d[[time]])]))),
+                                                                      unique(d[[id]][is.finite(d[[time]])]))),
                                  n_observed_before_imputation = sum(is.finite(d[[time]]) &
-                                   !is.na(d[[obs_indicator]]) & d[[obs_indicator]] == 1 &
-                                   is.finite(d[[outcome]])),
+                                                                      !is.na(d[[obs_indicator]]) & d[[obs_indicator]] == 1 &
+                                                                      is.finite(d[[outcome]])),
                                  n_imputed = li$n_imputed, n_analysis = one$n,
                                  n_imputed_forward = li$n_imputed_forward,
                                  n_imputed_backward = li$n_imputed_backward,
                                  backward_model_used = !is.null(li$backward),
                                  leading_imputation = leading_imputation,
                                  backward_model = li$backward[c("formula", "predictors", "weighting",
-                                   "n_observed_increments", "rank", "columns", "condition")],
+                                                                "n_observed_increments", "rank", "columns", "condition")],
                                  n_unreconstructed = li$n_unreconstructed,
                                  all_visit_outcome_coverage = one$n == sum(is.finite(d[[time]])),
                                  unreconstructed_policy = "error; preserve all actual visits of retained subjects",
@@ -715,12 +715,12 @@
                               "The reconstructed outcomes and selected random structure must be compatible with the Gaussian LMM; completed outcomes do not establish that model",
                               if (inference == "conditional")
                                 "Conditional covariance omits estimated-reconstruction uncertainty; use inference='patient_bootstrap' for full-procedure inference" else
-                                "Subjects are the independent resampling units"),
+                                  "Subjects are the independent resampling units"),
               call = match.call())
   if (keep_completed) ans$completed_data <- li$data
   class(ans) <- c("li_lmm"); ans
 }
 
 Linear_increment_IP <- function(data,ip_method=c('LMM','Liang','IIRR'),...) {
-  ip_method<-match.arg(ip_method);fit_method(c(LMM='li_lmm',Liang='li_liang',IIRR='li_iirr')[ip_method],data,...)
+  ip_method<-match.arg(ip_method);fit_method(method=c(LMM='li_lmm',Liang='li_liang',IIRR='li_iirr')[ip_method],data=data,...)
 }
