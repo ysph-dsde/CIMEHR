@@ -1,422 +1,312 @@
-#' Joint Estimation for Electronic Health Record (EHR) Longitudinal
-#' Processes (EHRJoint)
-#'
-#' @description
-#' Fits the three-stage joint estimator of Du, Shi, and Mukherjee (2025) for
-#' irregularly observed longitudinal Electronic Health Record (EHR) data with
-#' informative visiting and informative observation processes. Stage 1
-#' estimates the visiting-process intensity by solving an Andersen-Gill
-#' partial-likelihood score equation. Stage 2 fits the observation indicator
-#' via a probit (default) or logistic Generalized Linear Model (GLM). Stage 3
-#' estimates the longitudinal outcome coefficients from a Liang-type
-#' risk-set-centred estimating equation, augmented with a frailty-compensation
-#' covariate constructed from the Stage 1 estimates. Analytic standard errors
-#' are provided for all three stages: model-based for the visiting-process
-#' partial likelihood and for the observation-process GLM, and a clustered
-#' sandwich estimator for the outcome stage.
-#'
-#' @param data A \code{data.frame} in long (panel) format with one row per
-#'   subject-time combination. Must contain columns for subject identifier,
-#'   visit time, outcome, observation indicator, and all specified
-#'   covariates. Rows with \code{NA} in the time column are treated as
-#'   placeholder rows for zero-visit subjects.
-#' @param id Character string giving the name of the subject identifier
-#'   column. Default is \code{"id"}.
-#' @param time Character string giving the name of the visit-time column.
-#'   Default is \code{"time"}.
-#' @param outcome Character string giving the name of the outcome column.
-#'   Default is \code{"Y"}.
-#' @param obs_indicator Character string giving the name of the binary
-#'   observation indicator column (\code{1} = outcome observed, \code{0} =
-#'   outcome missing at visit). Default is \code{"R"}.
-#' @param visit_covs Character vector of covariate column names entering both
-#'   the visiting-process intensity and the observation-process GLM. Default
-#'   is \code{c("Z", "X")}.
-#' @param long_covs Character vector of covariate column names for the
-#'   fixed-effect part of the longitudinal outcome model. Default is
-#'   \code{c("Z", "X")}.
-#' @param random_covs Character vector of covariate column names that
-#'   interact with the latent factor in the outcome model (frailty
-#'   compensation). An intercept column is prepended automatically. Default
-#'   is \code{"Z"}.
-#' @param obs_link Character string giving the link function for the
-#'   observation-process GLM. One of \code{"probit"} (default, matching the
-#'   common data-generating process) or \code{"logit"}.
-#' @param sigma_sq_floor Positive numeric scalar; numerical threshold below
-#'   which the estimated frailty variance is treated as zero. When the
-#'   estimate falls below this floor, the frailty-compensation covariates
-#'   are dropped and the outcome model reduces to the no-correction
-#'   submodel. Default is \code{1e-6}.
-#'
-#' @return An object of class \code{"EHRJoint"}, a named list with three
-#'   components, each itself a named list:
-#'
-#' \describe{
-#'   \item{\code{visiting_process}}{A list with elements:
-#'     \describe{
-#'       \item{\code{gamma_hat}}{Named numeric vector of visiting-process
-#'         regression coefficients.}
-#'       \item{\code{se_gamma}}{Named numeric vector of model-based standard
-#'         errors for \code{gamma_hat}, from the inverse observed
-#'         information matrix.}
-#'       \item{\code{vcov_gamma}}{Numeric matrix; the model-based
-#'         variance-covariance matrix for \code{gamma_hat}.}
-#'       \item{\code{converged}}{Logical; \code{TRUE} if
-#'         \code{\link[nleqslv]{nleqslv}} returned a successful termination
-#'         code.}
-#'     }
-#'   }
-#'   \item{\code{observation_process}}{A list with elements:
-#'     \describe{
-#'       \item{\code{alpha_hat}}{Named numeric vector of observation-process
-#'         GLM coefficients (including intercept).}
-#'       \item{\code{se_alpha}}{Named numeric vector of model-based standard
-#'         errors for \code{alpha_hat}.}
-#'       \item{\code{vcov_alpha}}{Numeric matrix; the model-based
-#'         variance-covariance matrix for \code{alpha_hat}.}
-#'       \item{\code{link}}{Character string; the link function used
-#'         (\code{"probit"} or \code{"logit"}).}
-#'     }
-#'   }
-#'   \item{\code{longitudinal_outcome}}{A list with elements:
-#'     \describe{
-#'       \item{\code{beta_hat}}{Named numeric vector of outcome fixed-effect
-#'         coefficients.}
-#'       \item{\code{theta_hat}}{Named numeric vector of latent-link
-#'         coefficients (the part of the augmented coefficient vector
-#'         multiplying the frailty-compensation covariates). All \code{NA}
-#'         when the frailty variance is below \code{sigma_sq_floor}.}
-#'       \item{\code{se_beta}}{Named numeric vector of clustered sandwich
-#'         standard errors for \code{beta_hat}.}
-#'       \item{\code{se_theta}}{Named numeric vector of clustered sandwich
-#'         standard errors for \code{theta_hat}. All \code{NA} when the
-#'         frailty variance is below \code{sigma_sq_floor}.}
-#'       \item{\code{vcov_joint}}{Numeric matrix; the full clustered
-#'         sandwich variance-covariance matrix for the augmented coefficient
-#'         vector \code{c(beta_hat, theta_hat)}.}
-#'       \item{\code{Lambda_C}}{Numeric scalar; Breslow estimate of the
-#'         cumulative baseline visiting hazard over the full follow-up
-#'         window.}
-#'       \item{\code{sigma_sq}}{Numeric scalar; method-of-moments estimate
-#'         of the frailty variance \eqn{\sigma^2}, truncated below at zero.}
-#'       \item{\code{sigma_sq_raw}}{Numeric scalar; the untruncated
-#'         method-of-moments estimate of the frailty variance.}
-#'       \item{\code{use_B}}{Logical; \code{TRUE} if the frailty-compensation
-#'         covariates were retained in the outcome model
-#'         (\code{sigma_sq > sigma_sq_floor}), \code{FALSE} otherwise.}
-#'       \item{\code{cond_LHS}}{Numeric scalar; the L2 condition number of
-#'         the Stage 3 estimating-equation left-hand-side matrix. Values
-#'         larger than \code{1e10} trigger a warning and a pseudoinverse
-#'         fallback.}
-#'     }
-#'   }
-#'   \item{\code{call}}{The matched call.}
-#' }
-#'
-#' @details
-#' The estimator proceeds in three stages.
-#'
-#' \strong{Stage 1 - Visiting Process.} The visit intensity is
-#' \deqn{\lambda_i(t) = \eta_i \exp(\gamma^\top V_i)\,\lambda_0(t),}
-#' where \eqn{\eta_i} is a shared frailty. The coefficient vector
-#' \eqn{\gamma} is estimated by solving the Andersen-Gill partial-likelihood
-#' score equation
-#' \deqn{\sum_i \int [V_i - \bar V(\gamma; t)]\,dN_i(t) = 0,}
-#' where \eqn{\bar V(\gamma; t)} is the risk-set-weighted mean of \eqn{V}.
-#' Only visit rows enter the score; placeholder rows for zero-visit subjects
-#' are excluded. Standard errors are obtained from the inverse of the
-#' observed information matrix.
-#'
-#' \strong{Stage 2 - Observation Process.} The observation indicator is
-#' modelled by
-#' \deqn{P(R_{ij} = 1 \mid V_i) = g^{-1}(\alpha^\top V_i^*),}
-#' where \eqn{V_i^* = (1, V_i)} and \eqn{g} is the probit (default) or
-#' logistic link. The coefficient vector \eqn{\alpha} is estimated by
-#' \code{\link[stats]{glm}} and the model-based variance-covariance matrix
-#' is returned.
-#'
-#' \strong{Stage 3 - Longitudinal Outcome.} An empirical Bayes estimator of
-#' the latent loading \eqn{B_i} is constructed as
-#' \deqn{\hat B_i = \frac{1 + n_i \hat\sigma^2}{1 +
-#'   \hat\Lambda_i \hat\sigma^2} - 1,}
-#' where \eqn{n_i} is the visit count and
-#' \eqn{\hat\Lambda_i = \exp(\hat\gamma^\top V_i) \hat\Lambda_0(C)}.
-#' The outcome model
-#' \deqn{Y_i(t) = \beta^\top X_i(t) + \theta^\top \hat B_i Q_i^*(t) +
-#'   \varepsilon_i(t)}
-#' is estimated by solving the risk-set-centred estimating equation
-#' \deqn{\sum_{i,j} (M_{ij} - \bar M)(Y_{ij} - M_{ij}^\top \beta^*) = 0,}
-#' with \eqn{M_{ij} = (X_{ij}, \hat B_i Q_{ij}^*)} and the centering
-#' weighted by \eqn{n_i \hat w_i} where \eqn{\hat w_i} is the predicted
-#' observation probability. The equation is linear in \eqn{\beta^*} and is
-#' solved directly by \code{\link[base]{solve}}, with a Moore-Penrose
-#' pseudoinverse fallback (via \code{\link[MASS]{ginv}}) on singular systems.
-#' A clustered sandwich estimator
-#' \deqn{\hat V = B^{-1} \Bigl(\sum_i A_i A_i^\top\Bigr) B^{-\top},
-#'   \quad B = H^\top M,\
-#'   A_i = \sum_j H_{ij}(Y_{ij} - M_{ij}^\top \hat\beta^*)}
-#' is returned. This variance is conditional on the Stage 1 nuisance
-#' estimates and does not propagate uncertainty from
-#' \eqn{(\hat\gamma, \hat\sigma^2, \hat\Lambda_0)}.
-#'
-#' If the estimated frailty variance \eqn{\hat\sigma^2} falls below
-#' \code{sigma_sq_floor}, the frailty-compensation block is dropped and the
-#' outcome model reduces to the no-correction submodel with only
-#' \code{long_covs}; \code{theta_hat} and \code{se_theta} are then returned
-#' as \code{NA}.
-#'
-#' @note
-#' This function requires the \pkg{nleqslv} and \pkg{MASS} packages.
-#'
-#' @references
-#' Du, J., Shi, X., and Mukherjee, B. (2025). A new statistical approach for
-#' joint modeling of longitudinal outcomes measured in electronic health
-#' records with clinically informative presence and observation processes.
-#' arXiv:2410.13113. \doi{10.48550/arXiv.2410.13113}.
-#'
-#' @seealso
-#' \code{\link{Joint_modeling_visiting_and_longitudinal_Liang}} for a related
-#' joint model without an observation-process component;
-#' \code{\link{CIMEHR}} for the three-stage CIMEHR estimator with a full
-#' shared latent structure;
-#' \code{\link{bootstrap}} for bootstrap supplementation of the analytic
-#' standard errors.
-#'
-#' @examples
-#' dat <- sim_ehr_data[sim_ehr_data$id <= 60, ]
-#' fit <- EHRJoint(
-#'   dat,
-#'   outcome     = "log_HbA1c",
-#'   visit_covs  = c("Age", "NSES"),
-#'   long_covs   = c("Age", "NSES"),
-#'   random_covs = "NSES"
-#' )
-#'
-#' @importFrom stats as.formula binomial coef glm plogis pnorm vcov
-#' @export
-EHRJoint <- function(data,
-                     id = "id",
-                     time = "time",
-                     outcome = "Y",
-                     obs_indicator = "R",
-                     visit_covs = c("Z", "X"),
-                     long_covs = c("Z", "X"),
-                     random_covs = "Z",
-                     obs_link = c("probit", "logit"),
-                     sigma_sq_floor = 1e-6) {
 
-  if (!requireNamespace("nleqslv", quietly = TRUE)) {
-    stop("Package 'nleqslv' is required. Install it with: install.packages('nleqslv')",
-         call. = FALSE)
-  }
-  if (!requireNamespace("MASS", quietly = TRUE)) {
-    stop("Package 'MASS' is required. Install it with: install.packages('MASS')",
-         call. = FALSE)
-  }
-  obs_link <- match.arg(obs_link)
-
-  call <- match.call()
-
-  visit_covs  <- .check_covars(visit_covs,  data, "visit_covs")
-  long_covs   <- .check_covars(long_covs,   data, "long_covs")
-  random_covs <- .check_covars(random_covs, data, "random_covs")
-  if (length(visit_covs)  == 0L) stop("`visit_covs` must include at least one covariate.",  call. = FALSE)
-  if (length(long_covs)   == 0L) stop("`long_covs` must include at least one covariate.",   call. = FALSE)
-  if (length(random_covs) == 0L) stop("`random_covs` must include at least one covariate.", call. = FALSE)
-
-  # ------------------------------------------------------------------
-  # Data prep
-  # ------------------------------------------------------------------
-  id_vec     <- data[[id]]
-  unique_ids <- unique(id_vec)
-  n_subj     <- length(unique_ids)
-  subj_index <- match(id_vec, unique_ids)
-  sf         <- which(!duplicated(id_vec))            # baseline-row indices
-
-  V  <- as.matrix(data[, visit_covs, drop = FALSE])
-  VV <- V[sf, , drop = FALSE]                         # one row per subject
-
-  X  <- as.matrix(data[, long_covs, drop = FALSE])
-  XX <- X[sf, , drop = FALSE]
-
-  Q_full  <- as.matrix(data[, random_covs, drop = FALSE])
-  Q0      <- cbind(`(Intercept)` = 1, Q_full)         # nrow(data) x (1 + p_Q)
-  Q0_base <- Q0[sf, , drop = FALSE]
-
-  Time <- data[[time]]
-  y    <- data[[outcome]]
-
-  visit_mask     <- !is.na(Time)
-  n_visits_total <- sum(visit_mask)
-  ni <- tabulate(subj_index[visit_mask], nbins = n_subj)
-
-  # ------------------------------------------------------------------
-  # Stage 1: Andersen-Gill (AG) partial-likelihood score for gamma
-  # (sum only over visit rows; exclude placeholder rows for zero-visit
-  # subjects)
-  # ------------------------------------------------------------------
-  V_visits     <- V[visit_mask, , drop = FALSE]
-  sum_V_visits <- colSums(V_visits)                   # sum_i N_i V_i
-
-  gamma_score <- function(gamma) {
-    eta   <- as.vector(exp(VV %*% gamma))
-    denom <- sum(eta)
-    numer <- colSums(VV * eta)
-    sum_V_visits - (numer / denom) * n_visits_total
-  }
-
-  g0 <- rep(0, ncol(V))
-  gamma_solve <- nleqslv::nleqslv(g0, gamma_score, control = list(trace = 0))
-  if (!gamma_solve$termcd %in% c(1L, 2L)) {
-    warning("Stage 1 (gamma) did not converge: termcd = ", gamma_solve$termcd)
-  }
-  gamma_hat <- gamma_solve$x
-  names(gamma_hat) <- visit_covs
-
-  exp_gW   <- as.vector(exp(VV %*% gamma_hat))        # length n_subj
-  V_denom  <- sum(exp_gW)
-  V_bar    <- colSums(VV * exp_gW) / V_denom
-  VV_cent  <- sweep(VV, 2, V_bar, "-")
-  Info_g   <- n_visits_total * crossprod(VV_cent * sqrt(exp_gW)) / V_denom
-  vcov_g   <- tryCatch(solve(Info_g),
-                       error = function(e) MASS::ginv(Info_g))
-  se_gamma <- sqrt(pmax(diag(vcov_g), 0))
-  names(se_gamma) <- visit_covs
-  dimnames(vcov_g) <- list(visit_covs, visit_covs)
-
-  # ------------------------------------------------------------------
-  # Stage 2: observation-process GLM (probit by default)
-  # ------------------------------------------------------------------
-  obs_formula <- stats::as.formula(
-    paste(obs_indicator, "~", paste(visit_covs, collapse = " + "))
-  )
-  fit_IP <- stats::glm(obs_formula, data = data,
-                       family = stats::binomial(link = obs_link))
-  alpha_hat  <- stats::coef(fit_IP)
-  vcov_alpha <- stats::vcov(fit_IP)
-  se_alpha   <- sqrt(pmax(diag(vcov_alpha), 0))
-  names(se_alpha) <- names(alpha_hat)
-
-  link_inv <- if (obs_link == "logit") stats::plogis else stats::pnorm
-  V_int    <- cbind(`(Intercept)` = 1, V)
-  wi_full  <- as.vector(link_inv(V_int %*% alpha_hat))
-  wi_base  <- wi_full[sf]                             # length n_subj
-
-  # ------------------------------------------------------------------
-  # Stage 3a: Lambda_C (Breslow) and sigma^2 (method of moments)
-  # ------------------------------------------------------------------
-  Lambda_C_est <- n_visits_total / V_denom
-  Lambda_i     <- exp_gW * Lambda_C_est               # length n_subj
-  sigma_sq_raw <- sum(ni^2 - ni - Lambda_i^2) / sum(Lambda_i^2)
-  sigma_sq_hat <- max(sigma_sq_raw, 0)
-
-  # ------------------------------------------------------------------
-  # Stage 3b: frailty-compensation B_hat (broadcast by subject index)
-  # ------------------------------------------------------------------
-  use_B <- (sigma_sq_hat > sigma_sq_floor)
-  if (use_B) {
-    B_i       <- (1 + ni * sigma_sq_hat) / (1 + Lambda_i * sigma_sq_hat) - 1
-    Bhat      <- Q0      * B_i[subj_index]            # broadcast by subject
-    Bhat_base <- Q0_base * B_i                        # n_subj x (1 + p_Q)
-  } else {
-    B_i       <- rep(0, n_subj)
-    Bhat      <- matrix(0, nrow = nrow(data), ncol = ncol(Q0),
-                        dimnames = list(NULL, colnames(Q0)))
-    Bhat_base <- matrix(0, nrow = n_subj,    ncol = ncol(Q0),
-                        dimnames = list(NULL, colnames(Q0)))
-  }
-
-  # ------------------------------------------------------------------
-  # Stage 3c: Liang-style risk-set-centred estimating equation,
-  # solved as a direct linear system
-  # ------------------------------------------------------------------
-  w_subj  <- ni * wi_base                             # E[M_i] proxy
-  denom_w <- sum(w_subj)
-  if (denom_w <= 0) stop("Stage 3: total subject weight is zero.", call. = FALSE)
-
-  Xbar <- as.vector(colSums(w_subj * XX) / denom_w)
-  if (use_B) {
-    Bbar      <- as.vector(colSums(w_subj * Bhat_base) / denom_w)
-    design_M  <- cbind(X, Bhat)
-    centering <- c(Xbar, Bbar)
-  } else {
-    design_M  <- X
-    centering <- Xbar
-  }
-
-  Dbar <- matrix(centering, nrow = nrow(data), ncol = length(centering),
-                 byrow = TRUE)
-  H    <- design_M - Dbar
-
-  obs_mask <- !is.na(y)
-  H_obs <- H[obs_mask, , drop = FALSE]
-  D_obs <- design_M[obs_mask, , drop = FALSE]
-  Y_obs <- y[obs_mask]
-
-  LHS <- crossprod(H_obs, D_obs)
-  RHS <- as.vector(crossprod(H_obs, Y_obs))
-  cond_LHS <- kappa(LHS)
-  if (cond_LHS > 1e10) {
-    warning("Stage 3: LHS condition number = ", signif(cond_LHS, 3),
-            "; estimates may be unstable.", call. = FALSE)
-  }
-  coefs_all <- tryCatch(
-    as.vector(solve(LHS, RHS)),
-    error = function(e) as.vector(MASS::ginv(LHS) %*% RHS)
-  )
-
-  p_X <- ncol(X)
-  p_B <- if (use_B) ncol(Bhat) else 0
-  beta_hat  <- coefs_all[seq_len(p_X)]
-  theta_hat <- if (use_B) coefs_all[p_X + seq_len(p_B)] else
-    rep(NA_real_, ncol(Q0))
-  names(beta_hat)  <- long_covs
-  names(theta_hat) <- colnames(Q0)
-
-  # Subject-clustered sandwich variance
-  res_obs  <- Y_obs - as.vector(D_obs %*% coefs_all)
-  score_ij <- H_obs * res_obs
-  score_i  <- rowsum(score_ij, subj_index[obs_mask])
-  Meat     <- crossprod(score_i)
-  invA     <- tryCatch(solve(LHS), error = function(e) MASS::ginv(LHS))
-  Vsand    <- invA %*% Meat %*% t(invA)
-
-  se_all   <- sqrt(pmax(diag(Vsand), 0))
-  se_beta  <- se_all[seq_len(p_X)]
-  se_theta <- if (use_B) se_all[p_X + seq_len(p_B)] else
-    rep(NA_real_, ncol(Q0))
-  names(se_beta)  <- long_covs
-  names(se_theta) <- colnames(Q0)
-
-  vcov_names <- c(long_covs, if (use_B) colnames(Q0))
-  if (length(vcov_names) == ncol(Vsand))
-    dimnames(Vsand) <- list(vcov_names, vcov_names)
-
-  structure(list(
-    visiting_process = list(
-      gamma_hat  = gamma_hat,
-      se_gamma   = se_gamma,
-      vcov_gamma = vcov_g,
-      converged  = (gamma_solve$termcd %in% c(1L, 2L))
-    ),
-    observation_process = list(
-      alpha_hat  = alpha_hat,
-      se_alpha   = se_alpha,
-      vcov_alpha = vcov_alpha,
-      link       = obs_link
-    ),
-    longitudinal_outcome = list(
-      beta_hat     = beta_hat,
-      theta_hat    = theta_hat,
-      se_beta      = se_beta,
-      se_theta     = se_theta,
-      vcov_joint   = Vsand,
-      Lambda_C     = Lambda_C_est,
-      sigma_sq     = sigma_sq_hat,
-      sigma_sq_raw = sigma_sq_raw,
-      use_B        = use_B,
-      cond_LHS     = cond_LHS
-    ),
-    call = call
-  ), class = "EHRJoint")
+.ehrjoint_check<-function(data,vars){d<-as.data.frame(data);bad<-setdiff(unique(vars),names(d))
+  if(length(bad))stop("Missing columns: ",paste(bad,collapse=", "),call.=FALSE)
+  if(anyNA(d[[vars[1L]]]))stop("Subject id cannot be missing.",call.=FALSE);d}
+.ehrjoint_equilibrate<-function(A){
+  cs<-apply(abs(A),2L,max);cs[cs==0]<-1
+  As<-sweep(A,2L,cs,"/");rs<-apply(abs(As),1L,max);rs[rs==0]<-1
+  list(matrix=As/rs,column_scale=cs,row_scale=rs)
 }
+.ehrjoint_pinv<-function(A,tol=sqrt(.Machine$double.eps)){s<-svd(A);k<-s$d>tol*max(s$d,1)
+  if(!all(k)){
+    eq<-.ehrjoint_equilibrate(A);ss<-svd(eq$matrix)
+    if(length(ss$d)&&max(ss$d)>0&&all(ss$d>tol*max(ss$d)))
+      return(sweep((ss$v%*%(t(ss$u)/ss$d))/eq$column_scale,2L,eq$row_scale,"/"))
+  }
+  if(!any(k))stop("Rank-zero estimating equation.",call.=FALSE)
+  s$v[,k,drop=FALSE]%*%(t(s$u[,k,drop=FALSE])/s$d[k])}
+.ehrjoint_const<-function(d,id,vars){g<-NULL
+  for(v in vars){x<-d[[v]]
+    if(is.object(x)||!is.null(dim(x)))varies<-any(tapply(x,d[[id]],function(x)length(unique(x[!is.na(x)])))>1L,na.rm=TRUE)
+    else{if(is.null(g)){u<-unique(d[[id]]);s<-as.character(u);g<-match(s,unique(s))[match(d[[id]],u)]}
+      ok<-!is.na(x);xo<-x[ok];go<-g[ok];varies<-any(xo!=xo[match(go,go)])}
+    if(varies)stop("EHRJoint requires subject-level time-invariant covariate `",v,"`.",call.=FALSE)}}
+.ehrjoint_numeric<-function(d,vars){bad<-vars[!vapply(d[vars],is.numeric,logical(1))]
+  if(length(bad))stop("EHRJoint covariates must be numeric: ",paste(bad,collapse=", "),call.=FALSE)}
+
+.ehrjoint_link_stats <- function(eta, link = c("logit", "probit")) {
+  link <- match.arg(link)
+  if (link == "logit") {
+    p <- stats::plogis(eta)
+    dp <- p * (1 - p)
+
+    a <- rep(1, length(eta))
+    ap <- rep(0, length(eta))
+  } else {
+    p <- stats::pnorm(eta)
+    dp <- stats::dnorm(eta)
+    den <- p * (1 - p)
+    if (any(!is.finite(den) | den <= 1e-14))
+      stop("Observation probit violates numerical positivity; stacked inference is unavailable.", call.=FALSE)
+    a <- dp / den
+    d2p <- -eta * dp
+    ap <- d2p / den - dp^2 * (1 - 2 * p) / den^2
+  }
+  if (any(!is.finite(p)) || any(p <= 1e-10 | p >= 1 - 1e-10))
+    stop("Observation-model positivity is too weak for regular stacked inference.", call.=FALSE)
+  list(p=p, dp=dp, score_multiplier=a, score_multiplier_derivative=ap)
+}
+
+.ehrjoint_followup<-function(d,id,time,censor_col,entry_col){
+  ids<-unique(d[[id]]);si<-match(d[[id]],ids);first<-match(ids,d[[id]]);tt<-d[[time]];vis<-is.finite(tt)
+  if(!any(vis))stop("No visit events.")
+  C<-if(!is.null(censor_col))d[[censor_col]][first]else rep(max(tt[vis]),length(ids))
+  E<-if(!is.null(entry_col))d[[entry_col]][first]else rep(-Inf,length(ids))
+  ev<-vis;ev[vis]<-tt[vis]>E[si[vis]]
+  cC<-diff(range(C))<=1e-10
+  list(E=E,C=C,ev=ev,common_C=if(cC)C[1L]else NA_real_)}
+
+.ehrjoint_riskset<-function(E,C,times){ut<-sort(unique(times));K<-length(ut)
+  lo<-findInterval(E,ut)+1L;hi<-findInterval(C,ut);ok<-which(lo<=hi);entry<-any(lo[ok]>1L)
+  rsum<-function(w){M<-as.matrix(w);if(!ncol(M))return(matrix(0,K,0L))
+    out<-plm_ehr_rsum(M,lo,hi,K,entry)
+    if(is.null(dim(w)))drop(out)else out}
+  wsum<-function(x){M<-as.matrix(x);if(!ncol(M))return(matrix(0,length(lo),0L))
+    out<-plm_ehr_wsum(M,lo,hi)
+    if(!is.null(dimnames(M)))dimnames(out)<-list(if(!is.null(rownames(M)))c("",rownames(M))[hi+1L],colnames(M))
+    if(is.null(dim(x)))drop(out)else out}
+  list(ut=ut,K=K,rsum=rsum,wsum=wsum)}
+
+.ehrjoint_ag<-function(g,V,rs,dN,SV){e<-exp(drop(V%*%g));S0<-rs$rsum(e)
+  if(any(!(S0>0)))stop("Empty EHRJoint visiting risk set at a visit time.",call.=FALSE)
+  Vb<-rs$rsum(V*e)/S0;ng<-ncol(V);H<-matrix(0,ng,ng,dimnames=list(colnames(V),colnames(V)))
+  for(a in seq_len(ng))H[a,]<--colSums(dN*(rs$rsum(V*(e*V[,a]))/S0-Vb*Vb[,a]))
+  list(e=e,S0=S0,Vb=Vb,U=SV-colSums(dN*Vb),H=H)}
+
+.ehrjoint_gamma<-function(d,id,time,visit_covs,E,C,ev,tol=1e-12,accept_tol=1e-10,maxit=100L){
+  .ehrjoint_const(d,id,visit_covs);.ehrjoint_numeric(d,visit_covs)
+  ids<-unique(d[[id]]);si<-match(d[[id]],ids);first<-match(ids,d[[id]])
+  V<-as.matrix(d[first,visit_covs,drop=FALSE]);storage.mode(V)<-"double"
+  if(any(!is.finite(V)))stop("Baseline visit covariates must be finite.")
+  m<-tabulate(si[ev],nbins=length(ids));M<-sum(m)
+  if(!M)stop("No visit events inside the risk windows (entry, censoring].")
+  tv<-d[[time]][ev];rs<-.ehrjoint_riskset(E,C,tv);ek<-match(tv,rs$ut);es<-si[ev]
+  dN<-tabulate(ek,nbins=rs$K);SV<-colSums(V*m);g<-setNames(numeric(ncol(V)),visit_covs)
+  lim<-tol*max(1,M);it<-0L;tiny<-FALSE
+  repeat{cur<-.ehrjoint_ag(g,V,rs,dN,SV);if(tiny||max(abs(cur$U))<=lim||it>=maxit)break;it<-it+1L
+    st<-tryCatch(solve(-cur$H,cur$U),error=function(e)NULL)
+    if(is.null(st)||any(!is.finite(st)))stop("Singular EHRJoint visiting information.",call.=FALSE)
+    for(h in 0:30){dl<-drop(V%*%st);rc<-rs$rsum(cur$e*expm1(dl))/cur$S0
+      gain<-if(all(is.finite(rc)&rc>-1))sum(m*dl)-sum(dN*log1p(rc))else -Inf
+      if(gain>=-1e-10)break;st<-st/2}
+    if(gain< -1e-10)break;g<-g+st;tiny<-max(abs(st))<=1e-14*(1+max(abs(g)))}
+  sm<-max(abs(cur$U));dL<-dN/cur$S0;Vg<-.ehrjoint_pinv(-cur$H);dimnames(Vg)<-list(visit_covs,visit_covs)
+  ok<-sm<=accept_tol*max(1,M)
+  list(gamma=g,vcov=Vg,ids=ids,si=si,first=first,V=V,m=m,M=M,exp_gamma=cur$e,
+       converged=ok,code=as.integer(!ok),score_max=sm,
+       rs=rs,dN=dN,vis_s=es,vis_k=ek,dLambda=dL,Lambda_subject=rs$wsum(dL))}
+
+.ehrjoint_stacked_sandwich<-function(sp,gamma,alpha,sigma2,zeta,retain_influence=FALSE,rank_tol=1e-9){
+  V<-sp$V;O<-sp$O;X<-sp$X;Q<-sp$Q;m<-sp$m;rs<-sp$rs;use_B<-sp$use_B;obs_link<-sp$obs_link
+  n<-length(m);ng<-ncol(V);na<-ncol(O);nz<-length(zeta);K<-rs$K
+  ig<-seq_len(ng);ia<-ng+seq_len(na);cur<-ng+na
+  is<-if(use_B){cur<-cur+1L;cur}else integer(0)
+  iz<-cur+seq_len(nz);P<-max(iz)
+  pnames<-c(paste0("gamma:",colnames(V)),paste0("alpha:",colnames(O)),
+            if(use_B)"sigma2",paste0("outcome:",names(zeta)))
+  J<-matrix(0,P,P,dimnames=list(pnames,pnames))
+  Cmat<-matrix(0,P,n,dimnames=list(pnames,NULL))
+  F<-setNames(numeric(P),pnames)
+  bys<-function(M,s)cimehr_group_sum(as.matrix(M),s,n)
+
+  ag<-.ehrjoint_ag(gamma,V,rs,sp$dN,colSums(V*m));e<-ag$e;S0<-ag$S0;Vb<-ag$Vb
+  dL<-sp$dN/S0;Lam<-rs$wsum(dL);nu<-e*Lam;Ai<-rs$wsum(Vb*dL)
+  chain<-function(G){Gk<-rs$rsum(as.matrix(G))/S0
+    bys(Gk[sp$vis_k,,drop=FALSE],sp$vis_s)-e*rs$wsum(Gk*dL)}
+  evt<-bys(V[sp$vis_s,,drop=FALSE]-Vb[sp$vis_k,,drop=FALSE],sp$vis_s)
+  F[ig]<-colSums(evt);J[ig,ig]<-ag$H
+  Cmat[ig,]<-t(evt-e*(V*Lam-Ai))
+
+  ls<-.ehrjoint_link_stats(drop(O%*%alpha),obs_link)
+  ar<-sp$r_success-sp$r_trials*ls$p
+  salpha<-ar*ls$score_multiplier
+  halpha<-ar*ls$score_multiplier_derivative-sp$r_trials*ls$dp*ls$score_multiplier
+  F[ia]<-colSums(O*salpha);J[ia,ia]<-crossprod(O,sweep(O,1L,halpha,"*"));Cmat[ia,]<-t(O*salpha)
+
+  if(use_B){
+    nu2<-nu^2;h<-m^2-m-(1+sigma2)*nu2;Gs<--2*(1+sigma2)*nu*e
+    F[is]<-sum(h);J[is,ig]<--2*(1+sigma2)*colSums(V*nu2)-colSums(Ai*Gs);J[is,is]<--sum(nu2)
+    Cmat[is,]<-h+drop(chain(Gs))
+    den<-1+nu*sigma2;B<-(1+m*sigma2)/den-1
+    Bnu<--sigma2*(1+m*sigma2)/den^2;Bs<-(m-nu)/den^2
+    D<-cbind(X,Q*B)
+  }else D<-X
+  if(any(!is.finite(D)))stop("Non-finite EHRJoint outcome design.",call.=FALSE)
+  pos<-m>0;iL<-numeric(n);iL[pos]<-1/Lam[pos];cc<-ls$p*m*iL
+  Dn<-rs$rsum(cc);Db<-rs$rsum(D*cc)/Dn
+  os<-sp$obs_s;ok<-sp$obs_k;Do<-D[os,,drop=FALSE];Ho<-Do-Db[ok,,drop=FALSE]
+  r<-sp$obs_y-drop(Do%*%zeta)
+  F[iz]<-colSums(Ho*r);J[iz,iz]<--crossprod(Ho,Do)
+  q<-cimehr_group_sum(as.matrix(r),ok,K)[,1L]/Dn
+  rho<-rs$wsum(q);Phi<-D*rho-rs$wsum(Db*q)
+  rsi<-drop(bys(r,os));Hs<-bys(Ho,os)
+  gD<-function(dD)dD*(rsi-cc*rho)-Hs*drop(dD%*%zeta)
+  zx<-matrix(0,n,ncol(X))
+  gnu<-if(use_B)gD(cbind(zx,Q*Bnu))else matrix(0,n,nz)
+  G<-e*gnu+(cc*iL)*Phi
+  Cmat[iz,]<-t(bys(Ho*r,os)-cc*Phi+chain(G))
+  J[iz,ig]<-crossprod(gnu,V*nu)-crossprod(G,Ai)
+  J[iz,ia]<--crossprod(Phi,O*(m*ls$dp*iL))
+  if(use_B)J[iz,is]<-colSums(gD(cbind(zx,Q*Bs)))
+
+  A<--J;s<-svd(A);rank<-sum(s$d>rank_tol*max(s$d,1))
+  if(rank<P){
+    ss<-svd(.ehrjoint_equilibrate(A)$matrix,nu=0,nv=0)$d
+    rank<-if(length(ss)&&max(ss)>0)sum(ss>rank_tol*max(ss))else 0L
+  }
+  if(rank<P)stop("The full EHRJoint stacked bread is rank deficient (rank ",rank,
+                 " of ",P,").",call.=FALSE)
+  Ainv<-.ehrjoint_pinv(A,tol=rank_tol)
+  IF<-t(Ainv%*%Cmat);colnames(IF)<-pnames
+  VV<-crossprod(IF);dimnames(VV)<-list(pnames,pnames)
+  IFL<-drop(bys((1/S0)[sp$vis_k],sp$vis_s))-e*rs$wsum(dL/S0)+drop(IF[,ig,drop=FALSE]%*%(-colSums(dL*Vb)))
+  beta_pn<-paste0("outcome:",names(zeta)[seq_len(ncol(X))])
+  list(vcov=VV,vcov_beta=VV[beta_pn,beta_pn,drop=FALSE],se_Lambda=sqrt(sum(IFL^2)),
+       influence=if(retain_influence)IF else NULL,bread=A,case_derivative=Cmat,
+       equation=F,parameter_names=pnames,rank=rank,relative_min_singular=min(s$d)/max(s$d),
+       regular=use_B,
+       scope=paste0(if(use_B)"full regular-interior all-stage patient stacked sandwich" else
+         "branch-conditional patient stacked sandwich at the sigma2=0 selection boundary",
+         "; time-specific risk sets, Breslow profiled"))
+}
+
+.fit_ehrjoint<-function(
+    data,id="id",time="time",outcome="Y",obs_indicator="R",
+    visit_covs=c("Z","X"),long_covs=c("Z","X"),random_covs="Z",
+    obs_link=c("logit","probit"),sigma_floor=1e-6,
+    censor_col=if("C"%in%names(data))"C"else NULL,entry_col=NULL,
+    retain_influence=FALSE,rank_tol=1e-9,obs_fixed_covs=visit_covs){
+  if(is.null(obs_fixed_covs))obs_fixed_covs<-visit_covs
+  obs_link<-match.arg(obs_link)
+  d<-.ehrjoint_check(data,c(id,time,outcome,obs_indicator,visit_covs,obs_fixed_covs,long_covs,random_covs,
+                        if(!is.null(censor_col))censor_col,entry_col))
+  .ehrjoint_numeric(d,unique(c(visit_covs,obs_fixed_covs,long_covs,random_covs)))
+  fu<-.ehrjoint_followup(d,id,time,censor_col,entry_col);common_C<-fu$common_C;ev<-fu$ev
+  .ehrjoint_const(d,id,unique(c(obs_fixed_covs,long_covs,random_covs)))
+  ga<-.ehrjoint_gamma(d,id,time,visit_covs,fu$E,fu$C,ev)
+  visit<-is.finite(d[[time]])
+
+  bad_R<-visit&(!is.finite(d[[obs_indicator]])|!d[[obs_indicator]]%in%c(0,1))
+  if(any(bad_R))
+    stop("Every actual EHRJoint visit must have R equal to 0 or 1; only zero-visit placeholders may have R=NA.",call.=FALSE)
+  bad_Y<-visit&d[[obs_indicator]]==1&!is.finite(d[[outcome]])
+  if(any(bad_Y))
+    stop("EHRJoint requires a finite marker whenever an actual visit has R=1.",call.=FALSE)
+
+  ogood<-ev&!is.na(d[[obs_indicator]])&d[[obs_indicator]]%in%c(0,1)&
+         stats::complete.cases(d[,obs_fixed_covs,drop=FALSE])
+  if(sum(ogood)<=length(obs_fixed_covs)+1L)stop("Too few visit rows for observation model.")
+  oform<-stats::reformulate(if(length(obs_fixed_covs))obs_fixed_covs else "1",response=obs_indicator)
+  oglm<-stats::glm(oform,data=d[ogood,,drop=FALSE],family=stats::binomial(link=obs_link))
+  alpha<-stats::coef(oglm);Va<-as.matrix(stats::vcov(oglm))
+  if(any(!is.finite(alpha)))stop("Observation logit is unidentified (non-finite coefficients).")
+  base<-d[ga$first,,drop=FALSE]
+  pbase<-as.numeric(stats::predict(oglm,newdata=base,type="response"))
+  if(any(!is.finite(pbase)))stop("Non-finite observation probabilities.")
+
+  Lam<-sum(ga$dLambda);Li<-ga$exp_gamma*ga$Lambda_subject
+  raw<-sum(ga$m^2-ga$m-Li^2)/sum(Li^2);sig<-max(raw,0);use<-sig>sigma_floor
+  Bi<-if(use)(1+ga$m*sig)/(1+Li*sig)-1 else rep(0,length(ga$ids))
+  X<-as.matrix(d[,long_covs,drop=FALSE]);storage.mode(X)<-"double";Xb<-X[ga$first,,drop=FALSE]
+  Q<-as.matrix(d[,random_covs,drop=FALSE]);storage.mode(Q)<-"double"
+  Q0<-cbind(`(Intercept)`=1,Q);Qb<-Q0[ga$first,,drop=FALSE]
+  if(any(!is.finite(Xb))||any(!is.finite(Qb)))
+    stop("EHRJoint subject-level outcome/random-effect covariates must be finite.",call.=FALSE)
+  if(use){Bb<-Qb*Bi;D<-cbind(X,Q0*Bi[ga$si]);nm<-c(long_covs,paste0("theta:",colnames(Q0)))}
+  else{D<-X;Bb<-NULL;nm<-long_covs};colnames(D)<-nm
+  ws<-ga$m*pbase;if(sum(ws)<=0)stop("Zero EHRJoint Stage-3 weight.")
+  cs<-numeric(length(ws));cs[ga$m>0]<-ws[ga$m>0]/ga$Lambda_subject[ga$m>0]
+  Dbar<-ga$rs$rsum(cbind(Xb,Bb)*cs)/ga$rs$rsum(cs)
+  H<-D-Dbar[match(d[[time]],ga$rs$ut),,drop=FALSE]
+  obs<-ev&!is.na(d[[obs_indicator]])&d[[obs_indicator]]==1&
+       is.finite(d[[outcome]])&stats::complete.cases(D)
+  if(sum(obs)<=ncol(D))stop("Too few observed marker rows for EHRJoint.")
+  A<-crossprod(H[obs,,drop=FALSE],D[obs,,drop=FALSE]);Ai<-.ehrjoint_pinv(A)
+  cf<-as.vector(Ai%*%crossprod(H[obs,,drop=FALSE],d[[outcome]][obs]));names(cf)<-nm
+  rr_cond<-d[[outcome]][obs]-drop(D[obs,,drop=FALSE]%*%cf)
+  sc_cond<-cimehr_group_sum(H[obs,,drop=FALSE]*rr_cond,ga$si[obs],length(ga$ids))
+  Vcond<-Ai%*%crossprod(sc_cond)%*%t(Ai)
+  dimnames(Vcond)<-list(nm,nm)
+
+  nsub<-length(ga$ids)
+  r_trials<-tabulate(ga$si[ogood],nbins=nsub)
+  r_success<-tabulate(ga$si[ogood&d[[obs_indicator]]==1],nbins=nsub)
+  Ob<-stats::model.matrix(stats::delete.response(stats::terms(oglm)),base)
+  stack<-.ehrjoint_stacked_sandwich(
+    list(V=ga$V,m=ga$m,O=Ob,r_trials=r_trials,r_success=r_success,obs_link=obs_link,
+         use_B=use,nz=length(cf),X=Xb,Q=Qb,rs=ga$rs,dN=ga$dN,vis_s=ga$vis_s,vis_k=ga$vis_k,
+         obs_s=ga$si[obs],obs_k=match(d[[time]][obs],ga$rs$ut),obs_y=d[[outcome]][obs]),
+    gamma=ga$gamma,alpha=alpha,sigma2=sig,zeta=cf,
+    retain_influence=retain_influence,rank_tol=rank_tol)
+  p<-length(long_covs);beta<-cf[seq_len(p)]
+  out_names<-paste0("outcome:",nm)
+  Vout<-stack$vcov[out_names,out_names,drop=FALSE]
+  dimnames(Vout)<-list(nm,nm)
+  VB<-Vout[seq_len(p),seq_len(p),drop=FALSE]
+  dimnames(VB)<-list(long_covs,long_covs)
+  theta_names<-if(use)nm[-seq_len(p)]else character(0)
+  Vtheta<-if(use)Vout[theta_names,theta_names,drop=FALSE]else
+    matrix(NA_real_,ncol(Q0),ncol(Q0),dimnames=list(colnames(Q0),colnames(Q0)))
+  if(use)dimnames(Vtheta)<-list(colnames(Q0),colnames(Q0))
+  pg<-paste0("gamma:",visit_covs);pa<-paste0("alpha:",colnames(Ob))
+  Vg_stack<-stack$vcov[pg,pg,drop=FALSE];dimnames(Vg_stack)<-list(visit_covs,visit_covs)
+  Va_stack<-stack$vcov[pa,pa,drop=FALSE];dimnames(Va_stack)<-list(colnames(Ob),colnames(Ob))
+  conv<-isTRUE(ga$converged)&&isTRUE(oglm$converged)&&all(is.finite(cf))
+  ans<-list(method_key="ehrjoint",method="EHRJoint",
+            estimand=paste0("EHRJoint marginal longitudinal coefficient under shared visiting frailty and a measured-covariate observation ",obs_link),
+            coefficients=beta,vcov=VB,
+            se=sqrt(pmax(diag(VB),0)),
+            vcov_type=stack$scope,
+            nuisance=list(gamma=ga$gamma,vcov_gamma=Vg_stack,
+                          vcov_gamma_conditional=ga$vcov,
+                          alpha=alpha,vcov_alpha=Va_stack,
+                          vcov_alpha_model_based=Va,observation_link=obs_link,
+                          Lambda=Lam,sigma2=sig,sigma2_raw=raw,
+                          se_Lambda=stack$se_Lambda,
+                          se_sigma2=if(use)sqrt(stack$vcov["sigma2","sigma2"])else NA_real_,
+                          theta=if(use)cf[-seq_len(p)]else setNames(rep(NA_real_,ncol(Q0)),colnames(Q0)),
+                          vcov_theta=Vtheta,
+                          se_theta=if(use)sqrt(pmax(diag(Vtheta),0))else setNames(rep(NA_real_,ncol(Q0)),colnames(Q0)),
+                          Lambda0_hat=setNames(ga$dLambda,as.character(ga$rs$ut))),
+            stacked_sandwich=list(vcov_joint=stack$vcov,vcov_outcome=Vout,
+                                  vcov_outcome_conditional=Vcond,
+                                  bread=stack$bread,
+                                  influence=stack$influence,
+                                  regular=stack$regular,scope=stack$scope,
+                                  parameter_names=stack$parameter_names),
+            converged=conv,
+            diagnostics=list(ok=isTRUE(conv&&all(is.finite(VB))),
+                             n_subjects=length(ga$ids),n_visits=ga$M,n_observed=sum(obs),
+                             zero_visit_subjects=sum(ga$m==0L),common_censoring_time=common_C,
+                             gamma_converged=ga$converged,gamma_code=ga$code,
+                             gamma_score_max=ga$score_max,observation_glm_converged=oglm$converged,
+                             condition_number=kappa(A),frailty_boundary=!use,
+                             stacked_bread_rank=stack$rank,
+                             stacked_relative_min_singular=stack$relative_min_singular,
+                             stacked_equation_max=max(abs(stack$equation)),
+                             covariance_propagates_stage12=TRUE,
+                             covariance_regular=stack$regular,
+                             conditional_inference_available=isTRUE(conv)&&all(is.finite(VB))&&all(diag(VB)>=0),
+                             inference_scope=stack$scope),
+            assumptions=c("Subject-specific risk windows (entry, censoring] with time-specific risk sets, noninformative given covariates; time-invariant covariates",
+                          "Gamma shared frailty with method-of-moments variance",
+                          paste0(tools::toTitleCase(obs_link)," observation process depends only on measured covariates"),
+                          if(use)"Regular interior frailty variance for Wald inference" else
+                            "At sigma2=0, covariance is conditional on remaining on the no-frailty branch"),
+            call=match.call())
+  # dA(t) = beta_0(t) dLambda_0(t).
+  num <- cimehr_group_sum(as.matrix(rr_cond),match(d[[time]][obs],ga$rs$ut),length(ga$rs$ut))[,1L]
+  Sobs <- as.numeric(ga$rs$rsum(cs))
+  dA <- rep(NA_real_,length(Sobs));ok <- is.finite(Sobs)&Sobs>0
+  dA[ok] <- num[ok]/Sobs[ok]
+  low <- if(is.null(entry_col))min(c(0,d[[time]][ev])) else min(fu$E[is.finite(fu$E)])
+  if(!is.finite(low))low <- min(c(0,d[[time]][ev]))
+  ans$prediction <- list(
+    baseline=list(type="increments",increments=data.frame(time=ga$rs$ut,dA=dA,dLambda=ga$dLambda),
+      normalization="Profiled observation-risk numerator and fitted visiting-baseline increments"),
+    reference=base[,long_covs,drop=FALSE],long_covs=long_covs,coefficients=beta,
+    time_col=time,time_range=c(low,max(fu$C)))
+  class(ans)<-c("ehrjoint");ans
+}
+
+EHRJoint <- function(data,...) fit_method('ehrjoint',data,...)
