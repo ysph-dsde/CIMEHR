@@ -304,7 +304,7 @@ baseline is $-2+0.1t$. The grid spans months 0 to 60 at 121 points. The
 local-smoothing bandwidth is 12 months for ordinary CIMEHR and CIMEHR-HL;
 spline methods evaluate their fitted basis directly.
 
-```{r bootstrap-intervals}
+```{r bootstrap-intervals, eval = FALSE}
 B <- 50L
 bootstrap_seed <- 20261014L
 profile_weights <- c(.5, .5)
@@ -349,6 +349,21 @@ curve_results$method <- factor(curve_results$method,
 bootstrap_summary <- do.call(rbind, bootstrap_rows)
 ```
 
+The bootstrap above refits every stage 50 times for each method and curve
+type, which takes several minutes, so it is not rerun when this vignette is
+built. The results below were produced by exactly that code and are installed
+with the package:
+
+```{r load-bootstrap-results}
+results_directory <- system.file("examples", "results", package = "CIMEHR")
+curve_results <- read.csv(file.path(results_directory,
+                                    "baseline_population_curves.csv"))
+curve_results$method <- factor(curve_results$method,
+                               levels = unname(method_labels))
+bootstrap_summary <- read.csv(file.path(results_directory,
+                                        "bootstrap_summary.csv"))
+```
+
 The curve SE is the sample standard deviation of finite bootstrap estimates,
 not that standard deviation divided by the square root of `B`. Intervals use
 the original fitted curve plus or minus the normal critical value times this
@@ -371,7 +386,7 @@ knitr::kable(bootstrap_summary[, c("method", "type", "B", "successful",
                            "Finite intervals"))
 ```
 
-The next two figures use the newly calculated curve objects. Purple lines and
+The next two figures use these bootstrap results. Purple lines and
 ribbons show estimates and pointwise 95% confidence intervals; black dashed
 lines show the generating means. The same plotting function gives each method
 its own panel and keeps both curve types on a common display scale.
